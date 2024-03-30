@@ -12,7 +12,7 @@ sources = [
 
 exe = executable('flowtastic', sources + 'src/main.cpp',
   install : true,
-  dependencies : [dependency('fmt'), dependency('tomlplusplus')],
+  dependencies : [dependency('xtensor'), dependency('fmt'), dependency('tomlplusplus')],
   include_directories : incdir
   )
 
