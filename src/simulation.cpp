@@ -36,4 +36,35 @@ CommonLobeDimensions::CommonLobeDimensions( const Config::InputParams & input, c
     thickness_min = 2.0 * input.thickness_ratio / ( input.thickness_ratio + 1.0 ) * avg_lobe_thickness;
 }
 
+void Simulation::compute_initial_lobe_position( int idx_flow, int idx_lobe )
+{
+    // For now, we've just implemented vent_flag = 0
+    int idx_vent           = std::floor( idx_flow * input.n_vents() / input.n_flows );
+    lobes[idx_lobe].center = input.vent_coordinates[idx_vent];
+}
+
+void Simulation::run()
+{
+    for( int idx_flow = 0; idx_flow < input.n_flows; idx_flow++ )
+    {
+        // Determine n_lobes
+        // @TODO: Calculate this later, using a beta distribution etc.
+        int n_lobes = 0.5 * ( input.min_n_lobes + input.max_n_lobes );
+        n_lobes_total += n_lobes;
+
+        double delta_lobe_thickness
+            = 2.0 * ( lobe_dimensions.avg_lobe_thickness - lobe_dimensions.thickness_min ) / ( n_lobes - 1.0 );
+
+        // Build initial lobes which do  not propagate descendents
+        for( int idx_lobe = 0; idx_lobe < input.n_init; idx_lobe++ )
+        {
+            compute_initial_lobe_position( idx_lobe, idx_flow );
+            // get the slope
+            // perturb the angle
+            // compute lobe axes
+            // rasterize_lobe
+        }
+    }
+}
+
 } // namespace Flowtastic

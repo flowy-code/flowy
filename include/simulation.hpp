@@ -1,6 +1,9 @@
 #pragma once
 #include "asc_file.hpp"
 #include "config.hpp"
+#include "definitions.hpp"
+#include "lobe.hpp"
+#include <vector>
 
 namespace Flowtastic
 {
@@ -28,7 +31,17 @@ public:
     Config::InputParams input;
     AscFile asc_file;
 
+    std::vector<Lobe> lobes; // Lobes per flows
+
+    /*
+Calculates the initial lobe position
+*/
+    void compute_initial_lobe_position( int idx_flow, int idx_lobe );
+
+    void run();
+
 private:
+    int n_lobes_total = 0; // This is the total number of lobes, accumulated over all flows
     CommonLobeDimensions lobe_dimensions;
 };
 

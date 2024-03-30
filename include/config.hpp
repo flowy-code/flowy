@@ -13,6 +13,12 @@ public:
     std::filesystem::path run_name{}; // Name of the run (used to save the parameters and the output)
     std::filesystem::path source{};   // File name of ASCII digital elevation model (.asc file)
     MatrixX vent_coordinates{};       // of shape [n_vents, 2]
+
+    int n_vents()
+    {
+        return vent_coordinates.shape()[0];
+    }
+
     bool save_hazard_data{}; // If true, a raster map is saved, such that the values represent the probability of a cell
                              // to be covered by lava.
     int n_flows{};           // Number of flows per run
