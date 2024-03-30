@@ -8,6 +8,7 @@ incdir = include_directories('include')
 
 sources = [
   'src/flowtastic.cpp',
+  'src/asc_file.cpp',
 ]
 
 exe = executable('flowtastic', sources + 'src/main.cpp',
@@ -18,6 +19,7 @@ exe = executable('flowtastic', sources + 'src/main.cpp',
 
 tests = [
   ['Test_Dummy', 'test/test_dummy.cpp'],
+  ['Test_ASC', 'test/test_asc.cpp'],
 ]
 
 Catch2 = dependency('Catch2', method : 'cmake', modules : ['Catch2::Catch2WithMain', 'Catch2::Catch2'])
