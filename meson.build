@@ -9,6 +9,7 @@ incdir = include_directories('include')
 sources = [
   'src/flowtastic.cpp',
   'src/asc_file.cpp',
+  'src/simulation.cpp'
 ]
 
 exe = executable('flowtastic', sources + 'src/main.cpp',
@@ -18,7 +19,6 @@ exe = executable('flowtastic', sources + 'src/main.cpp',
   )
 
 tests = [
-  ['Test_Dummy', 'test/test_dummy.cpp'],
   ['Test_ASC', 'test/test_asc.cpp'],
 ]
 

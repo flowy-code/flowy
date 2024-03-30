@@ -25,8 +25,8 @@ public:
 
     // Variables we don't understand
     // masking_threshold: float = 0
-    // min_n_lobes: int = 0
-    // max_n_lobes: int = 0
+    int min_n_lobes{};
+    int max_n_lobes{};
 
     /*
     Inertial exponent, used for calculating the inertial modification to the azimuthal angle (also depends on the slope,
@@ -67,7 +67,7 @@ public:
     float thickness_ratio{};
 
     /*
-    This flag selects which dimension of the lobe is fixed when volume_flag=1:
+    This flag selects which dimension of the lobe is fixed:
     fixed_dimension_flag = 1  => the area of the lobes is assigned
     fixed_dimension_flag = 2  => the thickness of the lobes is assigend
     */
@@ -105,7 +105,6 @@ public:
 
     std::optional<float> fissure_probabilities{};
     std::optional<float> total_volume{};
-    std::optional<int> volume_flag{};
     std::optional<float> east_to_vent{};
     std::optional<float> west_to_vent{};
     std::optional<float> south_to_vent{};
