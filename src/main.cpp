@@ -4,7 +4,7 @@
 #include <filesystem>
 namespace fs = std::filesystem;
 
-int main() 
+int main()
 {
-    fmt::print("Flowtastic!\n");
+    fmt::print( "Flowtastic!\n" );
 }
