@@ -14,8 +14,8 @@ public:
     double cell_size          = 0;        // side length of square cell
     double no_data_value      = -9999;    // number that indicates lack of data
     MatrixX height_data{};                // array that contains height data
-    VectorX x_data;                       // one dimensional coordinates of the sampling grid in x direction
-    VectorX y_data;                       // one dimensional coordinates of the sampling grid in y direction
+    VectorX x_data{}; // one dimensional coordinates of the sampling grid in x direction (the center of each pixel)
+    VectorX y_data{}; // one dimensional coordinates of the sampling grid in y direction (the center of each pixel)
 
     int nrows()
     {

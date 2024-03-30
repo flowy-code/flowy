@@ -23,13 +23,21 @@ TEST_CASE( "asc_file_test", "[asc]" )
 
     REQUIRE( asc_file.height_data == height_data_expected );
 
-    double xllcorner_expected     = 2.701332e+05;
-    double yllcorner_expected     = 2.123588e+06;
-    int cellsize_expected         = 20;
+    double xllcorner_expected     = 1e+02;
+    double yllcorner_expected     = 2e+03;
+    int cellsize_expected         = 100;
     double no_data_value_expected = -9999;
+
+    Flowtastic::VectorX x_data_expected
+        = { xllcorner_expected + 0.5 * cellsize_expected, xllcorner_expected + 1.5 * cellsize_expected,
+            xllcorner_expected + 2.5 * cellsize_expected };
+    Flowtastic::VectorX y_data_expected
+        = { yllcorner_expected + 0.5 * cellsize_expected, yllcorner_expected + 1.5 * cellsize_expected };
 
     REQUIRE( xllcorner_expected == asc_file.lower_left_corner[0] );
     REQUIRE( yllcorner_expected == asc_file.lower_left_corner[1] );
     REQUIRE( cellsize_expected == asc_file.cell_size );
     REQUIRE( no_data_value_expected == asc_file.no_data_value );
+    REQUIRE( x_data_expected == asc_file.x_data );
+    REQUIRE( y_data_expected == asc_file.y_data );
 }

@@ -4,6 +4,7 @@
 #include <fstream>
 #include <istream>
 #include <stdexcept>
+#include <xtensor/xbuilder.hpp>
 #include <xtensor/xcsv.hpp>
 
 namespace Flowtastic
@@ -57,5 +58,13 @@ AscFile::AscFile( const std::filesystem::path & path )
         throw std::runtime_error(
             fmt::format( "ncols in header is {}, but there are {} cols of data", ncols_header, ncols() ) );
     }
+
+    this->x_data = xt::arange(
+        lower_left_corner[0] + 0.5 * cell_size, lower_left_corner[0] + ( double( ncols() ) + 0.5 ) * cell_size,
+        cell_size );
+
+    this->y_data = xt::arange(
+        lower_left_corner[1] + 0.5 * cell_size, lower_left_corner[1] + ( double( nrows() ) + 0.5 ) * cell_size,
+        cell_size );
 }
 } // namespace Flowtastic
