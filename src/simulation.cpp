@@ -109,8 +109,10 @@ void Simulation::run()
 
             auto [height_lobe_center, slope] = topography.height_and_slope( lobes[idx_lobe].center );
 
-            // perturb the angle
+            // Perturb the angle (and set it)
+            perturb_lobe_angle( lobes[idx_lobe], slope );
             // compute lobe axes
+            compute_lobe_axes( lobes[idx_lobe], slope );
             // rasterize_lobe
         }
     }

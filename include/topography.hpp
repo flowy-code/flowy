@@ -10,7 +10,10 @@ class Topography
 {
 public:
     Topography( const AscFile & asc_file )
-            : height_data( asc_file.height_data ), x_data( asc_file.height_data ), y_data( asc_file.y_data ){};
+            : height_data( asc_file.height_data ), x_data( asc_file.x_data ), y_data( asc_file.y_data ){};
+
+    Topography( const MatrixX & height_data, const VectorX & x_data, const VectorX & y_data )
+            : height_data( height_data ), x_data( x_data ), y_data( y_data ){};
 
     Topography() = default;
 

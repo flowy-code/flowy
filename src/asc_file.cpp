@@ -15,7 +15,7 @@ AscFile::AscFile( const std::filesystem::path & path )
     std::ifstream file( path.string() ); // Open the file
     if( !file.is_open() )
     {
-        throw std::runtime_error( "Unable to open file" );
+        throw std::runtime_error( fmt::format( "Unable to open asc file: '{}'", path.string() ) );
     }
 
     /* This is what the first six lines look like
