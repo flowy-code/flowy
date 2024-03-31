@@ -9,7 +9,8 @@ incdir = include_directories('include')
 sources = [
   'src/flowtastic.cpp',
   'src/asc_file.cpp',
-  'src/simulation.cpp'
+  'src/simulation.cpp',
+  'src/topography.cpp'
 ]
 
 exe = executable('flowtastic', sources + 'src/main.cpp',
