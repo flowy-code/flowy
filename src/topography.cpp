@@ -1,24 +1,90 @@
 #include "topography.hpp"
 #include "definitions.hpp"
+#include "xtensor/xbuilder.hpp"
+#include <regex>
 #include <stdexcept>
 
 namespace Flowtastic
 {
 
-std::pair<double, Vector2> Topography::height_and_slope( const Vector2 & coordinates )
+std::array<int, 2> Topography::locate_point( const Vector2 & coordinates )
 {
-    const bool outside_x = coordinates[0] < x_data[0] || coordinates[0] > x_data.periodic( -1 );
-    const bool outside_y = coordinates[1] < y_data[0] || coordinates[1] > y_data.periodic( -1 );
+
+    const bool outside_x
+        = coordinates[0] < x_data[0] - 0.5 * cell_size() || coordinates[0] > x_data.periodic( -1 ) - 0.5 * cell_size();
+    const bool outside_y
+        = coordinates[1] < y_data[0] - 0.5 * cell_size() || coordinates[1] > y_data.periodic( -1 ) - 0.5 * cell_size();
 
     if( outside_x || outside_y )
     {
-        throw std::runtime_error( "Cannot interpolate, because coordinates are outside of grid!" );
+        throw std::runtime_error( "Cannot locate point, because coordinates are outside of grid!" );
     }
 
     // Have to find the four grid points that enclose the coordinates
-    const int idx_x_lower  = int( ( coordinates[0] - x_data[0] ) / cell_size() );
+    const int idx_x_lower = int( ( coordinates[0] - x_data[0] + 0.5 * cell_size() ) / cell_size() );
+    const int idx_y_lower = int( ( coordinates[1] - y_data[0] + 0.5 * cell_size() ) / cell_size() );
+    return { idx_x_lower, idx_y_lower };
+}
+
+Topography::BoundingBox Topography::bounding_box( const Vector2 & center, double radius )
+{
+    const auto [idx_x_lower, idx_y_lower] = locate_point( center );
+    int number_of_cells_to_include        = std::ceil( radius / cell_size() );
+
+    Topography::BoundingBox res{};
+    res.idx_x_lower  = idx_x_lower - number_of_cells_to_include;
+    res.idx_x_higher = idx_x_lower + number_of_cells_to_include;
+    res.idx_y_lower  = idx_y_lower - number_of_cells_to_include;
+    res.idx_y_higher = idx_y_lower + number_of_cells_to_include;
+
+    return res;
+}
+
+std::pair<MatrixX, Topography::BoundingBox> Topography::compute_intersection( const Lobe & lobe )
+{
+    auto bbox       = bounding_box( lobe.center, lobe.semi_axes[0] );
+    constexpr int N = 15;
+
+    const int n_rows = bbox.idx_y_higher - bbox.idx_y_lower + 1;
+    const int n_cols = bbox.idx_x_higher - bbox.idx_x_lower + 1;
+
+    MatrixX covered_fraction = xt::empty<double>( { n_rows, n_cols } );
+
+    // We iterate over all cells, contained in the bounding box
+    for( int idx_x = bbox.idx_x_lower; idx_x <= bbox.idx_x_higher; idx_x++ )
+    {
+        const double x_cell_low  = x_data[idx_x] - 0.5 * cell_size();
+        const double x_cell_high = x_data[idx_x] + 0.5 * cell_size();
+        const auto x_range_cell  = xt::linspace( x_cell_low, x_cell_high, N );
+
+        for( int idx_y = bbox.idx_y_lower; idx_y <= bbox.idx_y_higher; idx_y++ )
+        {
+            const double y_cell_low  = y_data[idx_y] - 0.5 * cell_size();
+            const double y_cell_high = y_data[idx_y] + 0.5 * cell_size();
+            const auto y_range_cell  = xt::linspace( y_cell_low, y_cell_high, N );
+            int n_hits               = 0;
+            for( auto x : x_range_cell )
+            {
+                for( auto y : y_range_cell )
+                {
+                    if( lobe.is_point_in_lobe( { x, y } ) )
+                    {
+                        n_hits++;
+                    }
+                }
+            }
+            covered_fraction( idx_x, idx_y ) = double( n_hits ) / ( N * N );
+        }
+    }
+
+    return { covered_fraction, bbox };
+}
+
+std::pair<double, Vector2> Topography::height_and_slope( const Vector2 & coordinates )
+{
+    const auto [idx_x_lower, idx_y_lower] = locate_point( coordinates );
+
     const int idx_x_higher = idx_x_lower + 1;
-    const int idx_y_lower  = int( ( coordinates[1] - y_data[0] ) / cell_size() );
     const int idx_y_higher = idx_y_lower + 1;
 
     // We interpolate the height data with a function f(x,y) = alpha * x + beta * y + gamma * x * y + c

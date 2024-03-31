@@ -42,7 +42,6 @@ public:
     void compute_initial_lobe_position( int idx_flow, Lobe & lobe );
 
     // perturbes the initial azimuthal angle of the lobe, which is
-
     void compute_lobe_axes( Lobe & lobe, const Vector2 & slope ) const; // computed from the terrain slop
     void perturb_lobe_angle( Lobe & lobe, const Vector2 & slope );
 
