@@ -1,11 +1,20 @@
 #include "topography.hpp"
 #include "definitions.hpp"
+#include <stdexcept>
 
 namespace Flowtastic
 {
 
 std::pair<double, Vector2> Topography::height_and_slope( const Vector2 & coordinates )
 {
+    const bool outside_x = coordinates[0] < x_data[0] || coordinates[0] > x_data.periodic( -1 );
+    const bool outside_y = coordinates[1] < y_data[0] || coordinates[1] > y_data.periodic( -1 );
+
+    if( outside_x || outside_y )
+    {
+        throw std::runtime_error( "Cannot interpolate, because coordinates are outside of grid!" );
+    }
+
     // Have to find the four grid points that enclose the coordinates
     const int idx_x_lower  = int( coordinates[0] / cell_size );
     const int idx_x_higher = int( coordinates[0] / cell_size + 1 );
