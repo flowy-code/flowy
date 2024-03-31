@@ -12,3 +12,4 @@ dependencies:
   - tomlplusplus
   - catch2
   - xtensor 
+  - xtensor-blas

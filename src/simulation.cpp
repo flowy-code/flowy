@@ -1,5 +1,11 @@
 #include "simulation.hpp"
+#include "definitions.hpp"
+#include "lobe.hpp"
 #include "math.hpp"
+#include "probability_dist.hpp"
+#include "xtensor-blas/xlinalg.hpp"
+#include <cmath>
+#include <random>
 #include <stdexcept>
 
 namespace Flowtastic
@@ -36,11 +42,37 @@ CommonLobeDimensions::CommonLobeDimensions( const Config::InputParams & input, c
     thickness_min = 2.0 * input.thickness_ratio / ( input.thickness_ratio + 1.0 ) * avg_lobe_thickness;
 }
 
-void Simulation::compute_initial_lobe_position( int idx_flow, int idx_lobe )
+void Simulation::compute_initial_lobe_position( int idx_flow, Lobe & lobe )
 {
     // For now, we've just implemented vent_flag = 0
-    int idx_vent           = std::floor( idx_flow * input.n_vents() / input.n_flows );
-    lobes[idx_lobe].center = input.vent_coordinates[idx_vent];
+    int idx_vent = std::floor( idx_flow * input.n_vents() / input.n_flows );
+    lobe.center  = input.vent_coordinates[idx_vent];
+}
+
+void Simulation::perturb_lobe_angle( Lobe & lobe, const Vector2 & slope )
+{
+    lobe.azimuthal_angle    = std::atan2( slope[1], slope[0] ); // Sets the angle prior to perturbation
+    const double slope_norm = xt::linalg::norm( slope, 2 );     // Similar to np.linalg.norm
+    const double slope_deg  = std::atan( slope_norm );
+
+    if( input.max_slope_prob < 1 )
+    {
+        if( slope_deg > 0.0 && input.max_slope_prob > 0 )
+        {
+            const double sigma
+                = ( 1.0 - input.max_slope_prob ) / input.max_slope_prob * ( Math::pi / 2.0 - slope_deg ) / slope_deg;
+
+            ProbabilityDist::truncated_normal_distribution<double> dist_truncated( 0, sigma, -Math::pi, Math::pi );
+            const double angle_perturbation = dist_truncated( gen );
+            lobe.azimuthal_angle += angle_perturbation;
+        }
+        else
+        {
+            std::uniform_real_distribution<double> dist_uniform( -Math::pi, Math::pi );
+            const double angle_perturbation = dist_uniform( gen );
+            lobe.azimuthal_angle += angle_perturbation;
+        }
+    }
 }
 
 void Simulation::run()
@@ -58,8 +90,10 @@ void Simulation::run()
         // Build initial lobes which do  not propagate descendents
         for( int idx_lobe = 0; idx_lobe < input.n_init; idx_lobe++ )
         {
-            compute_initial_lobe_position( idx_lobe, idx_flow );
-            // get the slope
+            compute_initial_lobe_position( idx_flow, lobes[idx_lobe] );
+
+            auto [height_lobe_center, slope] = topography.height_and_slope( lobes[idx_lobe].center );
+
             // perturb the angle
             // compute lobe axes
             // rasterize_lobe

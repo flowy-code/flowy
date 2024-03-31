@@ -4,6 +4,7 @@
 #include "definitions.hpp"
 #include "lobe.hpp"
 #include "topography.hpp"
+#include <random>
 #include <vector>
 
 namespace Flowtastic
@@ -24,26 +25,31 @@ public:
 class Simulation
 {
 public:
-    Simulation( const Config::InputParams & input )
+    Simulation( const Config::InputParams & input, std::optional<int> rng_seed )
             : input( input ),
               asc_file( AscFile( input.source ) ),
-              lobe_dimensions( CommonLobeDimensions( input, asc_file ) ){};
+              topography( Topography( asc_file ) ),
+              lobe_dimensions( CommonLobeDimensions( input, asc_file ) ),
+              gen( std::mt19937( rng_seed.value_or( std::random_device()() ) ) ){};
 
     Config::InputParams input;
     AscFile asc_file;
+    Topography topography;
 
     std::vector<Lobe> lobes; // Lobes per flows
 
-    /*
-Calculates the initial lobe position
-*/
-    void compute_initial_lobe_position( int idx_flow, int idx_lobe );
+    // calculates the initial lobe position
+    void compute_initial_lobe_position( int idx_flow, Lobe & lobe );
+
+    // perturbes the initial azimuthal angle of the lobe, which is computed from the terrain slop
+    void perturb_lobe_angle( Lobe & lobe, const Vector2 & slope );
 
     void run();
 
 private:
     int n_lobes_total = 0; // This is the total number of lobes, accumulated over all flows
     CommonLobeDimensions lobe_dimensions;
+    std::mt19937 gen{};
 };
 
 } // namespace Flowtastic

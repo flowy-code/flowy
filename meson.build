@@ -13,9 +13,12 @@ sources = [
   'src/topography.cpp'
 ]
 
+# Library dependencies
+pdflib_dep = dependency('pdf_cpplib', fallback : ['pdf_cpplib', 'pdflib_dep'])
+
 exe = executable('flowtastic', sources + 'src/main.cpp',
   install : true,
-  dependencies : [dependency('xtensor'), dependency('fmt'), dependency('tomlplusplus')],
+  dependencies : [pdflib_dep, dependency('xtensor'), dependency('xtensor-blas'), dependency('fmt'), dependency('tomlplusplus')],
   include_directories : incdir
   )
 
@@ -28,7 +31,7 @@ Catch2 = dependency('Catch2', method : 'cmake', modules : ['Catch2::Catch2WithMa
 
 foreach t : tests
   exe = executable(t.get(0), sources + t.get(1),
-    dependencies : [dependency('fmt'), dependency('tomlplusplus'), Catch2],
+    dependencies : [pdflib_dep, dependency('xtensor'), dependency('xtensor-blas'),dependency('fmt'), dependency('tomlplusplus'), Catch2],
     include_directories : incdir
   )
   test(t.get(0), exe, workdir : meson.project_source_root())

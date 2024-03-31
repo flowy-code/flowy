@@ -1,0 +1,8 @@
+[wrap-git]
+directory=pdf_cpplib
+url=https://github.com/amritagos/pdf_cpplib.git
+revision = head
+depth = 1
+
+[provide]
+dependency_names = pdf_cpplib
