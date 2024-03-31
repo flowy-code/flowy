@@ -16,10 +16,10 @@ std::pair<double, Vector2> Topography::height_and_slope( const Vector2 & coordin
     }
 
     // Have to find the four grid points that enclose the coordinates
-    const int idx_x_lower  = int( coordinates[0] / cell_size );
-    const int idx_x_higher = int( coordinates[0] / cell_size + 1 );
-    const int idx_y_lower  = int( coordinates[1] / cell_size );
-    const int idx_y_higher = int( coordinates[1] / cell_size + 1 );
+    const int idx_x_lower  = int( ( coordinates[0] - x_data[0] ) / cell_size() );
+    const int idx_x_higher = idx_x_lower + 1;
+    const int idx_y_lower  = int( ( coordinates[1] - y_data[0] ) / cell_size() );
+    const int idx_y_higher = idx_y_lower + 1;
 
     // We interpolate the height data with a function f(x,y) = alpha * x + beta * y + gamma * x * y + c
     // We want f(x,y) to coincide with the actual height data at the four enclosing corners
