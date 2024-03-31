@@ -19,7 +19,8 @@ TEST_CASE( "asc_file_test", "[asc]" )
 
     fmt::print( "data = {}\n", fmt::streamed( asc_file.height_data ) );
 
-    Flowtastic::MatrixX height_data_expected = { { 0.5512, -9999, 2 }, { 2.0, 1.2, 3 } };
+    // NOTE: that the order of rows in the asc file is opposite to the order of rows in the height_data
+    Flowtastic::MatrixX height_data_expected = { { 2.0, 1.2, 3 }, { 0.5512, -9999, 2 } };
 
     REQUIRE( asc_file.height_data == height_data_expected );
 

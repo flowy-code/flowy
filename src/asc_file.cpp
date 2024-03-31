@@ -45,7 +45,7 @@ AscFile::AscFile( const std::filesystem::path & path )
     cell_size     = std::stod( get_number_string() );
     no_data_value = std::stod( get_number_string() );
 
-    height_data = xt::load_csv<double>( file, ' ' );
+    height_data = xt::flip( xt::load_csv<double>( file, ' ' ), 0 );
 
     if( nrows_header != nrows() )
     {
