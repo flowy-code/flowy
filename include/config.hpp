@@ -30,7 +30,7 @@ public:
     std::optional<double> prescribed_avg_lobe_thickness{}; // User defined average lobe thickness
 
     // Variables we don't understand
-    // masking_threshold: float = 0
+    // masking_threshold: double = 0
     int min_n_lobes{};
     int max_n_lobes{};
 
@@ -40,7 +40,7 @@ public:
     direction; inertial_exponent > 0 => the max probability direction for the new lobe takes into account also the
     direction of the parent lobe and the inertia increaes with increasing exponent
     */
-    float inertial_exponent{};
+    double inertial_exponent{};
 
     /*
     The lobe_exponent is associated with the probability that a new lobe will
@@ -51,7 +51,7 @@ public:
     lobe_exponent = 1 => th                                                                  e parent lobe is chosen
     with a uniform probability distribution. lobe_exponent = 0 => the new lobe is generated from the last one.
     */
-    float lobe_exponent{};
+    double lobe_exponent{};
 
     /*
     `max_slope_prob` is related to the probability that the direction of
@@ -62,7 +62,7 @@ public:
                           value of the parameter;
     max_slope_prob = 1 => the direction of the new lobe is the maximum slope direction.
     */
-    float max_slope_prob{};
+    double max_slope_prob{};
 
     /*
     thickness_ratio =  (thickness of the first lobe)/ (thickness of the last lobe)
@@ -70,7 +70,7 @@ public:
     thickness_ratio = 1   => all the lobes have the same thickness
     thickness_ratio > 1   => the thickness decreases with lobe "age"
     */
-    float thickness_ratio{};
+    double thickness_ratio{};
 
     /*
     This flag selects which dimension of the lobe is fixed:
@@ -109,17 +109,17 @@ public:
     */
     int vent_flag{};
 
-    std::optional<float> fissure_probabilities{};
-    std::optional<float> total_volume{};
-    std::optional<float> east_to_vent{};
-    std::optional<float> west_to_vent{};
-    std::optional<float> south_to_vent{};
-    std::optional<float> north_to_vent{};
+    std::optional<double> fissure_probabilities{};
+    std::optional<double> total_volume{};
+    std::optional<double> east_to_vent{};
+    std::optional<double> west_to_vent{};
+    std::optional<double> south_to_vent{};
+    std::optional<double> north_to_vent{};
     std::optional<std::string> channel_file{};
-    std::optional<float> alfa_channel{};
-    std::optional<float> d1{};
-    std::optional<float> d2{};
-    std::optional<float> eps{};
+    std::optional<double> alfa_channel{};
+    std::optional<double> d1{};
+    std::optional<double> d2{};
+    std::optional<double> eps{};
     std::optional<std::string> union_diff_file{};
 
     // from input_advanced
@@ -132,7 +132,7 @@ public:
       dist fact > 0 => increase the distance of the center of the new lobe
                         from the border of the previous one;
       dist_fact = 1 => the two lobes touch in one point only.*/
-    float dist_fact{};
+    double dist_fact{};
 
     /*
     Flag to select if it is cutted the volume of the area
@@ -148,11 +148,11 @@ public:
     a_beta, b_beta > 0 => n_lobes = min_n_lobes + 0.5 * ( max_n_lobes - min_n_lobes )
                                                  * beta(flow/n_flows,a_beta,b_beta)
     */
-    float a_beta{};
-    float b_beta{};
+    double a_beta{};
+    double b_beta{};
 
-    float max_aspect_ratio{}; // Maximum aspect ration of the lobes
-    int saveraster_flag{};    // if saveraster_flag = 1 then the raster output is saved as a *.asc file
+    double max_aspect_ratio{}; // Maximum aspect ration of the lobes
+    int saveraster_flag{};     // if saveraster_flag = 1 then the raster output is saved as a *.asc file
 
     /*
     This parameter affect the shape of the lobes. The larger is this parameter
@@ -161,7 +161,7 @@ public:
     aspect_ratio_coeff > 0 => the lobe is an ellipse, with the aspect ratio
                               increasing with the slope
     */
-    float aspect_ratio_coeff{};
+    double aspect_ratio_coeff{};
 
     /*
     This flag controls which lobes have larger probability:
@@ -178,7 +178,7 @@ public:
     Maximum distances (number of chained lobes) from the vent
     This parameter is used only when force_max_length = 1
     */
-    float max_length{};
+    double max_length{};
 
     /*
     This parameter is to avoid a chain of loop getting stuck in a hole. It is

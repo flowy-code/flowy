@@ -4,6 +4,7 @@
 #include "math.hpp"
 #include "probability_dist.hpp"
 #include "xtensor-blas/xlinalg.hpp"
+#include <algorithm>
 #include <cmath>
 #include <random>
 #include <stdexcept>
@@ -73,6 +74,20 @@ void Simulation::perturb_lobe_angle( Lobe & lobe, const Vector2 & slope )
             lobe.azimuthal_angle += angle_perturbation;
         }
     }
+}
+
+void Simulation::compute_lobe_axes( Lobe & lobe, const Vector2 & slope ) const
+{
+    const double slope_norm = xt::linalg::norm( slope, 2 );
+
+    // Factor for the lobe eccentricity
+    double aspect_ratio = std::min( input.max_aspect_ratio, 1.0 + input.aspect_ratio_coeff * slope_norm );
+
+    // Compute the semi-axes of the lobe
+    double semi_major_axis = std::sqrt( lobe_dimensions.lobe_area / Math::pi ) * std::sqrt( aspect_ratio );
+    double semi_minor_axis = std::sqrt( lobe_dimensions.lobe_area / Math::pi ) / std::sqrt( aspect_ratio );
+    // Set the semi-axes
+    lobe.semi_axes = { semi_major_axis, semi_minor_axis };
 }
 
 void Simulation::run()
