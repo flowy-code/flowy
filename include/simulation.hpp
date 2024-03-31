@@ -3,6 +3,7 @@
 #include "config.hpp"
 #include "definitions.hpp"
 #include "lobe.hpp"
+#include "topography.hpp"
 #include <vector>
 
 namespace Flowtastic
