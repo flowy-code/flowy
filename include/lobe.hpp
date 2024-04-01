@@ -39,7 +39,7 @@ public:
     // Determines the rectangular "bounding box" enclosing the ellipse (which can be tilted).
     // Returns the coordinates of the vertices of the bounding box
     // clockwise around the rectangle
-    inline std::vector<Vector2> bounding_box()
+    inline std::vector<Vector2> bounding_box() const
     {
         Vector2 major_axis_vec
             = { semi_axes[0] * std::cos( azimuthal_angle ), semi_axes[0] * std::sin( azimuthal_angle ) };

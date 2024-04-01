@@ -96,6 +96,21 @@ Topography::BoundingBox Topography::bounding_box( const Vector2 & center, double
     return res;
 }
 
+bool Topography::line_segment_intersects_cell( int idx_x, int idx_y, Vector2 x1, Vector2 x2 )
+{
+
+    const double slope  = ( x2[1] - x1[1] ) / ( x2[0] - x1[0] );
+    const double offset = x1[1] - slope * x1[0];
+    const double x_low  = std::min( x1[0], x2[0] );
+    const double x_high = std::max( x1[0], x2[0] );
+
+    if( x_data[idx_x] >= x_low && x_data[idx_x] < x_high )
+    {
+        return line_intersects_cell( idx_x, idx_y, slope, offset );
+    }
+    return false;
+}
+
 std::pair<MatrixX, Topography::BoundingBox> Topography::compute_intersection( const Lobe & lobe )
 {
     auto bbox       = bounding_box( lobe.center, lobe.semi_axes[0] );
