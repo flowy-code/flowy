@@ -81,18 +81,47 @@ TEST_CASE( "line_intersect", "[line_intersect]" )
     REQUIRE( !topography.line_intersects_cell( 0, 0, slope_xy, offset_out ) );
 }
 
-TEST_CASE( "test_compute_intersection", "[intersection]" )
+TEST_CASE( "line_segment_intersect", "[line_segment_intersect]" )
 {
-    Flowtastic::VectorX x_data      = xt::arange<double>( -0.5, 9.5, 1.0 );
-    Flowtastic::VectorX y_data      = xt::arange<double>( -0.5, 9.5, 1.0 );
+    Flowtastic::VectorX x_data      = xt::arange<double>( -2, 2.1, 4 );
+    Flowtastic::VectorX y_data      = xt::arange<double>( -2, 2.1, 4 );
     Flowtastic::MatrixX height_data = xt::zeros<double>( { x_data.size(), y_data.size() } );
 
     auto topography = Flowtastic::Topography( height_data, x_data, y_data );
 
-    Flowtastic::Lobe my_lobe;
-    my_lobe.center          = { 2.5, 5.5 };
-    my_lobe.semi_axes       = { 2, 1 };
-    my_lobe.azimuthal_angle = 0.0;
+    // Note that the left and bottom border of the cell are included, while the right and top are not
+
+    Flowtastic::Vector2 x1 = { -3, 0 };
+    Flowtastic::Vector2 x2 = { -1.99, 0 };
+
+    fmt::print("x2 = {}\n", fmt::streamed(x2)); 
+    REQUIRE( topography.line_segment_intersects_cell( 0, 0, x1, x2 ) );
+
+    x2 = { 0, 0 };
+    fmt::print("x2 = {}\n", fmt::streamed(x2)); 
+    REQUIRE( topography.line_segment_intersects_cell( 0, 0, x1, x2 ) );
+
+    x2 = { 3, 0 };
+    fmt::print("x2 = {}\n", fmt::streamed(x2)); 
+    REQUIRE( topography.line_segment_intersects_cell( 0, 0, x1, x2 ) );
+
+    x2 = { 0, -2 };
+    fmt::print("x2 = {}\n", fmt::streamed(x2)); 
+    REQUIRE( topography.line_segment_intersects_cell( 0, 0, x1, x2 ) );
+
+    x2 = { 0, 2 };
+    fmt::print("x2 = {}\n", fmt::streamed(x2)); 
+    REQUIRE( topography.line_segment_intersects_cell( 0, 0, x1, x2 ) );
+
+    // These shouldnt intersect the cell
+    x2 = { -2.5, 0 };
+    fmt::print("x2 = {}\n", fmt::streamed(x2)); 
+    REQUIRE( !topography.line_segment_intersects_cell( 0, 0, x1, x2 ) );
+
+    x2 = { -2.0, 2.01 };
+    fmt::print("x2 = {}\n", fmt::streamed(x2)); 
+    REQUIRE( !topography.line_segment_intersects_cell( 0, 0, x1, x2 ) );
+}
 
     auto [intersection, bbox] = topography.compute_intersection( my_lobe );
 
