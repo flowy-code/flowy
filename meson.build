@@ -26,7 +26,7 @@ tests = [
   ['Test_ASC', 'test/test_asc.cpp'],
   ['Test_Slope', 'test/test_slope.cpp'],
   ['Test_Perturb_Angle', 'test/test_perturb_angle.cpp'],
-  ['Test_Bounding_Box', 'test/test_bounding_box.cpp'],
+  ['Test_Topography', 'test/test_topography.cpp'],
   ['Test_Lobe', 'test/test_lobe.cpp'],
 ]
 

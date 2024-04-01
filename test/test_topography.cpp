@@ -48,6 +48,39 @@ TEST_CASE( "bounding_box", "[bounding_box]" )
     REQUIRE( bbox.idx_y_higher == idx_y_higher_expected );
 }
 
+TEST_CASE( "test_point_in_cell", "[point_in]" )
+{
+    Flowtastic::VectorX x_data      = xt::arange<double>( 0, 5, 1.0 );
+    Flowtastic::VectorX y_data      = xt::arange<double>( 0, 5, 1.0 );
+    Flowtastic::MatrixX height_data = xt::zeros<double>( { x_data.size(), y_data.size() } );
+
+    auto topography = Flowtastic::Topography( height_data, x_data, y_data );
+
+    // Note that the left and bottom border of the cell are included, while the right and top are not
+    Flowtastic::Vector2 point_in  = { 0.99, 0.5 };
+    Flowtastic::Vector2 point_out = { 1.00, 0.5 };
+    REQUIRE( topography.point_in_cell( 0, 0, point_in ) );
+    REQUIRE( !topography.point_in_cell( 0, 0, point_out ) );
+    REQUIRE( topography.point_in_cell( 1, 0, point_out ) );
+}
+
+TEST_CASE( "line_intersect", "[line_intersect]" )
+{
+    Flowtastic::VectorX x_data      = xt::arange<double>( 0, 5, 1.5 );
+    Flowtastic::VectorX y_data      = xt::arange<double>( 0, 5, 1.5 );
+    Flowtastic::MatrixX height_data = xt::zeros<double>( { x_data.size(), y_data.size() } );
+
+    auto topography = Flowtastic::Topography( height_data, x_data, y_data );
+
+    // Note that the left and bottom border of the cell are included, while the right and top are not
+    double slope_xy   = -1;
+    double offset_in  = 1.0;
+    double offset_out = 3.1;
+
+    REQUIRE( topography.line_intersects_cell( 0, 0, slope_xy, offset_in ) );
+    REQUIRE( !topography.line_intersects_cell( 0, 0, slope_xy, offset_out ) );
+}
+
 TEST_CASE( "test_compute_intersection", "[intersection]" )
 {
     Flowtastic::VectorX x_data      = xt::arange<double>( -0.5, 9.5, 1.0 );

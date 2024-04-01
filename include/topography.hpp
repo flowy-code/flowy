@@ -47,6 +47,7 @@ public:
     BoundingBox bounding_box( const Vector2 & center, double radius );
 
     // Test if a given point lies within the cell
+    // Note that the left and bottom border of the cell are included, while the right and top are not
     bool point_in_cell( int idx_i, int idx_j, const Vector2 & point );
 
     // Test if a line given by y(x) = slope_xy * x + offset intersects the cell

@@ -27,7 +27,14 @@ bool Topography::point_in_cell( int idx_i, int idx_j, const Vector2 & point )
 {
     // Get the center of the cell
     const Vector2 center_of_cell = { x_data[idx_i] + 0.5 * cell_size(), y_data[idx_j] + 0.5 * cell_size() };
-    return xt::linalg::norm( point - center_of_cell, xt::linalg::normorder::inf ) <= cell_size() / 2;
+
+    // Note that the left and bottom border of the cell are included, while the right and top are not
+    // clang-format off
+    return  (point[0] >= center_of_cell[0] -cell_size()/2.0) &&
+            (point[0] < center_of_cell[0] + cell_size()/2.0) &&
+            (point[1] >= center_of_cell[1] -cell_size()/2.0) &&
+            (point[1] < center_of_cell[1] + cell_size()/2.0);
+    // clang-format on
 }
 
 bool Topography::line_intersects_cell( int idx_i, int idx_j, double slope_xy, double offset )
@@ -37,13 +44,18 @@ bool Topography::line_intersects_cell( int idx_i, int idx_j, double slope_xy, do
 
     // We have to check if the line intersects any ouf the four sides of the square
 
+    auto check_x = [&]( double xc )
+    { return xc >= center_of_cell[0] - 0.5 * cell_size() && xc < center_of_cell[0] + 0.5 * cell_size(); };
+
+    auto check_y = [&]( double yc )
+    { return yc >= center_of_cell[1] - 0.5 * cell_size() && yc < center_of_cell[1] + 0.5 * cell_size(); };
+
     double yc{}, xc{};
 
     // Check bottom
     yc = center_of_cell[1] - cell_size() / 2;
     xc = ( yc - offset ) / slope_xy;
-
-    if( std::abs( xc - center_of_cell[0] ) <= cell_size() / 2.0 )
+    if( check_x( xc ) )
     {
         return true;
     }
@@ -51,8 +63,7 @@ bool Topography::line_intersects_cell( int idx_i, int idx_j, double slope_xy, do
     // Check top
     yc = center_of_cell[1] + cell_size() / 2;
     xc = ( yc - offset ) / slope_xy;
-
-    if( std::abs( xc - center_of_cell[0] ) <= cell_size() / 2.0 )
+    if( check_x( xc ) )
     {
         return true;
     }
@@ -60,8 +71,7 @@ bool Topography::line_intersects_cell( int idx_i, int idx_j, double slope_xy, do
     // Check left
     xc = center_of_cell[0] - cell_size() / 2;
     yc = slope_xy * xc + offset;
-
-    if( std::abs( yc - center_of_cell[1] ) <= cell_size() / 2.0 )
+    if( check_y( yc ) )
     {
         return true;
     }
@@ -69,8 +79,7 @@ bool Topography::line_intersects_cell( int idx_i, int idx_j, double slope_xy, do
     // Check right
     xc = center_of_cell[0] + cell_size() / 2;
     yc = slope_xy * xc + offset;
-
-    return std::abs( yc - center_of_cell[1] ) <= cell_size() / 2.0;
+    return check_y( yc );
 }
 
 Topography::BoundingBox Topography::bounding_box( const Vector2 & center, double radius )
