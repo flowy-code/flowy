@@ -46,6 +46,12 @@ public:
 
     BoundingBox bounding_box( const Vector2 & center, double radius );
 
+    // Test if a given point lies within the cell
+    bool point_in_cell( int idx_i, int idx_j, const Vector2 & point );
+
+    // Test if a line given by y(x) = slope_xy * x + offset intersects the cell
+    bool line_intersects_cell( int idx_i, int idx_j, double slope_xy, double offset );
+
     std::pair<MatrixX, BoundingBox> compute_intersection( const Lobe & lobe );
 
     // Figure out which pixel a given point is in, returning the indices of the lowest left corner

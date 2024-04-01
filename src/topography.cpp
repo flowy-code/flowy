@@ -1,5 +1,6 @@
 #include "topography.hpp"
 #include "definitions.hpp"
+#include "xtensor-blas/xlinalg.hpp"
 #include "xtensor/xbuilder.hpp"
 #include <algorithm>
 #include <stdexcept>
@@ -23,6 +24,56 @@ std::array<int, 2> Topography::locate_point( const Vector2 & coordinates )
     const int idx_x_lower = int( ( coordinates[0] - x_data[0] + 0.5 * cell_size() ) / cell_size() );
     const int idx_y_lower = int( ( coordinates[1] - y_data[0] + 0.5 * cell_size() ) / cell_size() );
     return { idx_x_lower, idx_y_lower };
+}
+
+bool Topography::point_in_cell( int idx_i, int idx_j, const Vector2 & point )
+{
+    // Get the center of the cell
+    const Vector2 center_of_cell = { x_data[idx_i], y_data[idx_j] };
+    return xt::linalg::norm( point - center_of_cell, xt::linalg::normorder::inf ) <= cell_size() / 2;
+}
+
+bool Topography::line_intersects_cell( int idx_i, int idx_j, double slope_xy, double offset )
+{
+    // Get the center of the cell
+    const Vector2 center_of_cell = { x_data[idx_i], y_data[idx_j] };
+
+    // We have to check if the line intersects any ouf the four sides of the square
+
+    double yc{}, xc{};
+
+    // Check bottom
+    yc = center_of_cell[1] - cell_size() / 2;
+    xc = ( yc - offset ) / slope_xy;
+
+    if( std::abs( xc - center_of_cell[0] ) <= cell_size() / 2.0 )
+    {
+        return true;
+    }
+
+    // Check top
+    yc = center_of_cell[1] + cell_size() / 2;
+    xc = ( yc - offset ) / slope_xy;
+
+    if( std::abs( xc - center_of_cell[0] ) <= cell_size() / 2.0 )
+    {
+        return true;
+    }
+
+    // Check left
+    xc = center_of_cell[0] - cell_size() / 2;
+    yc = slope_xy * xc + offset;
+
+    if( std::abs( yc - center_of_cell[1] ) <= cell_size() / 2.0 )
+    {
+        return true;
+    }
+
+    // Check right
+    xc = center_of_cell[0] + cell_size() / 2;
+    yc = slope_xy * xc + offset;
+
+    return std::abs( yc - center_of_cell[1] ) <= cell_size() / 2.0;
 }
 
 Topography::BoundingBox Topography::bounding_box( const Vector2 & center, double radius )
