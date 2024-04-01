@@ -3,6 +3,7 @@
 #include "fmt/ostream.h"
 #include "xtensor-blas/xlinalg.hpp"
 #include "xtensor/xbuilder.hpp"
+#include "xtensor/xiterator.hpp"
 #include <fmt/ranges.h>
 #include <algorithm>
 #include <limits>
@@ -40,25 +41,37 @@ bool Topography::point_in_cell( int idx_i, int idx_j, const Vector2 & point )
     // clang-format on
 }
 
-bool Topography::line_intersects_cell( int idx_i, int idx_j, double slope_xy, double offset )
+bool Topography::line_intersects_cell(
+    int idx_i, int idx_j, double slope_xy, double offset, double x_min, double x_max )
 {
     // Get the center of the cell
     const Vector2 center_of_cell = { x_data[idx_i] + 0.5 * cell_size(), y_data[idx_j] + 0.5 * cell_size() };
 
+    double y_min = std::min( slope_xy * x_min + offset, slope_xy * x_max + offset );
+    double y_max = std::max( slope_xy * x_min + offset, slope_xy * x_max + offset );
+
     // We have to check if the line intersects any ouf the four sides of the square
 
     auto check_x = [&]( double xc )
-    { return xc >= center_of_cell[0] - 0.5 * cell_size() && xc < center_of_cell[0] + 0.5 * cell_size(); };
+    {
+        bool in_cell = xc >= center_of_cell[0] - 0.5 * cell_size() && xc <= center_of_cell[0] + 0.5 * cell_size();
+        bool in_definition_range = xc >= x_min && xc <= x_max;
+        return in_cell && in_definition_range;
+    };
 
     auto check_y = [&]( double yc )
-    { return yc >= center_of_cell[1] - 0.5 * cell_size() && yc < center_of_cell[1] + 0.5 * cell_size(); };
+    {
+        bool in_cell = yc >= center_of_cell[1] - 0.5 * cell_size() && yc <= center_of_cell[1] + 0.5 * cell_size();
+        bool in_definition_range = yc >= y_min && yc <= y_max;
+        return in_cell && in_definition_range;
+    };
 
     double yc{}, xc{};
 
     // Check bottom
     yc = center_of_cell[1] - cell_size() / 2;
     xc = ( yc - offset ) / slope_xy;
-    if( check_x( xc ) )
+    if( check_x( xc ) && check_y( yc ) )
     {
         return true;
     }
@@ -66,7 +79,7 @@ bool Topography::line_intersects_cell( int idx_i, int idx_j, double slope_xy, do
     // Check top
     yc = center_of_cell[1] + cell_size() / 2;
     xc = ( yc - offset ) / slope_xy;
-    if( check_x( xc ) )
+    if( check_x( xc ) && check_y( yc ) )
     {
         return true;
     }
@@ -74,7 +87,7 @@ bool Topography::line_intersects_cell( int idx_i, int idx_j, double slope_xy, do
     // Check left
     xc = center_of_cell[0] - cell_size() / 2;
     yc = slope_xy * xc + offset;
-    if( check_y( yc ) )
+    if( check_x( xc ) && check_y( yc ) )
     {
         return true;
     }
@@ -82,7 +95,7 @@ bool Topography::line_intersects_cell( int idx_i, int idx_j, double slope_xy, do
     // Check right
     xc = center_of_cell[0] + cell_size() / 2;
     yc = slope_xy * xc + offset;
-    return check_y( yc );
+    return ( check_x( xc ) && check_y( yc ) );
 }
 
 Topography::BoundingBox Topography::bounding_box( const Vector2 & center, double radius )
@@ -103,21 +116,23 @@ bool Topography::line_segment_intersects_cell( int idx_x, int idx_y, Vector2 x1,
 {
     constexpr double epsilon = std::numeric_limits<double>::epsilon() * 100;
 
+    if( point_in_cell( idx_x, idx_y, x1 ) || point_in_cell( idx_x, idx_y, x2 ) )
+    {
+        return true;
+    }
+
     const double slope  = ( x2[1] - x1[1] ) / ( x2[0] - x1[0] );
     const double offset = x1[1] - slope * x1[0];
     const double x_low  = std::min( x1[0], x2[0] );
     const double x_high = std::max( x1[0], x2[0] );
-
-    if( x_data[idx_x] + cell_size() >= x_low * ( 1.0 - epsilon ) && x_data[idx_x] < x_high * ( 1.0 + epsilon ) )
+    // If the two points are too close in x, the slope is infinite, therefore we have to check against this
+    if( std::abs( x2[0] - x1[0] ) < epsilon )
     {
-        // If the two points are too close in x, the slope is infinite, therefore we have to check against this
-        if( std::abs( x2[0] - x1[0] ) < epsilon )
-        {
-            return true;
-        }
-        return line_intersects_cell( idx_x, idx_y, slope, offset );
+        bool x_condition = x1[0] >= x_data[idx_x] && x1[0] <= x_data[idx_x] + cell_size();
+        bool y_condition = ( x1[1] - y_data[idx_y] ) * ( x2[1] - y_data[idx_y] ) < 0;
+        return x_condition && y_condition;
     }
-    return false;
+    return line_intersects_cell( idx_x, idx_y, slope, offset, x_low, x_high );
 }
 
 std::vector<std::array<int, 2>> Topography::get_cells_intersecting_lobe( const Lobe & lobe )
@@ -168,44 +183,31 @@ std::vector<std::array<int, 2>> Topography::get_cells_intersecting_lobe( const L
     return res;
 }
 
-std::pair<MatrixX, Topography::BoundingBox> Topography::compute_intersection( const Lobe & lobe )
+std::vector<std::pair<std::array<int, 2>, double>> Topography::compute_intersection( const Lobe & lobe, int N )
 {
-    auto bbox       = bounding_box( lobe.center, lobe.semi_axes[0] );
-    constexpr int N = 15;
+    std::vector<std::pair<std::array<int, 2>, double>> res{};
 
-    const int n_rows = bbox.idx_y_higher - bbox.idx_y_lower + 1;
-    const int n_cols = bbox.idx_x_higher - bbox.idx_x_lower + 1;
+    auto cells_to_rasterize = get_cells_intersecting_lobe( lobe );
 
-    MatrixX covered_fraction = xt::empty<double>( { n_rows, n_cols } );
-
-    // We iterate over all cells, contained in the bounding box
-    for( int idx_x = bbox.idx_x_lower; idx_x <= bbox.idx_x_higher; idx_x++ )
+    for( auto [idx_x, idx_y] : cells_to_rasterize )
     {
-        const double x_cell_low  = x_data[idx_x];
-        const double x_cell_high = x_data[idx_x] + cell_size();
-        const auto x_range_cell  = xt::linspace<double>( x_cell_low, x_cell_high, N );
-
-        for( int idx_y = bbox.idx_y_lower; idx_y <= bbox.idx_y_higher; idx_y++ )
+        const auto x_range_cell = xt::linspace<double>( x_data[idx_x], x_data[idx_x] + cell_size(), N );
+        const auto y_range_cell = xt::linspace<double>( y_data[idx_y], y_data[idx_y] + cell_size(), N );
+        int n_hits              = 0;
+        for( auto x : x_range_cell )
         {
-            const double y_cell_low  = y_data[idx_y];
-            const double y_cell_high = y_data[idx_y] + cell_size();
-            const auto y_range_cell  = xt::linspace<double>( y_cell_low, y_cell_high, N );
-            int n_hits               = 0;
-            for( auto x : x_range_cell )
+            for( auto y : y_range_cell )
             {
-                for( auto y : y_range_cell )
+                if( lobe.is_point_in_lobe( { x, y } ) )
                 {
-                    if( lobe.is_point_in_lobe( { x, y } ) )
-                    {
-                        n_hits++;
-                    }
+                    n_hits++;
                 }
             }
-            covered_fraction( idx_x - bbox.idx_x_lower, idx_y - bbox.idx_y_lower ) = double( n_hits ) / ( N * N );
         }
+        double fraction = double( n_hits ) / double( N * N );
+        res.push_back( { { idx_x, idx_y }, fraction } );
     }
-
-    return { covered_fraction, bbox };
+    return res;
 }
 
 std::pair<double, Vector2> Topography::height_and_slope( const Vector2 & coordinates )

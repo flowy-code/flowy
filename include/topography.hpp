@@ -51,7 +51,9 @@ public:
     bool point_in_cell( int idx_i, int idx_j, const Vector2 & point );
 
     // Test if a line given by y(x) = slope_xy * x + offset intersects the cell
-    bool line_intersects_cell( int idx_i, int idx_j, double slope_xy, double offset );
+    bool line_intersects_cell(
+        int idx_i, int idx_j, double slope_xy, double offset, double x_min = -std::numeric_limits<double>::infinity(),
+        double x_max = std::numeric_limits<double>::infinity() );
 
     // Test if a line segment between x1 and x2 intersects the cell
     bool line_segment_intersects_cell( int idx_x, int idx_y, Vector2 x1, Vector2 x2 );
@@ -59,7 +61,7 @@ public:
     // Find all the cells that intersect the lobe
     std::vector<std::array<int, 2>> get_cells_intersecting_lobe( const Lobe & lobe );
 
-    std::pair<MatrixX, BoundingBox> compute_intersection( const Lobe & lobe );
+    std::vector<std::pair<std::array<int, 2>, double>> compute_intersection( const Lobe & lobe, int N = 15 );
 
     // Figure out which pixel a given point is in, returning the indices of the lowest left corner
     std::array<int, 2> locate_point( const Vector2 & coordinates );

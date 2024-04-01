@@ -139,29 +139,14 @@ TEST_CASE( "line_segment_intersect", "[line_segment_intersect]" )
     fmt::print( "x1 = {}\n", fmt::streamed( x1 ) );
     fmt::print( "x2 = {}\n", fmt::streamed( x2 ) );
     REQUIRE( topography.line_segment_intersects_cell( 0, 0, x1, x2 ) );
+
+    // Along y-axis
+    x1 = { -2, -4 };
+    x2 = { -2, 2 };
+    fmt::print( "x1 = {}\n", fmt::streamed( x1 ) );
+    fmt::print( "x2 = {}\n", fmt::streamed( x2 ) );
+    REQUIRE( topography.line_segment_intersects_cell( 0, 0, x1, x2 ) );
 }
-
-// TEST_CASE( "test_compute_intersection", "[intersection]" )
-// {
-//     Flowtastic::VectorX x_data      = xt::arange<double>( -0.5, 9.5, 1.0 );
-//     Flowtastic::VectorX y_data      = xt::arange<double>( -0.5, 9.5, 1.0 );
-//     Flowtastic::MatrixX height_data = xt::zeros<double>( { x_data.size(), y_data.size() } );
-
-//     auto topography = Flowtastic::Topography( height_data, x_data, y_data );
-
-//     Flowtastic::Lobe my_lobe;
-//     my_lobe.center          = { 2.5, 5.5 };
-//     my_lobe.semi_axes       = { 2, 1 };
-//     my_lobe.azimuthal_angle = 0.0;
-
-//     auto [intersection, bbox] = topography.compute_intersection( my_lobe );
-
-//     fmt::print( "bbox.idx_x_higher = {}\n", bbox.idx_x_higher );
-//     fmt::print( "bbox.idx_x_lower = {}\n", bbox.idx_x_lower );
-//     fmt::print( "bbox.idx_y_lower = {}\n", bbox.idx_y_lower );
-//     fmt::print( "bbox.idx_y_higher = {}\n", bbox.idx_y_higher );
-//     fmt::print( "intersection = {}\n", fmt::streamed( intersection( 0, 0 ) ) );
-// }
 
 TEST_CASE( "get_cells_intersecting_lobe", "[intersecting_lobe_cells]" )
 {
@@ -183,6 +168,31 @@ TEST_CASE( "get_cells_intersecting_lobe", "[intersecting_lobe_cells]" )
 
     for( size_t i = 0; i < cell_indices.size(); i++ )
     {
+        fmt::print( " {} \n", cell_indices[i] );
         REQUIRE_THAT( cell_indices[i], Catch::Matchers::RangeEquals( cell_indices_expected[i] ) );
+    }
+}
+
+TEST_CASE( "test_compute_intersection", "[intersection]" )
+{
+    Flowtastic::VectorX x_data      = xt::arange<double>( -3, 3, 1.0 );
+    Flowtastic::VectorX y_data      = xt::arange<double>( -3, 3, 1.0 );
+    Flowtastic::MatrixX height_data = xt::zeros<double>( { x_data.size(), y_data.size() } );
+
+    auto topography = Flowtastic::Topography( height_data, x_data, y_data );
+
+    Flowtastic::Lobe my_lobe;
+    my_lobe.center          = { 0, 0 };
+    my_lobe.semi_axes       = { 1.0, 1.0 };
+    my_lobe.azimuthal_angle = 0.0;
+
+    auto intersection_data = topography.compute_intersection( my_lobe );
+
+    for( const auto & d : intersection_data )
+    {
+        auto indices  = d.first;
+        auto fraction = d.second;
+
+        fmt::print( " indices = {}, fraction = {}\n", indices, fraction );
     }
 }
