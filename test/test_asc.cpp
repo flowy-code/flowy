@@ -30,10 +30,8 @@ TEST_CASE( "asc_file_test", "[asc]" )
     double no_data_value_expected = -9999;
 
     Flowtastic::VectorX x_data_expected
-        = { xllcorner_expected + 0.5 * cellsize_expected, xllcorner_expected + 1.5 * cellsize_expected,
-            xllcorner_expected + 2.5 * cellsize_expected };
-    Flowtastic::VectorX y_data_expected
-        = { yllcorner_expected + 0.5 * cellsize_expected, yllcorner_expected + 1.5 * cellsize_expected };
+        = { xllcorner_expected, xllcorner_expected + cellsize_expected, xllcorner_expected + 2.0 * cellsize_expected };
+    Flowtastic::VectorX y_data_expected = { yllcorner_expected, yllcorner_expected + cellsize_expected };
 
     REQUIRE( xllcorner_expected == asc_file.lower_left_corner[0] );
     REQUIRE( yllcorner_expected == asc_file.lower_left_corner[1] );

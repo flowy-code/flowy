@@ -10,33 +10,30 @@ namespace Flowtastic
 
 std::array<int, 2> Topography::locate_point( const Vector2 & coordinates )
 {
-    const bool outside_x
-        = coordinates[0] < x_data[0] - 0.5 * cell_size() || coordinates[0] > x_data.periodic( -1 ) + 0.5 * cell_size();
-    const bool outside_y
-        = coordinates[1] < y_data[0] - 0.5 * cell_size() || coordinates[1] > y_data.periodic( -1 ) + 0.5 * cell_size();
+    const bool outside_x = coordinates[0] < x_data[0] || coordinates[0] >= x_data.periodic( -1 ) + cell_size();
+    const bool outside_y = coordinates[1] < y_data[0] || coordinates[1] >= y_data.periodic( -1 ) + cell_size();
 
     if( outside_x || outside_y )
     {
         throw std::runtime_error( "Cannot locate point, because coordinates are outside of grid!" );
     }
 
-    // Have to find the four grid points that enclose the coordinates
-    const int idx_x_lower = int( ( coordinates[0] - x_data[0] + 0.5 * cell_size() ) / cell_size() );
-    const int idx_y_lower = int( ( coordinates[1] - y_data[0] + 0.5 * cell_size() ) / cell_size() );
+    const int idx_x_lower = int( ( coordinates[0] - x_data[0] ) / cell_size() );
+    const int idx_y_lower = int( ( coordinates[1] - y_data[0] ) / cell_size() );
     return { idx_x_lower, idx_y_lower };
 }
 
 bool Topography::point_in_cell( int idx_i, int idx_j, const Vector2 & point )
 {
     // Get the center of the cell
-    const Vector2 center_of_cell = { x_data[idx_i], y_data[idx_j] };
+    const Vector2 center_of_cell = { x_data[idx_i] + 0.5 * cell_size(), y_data[idx_j] + 0.5 * cell_size() };
     return xt::linalg::norm( point - center_of_cell, xt::linalg::normorder::inf ) <= cell_size() / 2;
 }
 
 bool Topography::line_intersects_cell( int idx_i, int idx_j, double slope_xy, double offset )
 {
     // Get the center of the cell
-    const Vector2 center_of_cell = { x_data[idx_i], y_data[idx_j] };
+    const Vector2 center_of_cell = { x_data[idx_i] + 0.5 * cell_size(), y_data[idx_j] + 0.5 * cell_size() };
 
     // We have to check if the line intersects any ouf the four sides of the square
 
@@ -103,14 +100,14 @@ std::pair<MatrixX, Topography::BoundingBox> Topography::compute_intersection( co
     // We iterate over all cells, contained in the bounding box
     for( int idx_x = bbox.idx_x_lower; idx_x <= bbox.idx_x_higher; idx_x++ )
     {
-        const double x_cell_low  = x_data[idx_x] - 0.5 * cell_size();
-        const double x_cell_high = x_data[idx_x] + 0.5 * cell_size();
+        const double x_cell_low  = x_data[idx_x];
+        const double x_cell_high = x_data[idx_x] + cell_size();
         const auto x_range_cell  = xt::linspace<double>( x_cell_low, x_cell_high, N );
 
         for( int idx_y = bbox.idx_y_lower; idx_y <= bbox.idx_y_higher; idx_y++ )
         {
-            const double y_cell_low  = y_data[idx_y] - 0.5 * cell_size();
-            const double y_cell_high = y_data[idx_y] + 0.5 * cell_size();
+            const double y_cell_low  = y_data[idx_y];
+            const double y_cell_high = y_data[idx_y] + cell_size();
             const auto y_range_cell  = xt::linspace<double>( y_cell_low, y_cell_high, N );
             int n_hits               = 0;
             for( auto x : x_range_cell )
@@ -134,8 +131,18 @@ std::pair<double, Vector2> Topography::height_and_slope( const Vector2 & coordin
 {
     const auto [idx_x_lower, idx_y_lower] = locate_point( coordinates );
 
-    const int idx_x_higher = idx_x_lower + 1;
-    const int idx_y_higher = idx_y_lower + 1;
+    int idx_x_higher = idx_x_lower + 1;
+    int idx_y_higher = idx_y_lower + 1;
+
+    if( size_t( idx_x_higher ) == x_data.size() )
+    {
+        idx_x_higher = idx_x_lower;
+    }
+
+    if( size_t( idx_y_higher ) == y_data.size() )
+    {
+        idx_y_higher = idx_y_lower;
+    }
 
     // We interpolate the height data with a function f(x,y) = alpha * x + beta * y + gamma * x * y + c
     // We want f(x,y) to coincide with the actual height data at the four enclosing corners

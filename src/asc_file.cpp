@@ -59,12 +59,10 @@ AscFile::AscFile( const std::filesystem::path & path )
             fmt::format( "ncols in header is {}, but there are {} cols of data", ncols_header, ncols() ) );
     }
 
-    this->x_data = xt::arange(
-        lower_left_corner[0] + 0.5 * cell_size, lower_left_corner[0] + ( double( ncols() ) + 0.5 ) * cell_size,
-        cell_size );
+    this->x_data
+        = xt::arange( lower_left_corner[0], lower_left_corner[0] + ( double( ncols() ) ) * cell_size, cell_size );
 
-    this->y_data = xt::arange(
-        lower_left_corner[1] + 0.5 * cell_size, lower_left_corner[1] + ( double( nrows() ) + 0.5 ) * cell_size,
-        cell_size );
+    this->y_data
+        = xt::arange( lower_left_corner[1], lower_left_corner[1] + ( double( nrows() ) ) * cell_size, cell_size );
 }
 } // namespace Flowtastic

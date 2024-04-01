@@ -11,8 +11,8 @@
 
 TEST_CASE( "bounding_box", "[bounding_box]" )
 {
-    Flowtastic::VectorX x_data      = xt::arange<double>( 1.0, 20.0, 1.0 );
-    Flowtastic::VectorX y_data      = xt::arange<double>( 5.0, 11.0, 1.0 );
+    Flowtastic::VectorX x_data      = xt::arange<double>( 0.5, 19.5, 1.0 );
+    Flowtastic::VectorX y_data      = xt::arange<double>( 4.5, 10.5, 1.0 );
     Flowtastic::MatrixX height_data = xt::zeros<double>( { x_data.size(), y_data.size() } );
 
     auto topography = Flowtastic::Topography( height_data, x_data, y_data );
@@ -50,8 +50,8 @@ TEST_CASE( "bounding_box", "[bounding_box]" )
 
 TEST_CASE( "test_compute_intersection", "[intersection]" )
 {
-    Flowtastic::VectorX x_data      = xt::arange<double>( 0.0, 10.0, 1.0 );
-    Flowtastic::VectorX y_data      = xt::arange<double>( 0.0, 10.0, 1.0 );
+    Flowtastic::VectorX x_data      = xt::arange<double>( -0.5, 9.5, 1.0 );
+    Flowtastic::VectorX y_data      = xt::arange<double>( -0.5, 9.5, 1.0 );
     Flowtastic::MatrixX height_data = xt::zeros<double>( { x_data.size(), y_data.size() } );
 
     auto topography = Flowtastic::Topography( height_data, x_data, y_data );
