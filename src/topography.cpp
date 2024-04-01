@@ -1,7 +1,7 @@
 #include "topography.hpp"
 #include "definitions.hpp"
 #include "xtensor/xbuilder.hpp"
-#include <regex>
+#include <algorithm>
 #include <stdexcept>
 
 namespace Flowtastic
@@ -9,11 +9,10 @@ namespace Flowtastic
 
 std::array<int, 2> Topography::locate_point( const Vector2 & coordinates )
 {
-
     const bool outside_x
-        = coordinates[0] < x_data[0] - 0.5 * cell_size() || coordinates[0] > x_data.periodic( -1 ) - 0.5 * cell_size();
+        = coordinates[0] < x_data[0] - 0.5 * cell_size() || coordinates[0] > x_data.periodic( -1 ) + 0.5 * cell_size();
     const bool outside_y
-        = coordinates[1] < y_data[0] - 0.5 * cell_size() || coordinates[1] > y_data.periodic( -1 ) - 0.5 * cell_size();
+        = coordinates[1] < y_data[0] - 0.5 * cell_size() || coordinates[1] > y_data.periodic( -1 ) + 0.5 * cell_size();
 
     if( outside_x || outside_y )
     {
@@ -32,10 +31,10 @@ Topography::BoundingBox Topography::bounding_box( const Vector2 & center, double
     int number_of_cells_to_include        = std::ceil( radius / cell_size() );
 
     Topography::BoundingBox res{};
-    res.idx_x_lower  = idx_x_lower - number_of_cells_to_include;
-    res.idx_x_higher = idx_x_lower + number_of_cells_to_include;
-    res.idx_y_lower  = idx_y_lower - number_of_cells_to_include;
-    res.idx_y_higher = idx_y_lower + number_of_cells_to_include;
+    res.idx_x_lower  = std::clamp<int>( idx_x_lower - number_of_cells_to_include, 0, x_data.size() - 1 );
+    res.idx_x_higher = std::clamp<int>( idx_x_lower + number_of_cells_to_include, 0, x_data.size() - 1 );
+    res.idx_y_lower  = std::clamp<int>( idx_y_lower - number_of_cells_to_include, 0, y_data.size() - 1 );
+    res.idx_y_higher = std::clamp<int>( idx_y_lower + number_of_cells_to_include, 0, y_data.size() - 1 );
 
     return res;
 }

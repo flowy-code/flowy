@@ -1,5 +1,7 @@
 #pragma once
 #include "definitions.hpp"
+#include "fmt/ostream.h"
+#include <fmt/format.h>
 
 namespace Flowtastic
 {
@@ -15,9 +17,7 @@ public:
     int idx_parent         = 0;        // The idx of the parent lobe
     double alpha_inertial  = 0;        // The coefficient for the inertial contribution
 
-    /*
-    Checks if the point lies inside the lobe
-    */
+    // Checks if the point lies inside the lobe
     inline bool is_point_in_lobe( const Vector2 & coordinates ) const
     {
         // Translate the coordinates by the center of ellipse
@@ -27,8 +27,8 @@ public:
         // Transform to the coordinate system centered on the center of the ellipse
         // To use eqn (x'/a)^2 + (y'/b)^2
         // The rotation matrix is [  {cos phi x, sin phi x}, {-sin phi x, cos phi x} ]
-        double x_prime = std::cos( azimuthal_angle * x ) + std::sin( azimuthal_angle * y );
-        double y_prime = -std::sin( azimuthal_angle * x ) + std::cos( azimuthal_angle * y );
+        double x_prime = std::cos( azimuthal_angle ) * x + std::sin( azimuthal_angle ) * y;
+        double y_prime = -std::sin( azimuthal_angle ) * x + std::cos( azimuthal_angle ) * y;
 
         double ellipse_lhs = ( x_prime / semi_axes[0] ) * ( x_prime / semi_axes[0] )
                              + ( y_prime / semi_axes[1] ) * ( y_prime / semi_axes[1] );
