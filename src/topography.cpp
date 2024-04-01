@@ -1,8 +1,11 @@
 #include "topography.hpp"
 #include "definitions.hpp"
+#include "fmt/ostream.h"
 #include "xtensor-blas/xlinalg.hpp"
 #include "xtensor/xbuilder.hpp"
+#include <fmt/ranges.h>
 #include <algorithm>
+#include <limits>
 #include <stdexcept>
 
 namespace Flowtastic
@@ -98,17 +101,71 @@ Topography::BoundingBox Topography::bounding_box( const Vector2 & center, double
 
 bool Topography::line_segment_intersects_cell( int idx_x, int idx_y, Vector2 x1, Vector2 x2 )
 {
+    constexpr double epsilon = std::numeric_limits<double>::epsilon() * 100;
 
     const double slope  = ( x2[1] - x1[1] ) / ( x2[0] - x1[0] );
     const double offset = x1[1] - slope * x1[0];
     const double x_low  = std::min( x1[0], x2[0] );
     const double x_high = std::max( x1[0], x2[0] );
 
-    if( x_data[idx_x] >= x_low && x_data[idx_x] < x_high )
+    if( x_data[idx_x] + cell_size() >= x_low * ( 1.0 - epsilon ) && x_data[idx_x] < x_high * ( 1.0 + epsilon ) )
     {
+        // If the two points are too close in x, the slope is infinite, therefore we have to check against this
+        if( std::abs( x2[0] - x1[0] ) < epsilon )
+        {
+            return true;
+        }
         return line_intersects_cell( idx_x, idx_y, slope, offset );
     }
     return false;
+}
+
+std::vector<std::array<int, 2>> Topography::get_cells_intersecting_lobe( const Lobe & lobe )
+{
+    std::vector<std::array<int, 2>> res{};
+
+    // First, we find all candidates with the bounding_box function from the topography
+    const auto bbox = bounding_box( lobe.center, lobe.semi_axes[0] );
+
+    // Then, we find the bounding box of the ellipse
+    const auto ellipse_bbox = lobe.bounding_box();
+
+    // Now we test all the candidate cells from the big bounding box for intersection with the outline of the
+    // ellipse_bbox We iterate over all cells, contained in the bounding box
+    for( int idx_y = bbox.idx_y_lower; idx_y <= bbox.idx_y_higher; idx_y++ )
+    {
+        std::vector<int> x_indices = std::vector<int>( bbox.idx_x_higher - bbox.idx_x_lower + 1 );
+        std::iota( x_indices.begin(), x_indices.end(), bbox.idx_x_lower );
+
+        auto test_lines = [&]( int idx_x )
+        {
+            auto res1 = line_segment_intersects_cell( idx_x, idx_y, ellipse_bbox[0], ellipse_bbox[1] );
+            auto res2 = line_segment_intersects_cell( idx_x, idx_y, ellipse_bbox[1], ellipse_bbox[2] );
+            auto res3 = line_segment_intersects_cell( idx_x, idx_y, ellipse_bbox[2], ellipse_bbox[3] );
+            auto res4 = line_segment_intersects_cell( idx_x, idx_y, ellipse_bbox[3], ellipse_bbox[0] );
+            return res1 || res2 || res3 || res4;
+        };
+
+        // The ellipse intersects up to two cells per row, we have to push back all cells between those cels
+        // Find the first x_index that intersects the bounding box
+        auto it_idx_first = std::find_if( x_indices.begin(), x_indices.end(), test_lines );
+
+        if( it_idx_first == x_indices.end() )
+            continue;
+
+        res.push_back( { *it_idx_first, idx_y } );
+
+        // Find the next x_index that intersects the bounding box
+        auto it_idx_next = std::find_if( it_idx_first + 1, x_indices.end(), test_lines );
+
+        if( it_idx_next == x_indices.end() )
+            continue;
+
+        for( auto it = it_idx_first + 1; it != it_idx_next + 1; it++ )
+            res.push_back( { *it, idx_y } );
+    }
+
+    return res;
 }
 
 std::pair<MatrixX, Topography::BoundingBox> Topography::compute_intersection( const Lobe & lobe )

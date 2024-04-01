@@ -56,6 +56,8 @@ public:
     // Test if a line segment between x1 and x2 intersects the cell
     bool line_segment_intersects_cell( int idx_x, int idx_y, Vector2 x1, Vector2 x2 );
 
+    // Find all the cells that intersect the lobe
+    std::vector<std::array<int, 2>> get_cells_intersecting_lobe( const Lobe & lobe );
 
     std::pair<MatrixX, BoundingBox> compute_intersection( const Lobe & lobe );
 

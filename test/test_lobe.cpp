@@ -34,7 +34,7 @@ TEST_CASE( "Test the bounding box of the lobe", "[lobe_bbox]" )
 {
     auto my_lobe            = Flowtastic::Lobe();
     my_lobe.azimuthal_angle = Flowtastic::Math::pi / 2.0; // The azimuthal angle; major axis is along y-axis
-    my_lobe.center          = { 0.5, 0 };                   // The center of the ellipse
+    my_lobe.center          = { 0.5, 0 };                 // The center of the ellipse
     my_lobe.semi_axes       = { 2, 1 };
     // Expected bbox coordinates
     auto bbox_coord_expected
