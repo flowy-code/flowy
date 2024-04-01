@@ -26,6 +26,8 @@ tests = [
   ['Test_ASC', 'test/test_asc.cpp'],
   ['Test_Slope', 'test/test_slope.cpp'],
   ['Test_Perturb_Angle', 'test/test_perturb_angle.cpp'],
+  ['Test_Bounding_Box', 'test/test_bounding_box.cpp'],
+  ['Test_Lobe', 'test/test_lobe.cpp'],
 ]
 
 Catch2 = dependency('Catch2', method : 'cmake', modules : ['Catch2::Catch2WithMain', 'Catch2::Catch2'])

@@ -54,13 +54,13 @@ std::pair<MatrixX, Topography::BoundingBox> Topography::compute_intersection( co
     {
         const double x_cell_low  = x_data[idx_x] - 0.5 * cell_size();
         const double x_cell_high = x_data[idx_x] + 0.5 * cell_size();
-        const auto x_range_cell  = xt::linspace( x_cell_low, x_cell_high, N );
+        const auto x_range_cell  = xt::linspace<double>( x_cell_low, x_cell_high, N );
 
         for( int idx_y = bbox.idx_y_lower; idx_y <= bbox.idx_y_higher; idx_y++ )
         {
             const double y_cell_low  = y_data[idx_y] - 0.5 * cell_size();
             const double y_cell_high = y_data[idx_y] + 0.5 * cell_size();
-            const auto y_range_cell  = xt::linspace( y_cell_low, y_cell_high, N );
+            const auto y_range_cell  = xt::linspace<double>( y_cell_low, y_cell_high, N );
             int n_hits               = 0;
             for( auto x : x_range_cell )
             {
@@ -72,7 +72,7 @@ std::pair<MatrixX, Topography::BoundingBox> Topography::compute_intersection( co
                     }
                 }
             }
-            covered_fraction( idx_x, idx_y ) = double( n_hits ) / ( N * N );
+            covered_fraction( idx_x - bbox.idx_x_lower, idx_y - bbox.idx_y_lower ) = double( n_hits ) / ( N * N );
         }
     }
 

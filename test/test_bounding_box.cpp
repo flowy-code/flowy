@@ -1,4 +1,5 @@
 #include "definitions.hpp"
+#include "lobe.hpp"
 #include "math.hpp"
 #include "topography.hpp"
 #include "xtensor/xbuilder.hpp"
@@ -29,7 +30,7 @@ TEST_CASE( "bounding_box", "[bounding_box]" )
 
     fmt::print( "point.idx_x = {}, point.idx_y = {}\n", point_indices[0], point_indices[1] );
 
-    // Note: this bounding box is chosen such that no clamping will occur 
+    // Note: this bounding box is chosen such that no clamping will occur
     auto bbox = topography.bounding_box( point, 2 );
     fmt::print( "bbox.idx_x_higher = {}\n", bbox.idx_x_higher );
     fmt::print( "bbox.idx_x_lower = {}\n", bbox.idx_x_lower );
@@ -45,4 +46,26 @@ TEST_CASE( "bounding_box", "[bounding_box]" )
     REQUIRE( bbox.idx_x_lower == idx_x_lower_expected );
     REQUIRE( bbox.idx_y_lower == idx_y_lower_expected );
     REQUIRE( bbox.idx_y_higher == idx_y_higher_expected );
+}
+
+TEST_CASE( "test_compute_intersection", "[intersection]" )
+{
+    Flowtastic::VectorX x_data      = xt::arange<double>( 0.0, 10.0, 1.0 );
+    Flowtastic::VectorX y_data      = xt::arange<double>( 0.0, 10.0, 1.0 );
+    Flowtastic::MatrixX height_data = xt::zeros<double>( { x_data.size(), y_data.size() } );
+
+    auto topography = Flowtastic::Topography( height_data, x_data, y_data );
+
+    Flowtastic::Lobe my_lobe;
+    my_lobe.center          = { 2.5, 5.5 };
+    my_lobe.semi_axes       = { 2, 1 };
+    my_lobe.azimuthal_angle = 0.0;
+
+    auto [intersection, bbox] = topography.compute_intersection( my_lobe );
+
+    fmt::print( "bbox.idx_x_higher = {}\n", bbox.idx_x_higher );
+    fmt::print( "bbox.idx_x_lower = {}\n", bbox.idx_x_lower );
+    fmt::print( "bbox.idx_y_lower = {}\n", bbox.idx_y_lower );
+    fmt::print( "bbox.idx_y_higher = {}\n", bbox.idx_y_higher );
+    fmt::print( "intersection = {}\n", fmt::streamed( intersection( 0, 0 ) ) );
 }
