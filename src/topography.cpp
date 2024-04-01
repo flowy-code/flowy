@@ -27,77 +27,6 @@ std::array<int, 2> Topography::locate_point( const Vector2 & coordinates )
     return { idx_x_lower, idx_y_lower };
 }
 
-bool Topography::point_in_cell( int idx_i, int idx_j, const Vector2 & point )
-{
-    // Get the center of the cell
-    const Vector2 center_of_cell = { x_data[idx_i] + 0.5 * cell_size(), y_data[idx_j] + 0.5 * cell_size() };
-
-    // Note that the left and bottom border of the cell are included, while the right and top are not
-    // clang-format off
-    return  (point[0] >= center_of_cell[0] -cell_size()/2.0) &&
-            (point[0] < center_of_cell[0] + cell_size()/2.0) &&
-            (point[1] >= center_of_cell[1] -cell_size()/2.0) &&
-            (point[1] < center_of_cell[1] + cell_size()/2.0);
-    // clang-format on
-}
-
-bool Topography::line_intersects_cell(
-    int idx_i, int idx_j, double slope_xy, double offset, double x_min, double x_max )
-{
-    // Get the center of the cell
-    const Vector2 center_of_cell = { x_data[idx_i] + 0.5 * cell_size(), y_data[idx_j] + 0.5 * cell_size() };
-
-    double y_min = std::min( slope_xy * x_min + offset, slope_xy * x_max + offset );
-    double y_max = std::max( slope_xy * x_min + offset, slope_xy * x_max + offset );
-
-    // We have to check if the line intersects any ouf the four sides of the square
-
-    auto check_x = [&]( double xc )
-    {
-        bool in_cell = xc >= center_of_cell[0] - 0.5 * cell_size() && xc <= center_of_cell[0] + 0.5 * cell_size();
-        bool in_definition_range = xc >= x_min && xc <= x_max;
-        return in_cell && in_definition_range;
-    };
-
-    auto check_y = [&]( double yc )
-    {
-        bool in_cell = yc >= center_of_cell[1] - 0.5 * cell_size() && yc <= center_of_cell[1] + 0.5 * cell_size();
-        bool in_definition_range = yc >= y_min && yc <= y_max;
-        return in_cell && in_definition_range;
-    };
-
-    double yc{}, xc{};
-
-    // Check bottom
-    yc = center_of_cell[1] - cell_size() / 2;
-    xc = ( yc - offset ) / slope_xy;
-    if( check_x( xc ) && check_y( yc ) )
-    {
-        return true;
-    }
-
-    // Check top
-    yc = center_of_cell[1] + cell_size() / 2;
-    xc = ( yc - offset ) / slope_xy;
-    if( check_x( xc ) && check_y( yc ) )
-    {
-        return true;
-    }
-
-    // Check left
-    xc = center_of_cell[0] - cell_size() / 2;
-    yc = slope_xy * xc + offset;
-    if( check_x( xc ) && check_y( yc ) )
-    {
-        return true;
-    }
-
-    // Check right
-    xc = center_of_cell[0] + cell_size() / 2;
-    yc = slope_xy * xc + offset;
-    return ( check_x( xc ) && check_y( yc ) );
-}
-
 Topography::BoundingBox Topography::bounding_box( const Vector2 & center, double radius )
 {
     const auto [idx_x_lower, idx_y_lower] = locate_point( center );
@@ -112,29 +41,6 @@ Topography::BoundingBox Topography::bounding_box( const Vector2 & center, double
     return res;
 }
 
-bool Topography::line_segment_intersects_cell( int idx_x, int idx_y, Vector2 x1, Vector2 x2 )
-{
-    constexpr double epsilon = std::numeric_limits<double>::epsilon() * 100;
-
-    if( point_in_cell( idx_x, idx_y, x1 ) || point_in_cell( idx_x, idx_y, x2 ) )
-    {
-        return true;
-    }
-
-    const double slope  = ( x2[1] - x1[1] ) / ( x2[0] - x1[0] );
-    const double offset = x1[1] - slope * x1[0];
-    const double x_low  = std::min( x1[0], x2[0] );
-    const double x_high = std::max( x1[0], x2[0] );
-    // If the two points are too close in x, the slope is infinite, therefore we have to check against this
-    if( std::abs( x2[0] - x1[0] ) < epsilon )
-    {
-        bool x_condition = x1[0] >= x_data[idx_x] && x1[0] <= x_data[idx_x] + cell_size();
-        bool y_condition = ( x1[1] - y_data[idx_y] ) * ( x2[1] - y_data[idx_y] ) < 0;
-        return x_condition && y_condition;
-    }
-    return line_intersects_cell( idx_x, idx_y, slope, offset, x_low, x_high );
-}
-
 std::vector<std::array<int, 2>> Topography::get_cells_intersecting_lobe( const Lobe & lobe )
 {
     std::vector<std::array<int, 2>> res{};
@@ -142,42 +48,28 @@ std::vector<std::array<int, 2>> Topography::get_cells_intersecting_lobe( const L
     // First, we find all candidates with the bounding_box function from the topography
     const auto bbox = bounding_box( lobe.center, lobe.semi_axes[0] );
 
-    // Then, we find the bounding box of the ellipse
-    const auto ellipse_bbox = lobe.bounding_box();
-
-    // Now we test all the candidate cells from the big bounding box for intersection with the outline of the
-    // ellipse_bbox We iterate over all cells, contained in the bounding box
-    for( int idx_y = bbox.idx_y_lower; idx_y <= bbox.idx_y_higher; idx_y++ )
+    // Now we test all the candidate cells from the big bounding box for intersection with the lobe
+    for( int idx_x = bbox.idx_x_lower; idx_x <= bbox.idx_x_higher; idx_x++ )
     {
-        std::vector<int> x_indices = std::vector<int>( bbox.idx_x_higher - bbox.idx_x_lower + 1 );
-        std::iota( x_indices.begin(), x_indices.end(), bbox.idx_x_lower );
-
-        auto test_lines = [&]( int idx_x )
+        for( int idx_y = bbox.idx_y_lower; idx_y <= bbox.idx_y_higher; idx_y++ )
         {
-            auto res1 = line_segment_intersects_cell( idx_x, idx_y, ellipse_bbox[0], ellipse_bbox[1] );
-            auto res2 = line_segment_intersects_cell( idx_x, idx_y, ellipse_bbox[1], ellipse_bbox[2] );
-            auto res3 = line_segment_intersects_cell( idx_x, idx_y, ellipse_bbox[2], ellipse_bbox[3] );
-            auto res4 = line_segment_intersects_cell( idx_x, idx_y, ellipse_bbox[3], ellipse_bbox[0] );
-            return res1 || res2 || res3 || res4;
-        };
-
-        // The ellipse intersects up to two cells per row, we have to push back all cells between those cels
-        // Find the first x_index that intersects the bounding box
-        auto it_idx_first = std::find_if( x_indices.begin(), x_indices.end(), test_lines );
-
-        if( it_idx_first == x_indices.end() )
-            continue;
-
-        res.push_back( { *it_idx_first, idx_y } );
-
-        // Find the next x_index that intersects the bounding box
-        auto it_idx_next = std::find_if( it_idx_first + 1, x_indices.end(), test_lines );
-
-        if( it_idx_next == x_indices.end() )
-            continue;
-
-        for( auto it = it_idx_first + 1; it != it_idx_next + 1; it++ )
-            res.push_back( { *it, idx_y } );
+            // We check all corners of each cell
+            Vector2 point_lb = { x_data[idx_x], y_data[idx_y] };
+            Vector2 point_lt = { x_data[idx_x], y_data[idx_y] + cell_size() };
+            Vector2 point_rb = { x_data[idx_x] + cell_size(), y_data[idx_y] };
+            Vector2 point_rt = { x_data[idx_x] + cell_size(), y_data[idx_y] + cell_size() };
+            // clang-format off
+            if(
+                   lobe.is_point_in_lobe( point_lb )
+                || lobe.is_point_in_lobe( point_lt )
+                || lobe.is_point_in_lobe( point_rb )
+                || lobe.is_point_in_lobe( point_rt )
+            )
+            {
+                res.push_back( { idx_x, idx_y } );
+            }
+            // clang-format on
+        }
     }
 
     return res;

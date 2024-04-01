@@ -52,102 +52,6 @@ TEST_CASE( "bounding_box", "[bounding_box]" )
     REQUIRE( bbox.idx_y_higher == idx_y_higher_expected );
 }
 
-TEST_CASE( "test_point_in_cell", "[point_in]" )
-{
-    Flowtastic::VectorX x_data      = xt::arange<double>( 0, 5, 1.0 );
-    Flowtastic::VectorX y_data      = xt::arange<double>( 0, 5, 1.0 );
-    Flowtastic::MatrixX height_data = xt::zeros<double>( { x_data.size(), y_data.size() } );
-
-    auto topography = Flowtastic::Topography( height_data, x_data, y_data );
-
-    // Note that the left and bottom border of the cell are included, while the right and top are not
-    Flowtastic::Vector2 point_in  = { 0.99, 0.5 };
-    Flowtastic::Vector2 point_out = { 1.00, 0.5 };
-    REQUIRE( topography.point_in_cell( 0, 0, point_in ) );
-    REQUIRE( !topography.point_in_cell( 0, 0, point_out ) );
-    REQUIRE( topography.point_in_cell( 1, 0, point_out ) );
-}
-
-TEST_CASE( "line_intersect", "[line_intersect]" )
-{
-    Flowtastic::VectorX x_data      = xt::arange<double>( 0, 5, 1.5 );
-    Flowtastic::VectorX y_data      = xt::arange<double>( 0, 5, 1.5 );
-    Flowtastic::MatrixX height_data = xt::zeros<double>( { x_data.size(), y_data.size() } );
-
-    auto topography = Flowtastic::Topography( height_data, x_data, y_data );
-
-    // Note that the left and bottom border of the cell are included, while the right and top are not
-    double slope_xy   = -1;
-    double offset_in  = 1.0;
-    double offset_out = 3.1;
-
-    REQUIRE( topography.line_intersects_cell( 0, 0, slope_xy, offset_in ) );
-    REQUIRE( !topography.line_intersects_cell( 0, 0, slope_xy, offset_out ) );
-}
-
-TEST_CASE( "line_segment_intersect", "[line_segment_intersect]" )
-{
-    Flowtastic::VectorX x_data      = xt::arange<double>( -2, 2.1, 4.0 );
-    Flowtastic::VectorX y_data      = xt::arange<double>( -2, 2.1, 4.0 );
-    Flowtastic::MatrixX height_data = xt::zeros<double>( { x_data.size(), y_data.size() } );
-
-    auto topography = Flowtastic::Topography( height_data, x_data, y_data );
-
-    // Note that the left and bottom border of the cell are included, while the right and top are not
-
-    Flowtastic::Vector2 x1 = { -3, 0 };
-    Flowtastic::Vector2 x2 = { -1.99, 0 };
-
-    fmt::print( "x2 = {}\n", fmt::streamed( x2 ) );
-    REQUIRE( topography.line_segment_intersects_cell( 0, 0, x1, x2 ) );
-
-    x2 = { 0, 0 };
-    fmt::print( "x2 = {}\n", fmt::streamed( x2 ) );
-    REQUIRE( topography.line_segment_intersects_cell( 0, 0, x1, x2 ) );
-
-    x2 = { 3, 0 };
-    fmt::print( "x2 = {}\n", fmt::streamed( x2 ) );
-    REQUIRE( topography.line_segment_intersects_cell( 0, 0, x1, x2 ) );
-
-    x2 = { 0, -2 };
-    fmt::print( "x2 = {}\n", fmt::streamed( x2 ) );
-    REQUIRE( topography.line_segment_intersects_cell( 0, 0, x1, x2 ) );
-
-    x2 = { 0, 2 };
-    fmt::print( "x2 = {}\n", fmt::streamed( x2 ) );
-    REQUIRE( topography.line_segment_intersects_cell( 0, 0, x1, x2 ) );
-
-    // These shouldnt intersect the cell
-    x2 = { -2.5, 0 };
-    fmt::print( "x2 = {}\n", fmt::streamed( x2 ) );
-    REQUIRE( !topography.line_segment_intersects_cell( 0, 0, x1, x2 ) );
-
-    x2 = { -2.0, 2.01 };
-    fmt::print( "x2 = {}\n", fmt::streamed( x2 ) );
-    REQUIRE( !topography.line_segment_intersects_cell( 0, 0, x1, x2 ) );
-
-    // Start in the middle
-    x1 = { 0, 0 };
-    x2 = { 0.5, 0 };
-    fmt::print( "x1 = {}\n", fmt::streamed( x1 ) );
-    fmt::print( "x2 = {}\n", fmt::streamed( x2 ) );
-    REQUIRE( topography.line_segment_intersects_cell( 0, 0, x1, x2 ) );
-
-    // Along y-axis
-    x1 = { 0, -3 };
-    x2 = { 0, 3 };
-    fmt::print( "x1 = {}\n", fmt::streamed( x1 ) );
-    fmt::print( "x2 = {}\n", fmt::streamed( x2 ) );
-    REQUIRE( topography.line_segment_intersects_cell( 0, 0, x1, x2 ) );
-
-    // Along y-axis
-    x1 = { -2, -4 };
-    x2 = { -2, 2 };
-    fmt::print( "x1 = {}\n", fmt::streamed( x1 ) );
-    fmt::print( "x2 = {}\n", fmt::streamed( x2 ) );
-    REQUIRE( topography.line_segment_intersects_cell( 0, 0, x1, x2 ) );
-}
-
 TEST_CASE( "get_cells_intersecting_lobe", "[intersecting_lobe_cells]" )
 {
     Flowtastic::VectorX x_data      = xt::arange<double>( -2.0, 2.0, 1.0 );
@@ -161,8 +65,17 @@ TEST_CASE( "get_cells_intersecting_lobe", "[intersecting_lobe_cells]" )
     my_lobe.semi_axes       = { 1.95, 0.95 };
     my_lobe.azimuthal_angle = Flowtastic::Math::pi / 2.0;
 
-    auto cell_indices_expected = std::vector<std::array<int, 2>>{ { 1, 0 }, { 2, 0 }, { 1, 1 }, { 2, 1 },
-                                                                  { 1, 2 }, { 2, 2 }, { 1, 3 }, { 2, 3 } };
+    // clang-format off
+    std::vector<std::array<int, 2>> cell_indices_expected = { 
+        { 1, 0 }, 
+        { 1, 1 }, 
+        { 1, 2 },
+        { 1, 3 },
+        { 2, 0 }, 
+        { 2, 1 }, 
+        { 2, 2 }, 
+        { 2, 3 } };
+    // clang-format on
 
     auto cell_indices = topography.get_cells_intersecting_lobe( my_lobe );
 
@@ -183,16 +96,27 @@ TEST_CASE( "test_compute_intersection", "[intersection]" )
 
     Flowtastic::Lobe my_lobe;
     my_lobe.center          = { 0, 0 };
-    my_lobe.semi_axes       = { 1.0, 1.0 };
+    my_lobe.semi_axes       = { 1 - 1e-14, 1 - 1e-14 };
     my_lobe.azimuthal_angle = 0.0;
 
-    auto intersection_data = topography.compute_intersection( my_lobe );
+    // clang-format off
+    std::vector<std::array<int, 2>> cell_indices_expected = { 
+        { 2, 2 }, 
+        { 2, 3 }, 
+        { 3, 2 },
+        { 3, 3 } };
+    // clang-format on
+    double expected_area_fraction = Flowtastic::Math::pi / 4.0;
 
-    for( const auto & d : intersection_data )
+    auto intersection_data = topography.compute_intersection( my_lobe, 30 );
+
+    for( size_t i = 0; i < cell_indices_expected.size(); i++ )
     {
-        auto indices  = d.first;
-        auto fraction = d.second;
+        auto indices  = intersection_data[i].first;
+        auto fraction = intersection_data[i].second;
 
-        fmt::print( " indices = {}, fraction = {}\n", indices, fraction );
+        fmt::print( " indices = {}, fraction = {}, fraction_expected {}\n", indices, fraction, expected_area_fraction );
+        REQUIRE_THAT( indices, Catch::Matchers::RangeEquals( cell_indices_expected[i] ) );
+        REQUIRE_THAT( fraction, Catch::Matchers::WithinRel( expected_area_fraction, 5e-2 ) );
     }
 }

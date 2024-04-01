@@ -35,25 +35,6 @@ public:
         // Check if the point lies in the lobe
         return ellipse_lhs <= 1;
     }
-
-    // Determines the rectangular "bounding box" enclosing the ellipse (which can be tilted).
-    // Returns the coordinates of the vertices of the bounding box
-    // counter-clockwise around the rectangle
-    inline std::vector<Vector2> bounding_box() const
-    {
-        Vector2 major_axis_vec
-            = { semi_axes[0] * std::cos( azimuthal_angle ), semi_axes[0] * std::sin( azimuthal_angle ) };
-        Vector2 minor_axis_vec
-            = { -semi_axes[1] * std::sin( azimuthal_angle ), semi_axes[1] * std::cos( azimuthal_angle ) };
-
-        // The points are given by center plus/minus major_axis_vec plus/minus minor_axis_vec
-        Vector2 point1 = center + major_axis_vec - minor_axis_vec;
-        Vector2 point2 = center + major_axis_vec + minor_axis_vec;
-        Vector2 point3 = center - major_axis_vec + minor_axis_vec;
-        Vector2 point4 = center - major_axis_vec - minor_axis_vec;
-
-        return { point1, point2, point3, point4 };
-    }
 };
 
 } // namespace Flowtastic
