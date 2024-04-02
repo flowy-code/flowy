@@ -48,6 +48,8 @@ public:
 
     int select_parent_lobe( int idx_descendant );
 
+    void add_inertial_contribution( Lobe & lobe, const Lobe & parent, const Vector2 & slope ) const;
+
     void run();
 
 private:

@@ -115,6 +115,28 @@ int Simulation::select_parent_lobe( int idx_descendant )
     return idx_parent;
 }
 
+void Simulation::add_inertial_contribution( Lobe & lobe, const Lobe & parent, const Vector2 & slope ) const
+{
+    const double slope_norm = xt::linalg::norm( slope, 2 );
+    double cos_angle_parent = std::cos( parent.azimuthal_angle );
+    double sin_angle_parent = std::sin( parent.azimuthal_angle );
+    double cos_angle_lobe   = std::cos( lobe.azimuthal_angle );
+    double sin_angle_lobe   = std::sin( lobe.azimuthal_angle );
+
+    double alpha_inertial = 0.0;
+
+    const double eta = input.inertial_exponent;
+    if( eta > 0 )
+    {
+        alpha_inertial = std::pow( ( 1.0 - std::pow( 2.0 * std::atan( slope_norm ) / Math::pi, eta ) ), ( 1.0 / eta ) );
+    }
+
+    const double x_avg = ( 1.0 - alpha_inertial ) * cos_angle_parent + alpha_inertial * cos_angle_lobe;
+    const double y_avg = ( 1.0 - alpha_inertial ) * sin_angle_parent + alpha_inertial * sin_angle_lobe;
+
+    lobe.azimuthal_angle = std::atan2( y_avg, x_avg );
+}
+
 void Simulation::run()
 {
     for( int idx_flow = 0; idx_flow < input.n_flows; idx_flow++ )
@@ -141,6 +163,7 @@ void Simulation::run()
 
             // Perturb the angle (and set it)
             perturb_lobe_angle( lobes[idx_lobe], slope );
+
             // compute lobe axes
             compute_lobe_axes( lobes[idx_lobe], slope );
 
@@ -152,9 +175,39 @@ void Simulation::run()
         // Each lobe is a descendant of a parent lobe
         for( int idx_lobe = input.n_init; idx_lobe < n_lobes; idx_lobe++ )
         {
+            Lobe & lobe_cur = lobes[idx_lobe];
+
             // Select which of the previously created lobes is the parent lobe
             // from which the new descendent lobe will bud
-            auto parent_idx = select_parent_lobe( idx_lobe );
+            auto idx_parent = select_parent_lobe( idx_lobe );
+
+            Lobe & lobe_parent = lobes[idx_parent];
+
+            // Find the preliminary budding point on the perimeter of the parent lobe (npoints is the number of raster
+            // points on the ellipse)
+            Flowtastic::Vector2 budding_point = topography.find_preliminary_budding_point( lobe_parent, input.npoints );
+
+            auto [height_lobe_center, slope_parent] = topography.height_and_slope( lobe_parent.center );
+
+            // Perturb the angle and set it (not on the parent anymore)
+            perturb_lobe_angle( lobe_cur, slope_parent );
+
+            // Add the inertial contribution
+            add_inertial_contribution( lobe_cur, lobe_parent, slope_parent );
+
+            // Compute the final budding point
+            // It is defined by the point on the perimeter of the parent lobe closest to the center of the new lobe
+            Vector2 final_budding_point = lobe_parent.point_at_angle( lobe_cur.azimuthal_angle );
+
+            // Get the slope at the final budding point
+            auto [height_budding_point, slope_budding_point] = topography.height_and_slope( final_budding_point );
+
+            // compute the new lobe axes
+            compute_lobe_axes( lobe_cur, slope_budding_point );
+            Vector2 direction_to_new_lobe = ( final_budding_point - lobe_parent.center )
+                                            / xt::linalg::norm( final_budding_point - lobe_parent.center );
+            Vector2 new_lobe_center = final_budding_point + direction_to_new_lobe * lobe_cur.semi_axes[0];
+            lobe_cur.center         = new_lobe_center;
         }
     }
 }

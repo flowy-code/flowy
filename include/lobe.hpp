@@ -92,18 +92,22 @@ public:
         return false;
     }
 
+    inline Vector2 point_at_angle(const double phi) const
+    {
+        const double a = semi_axes[0]; // major axis
+        const double b = semi_axes[1]; // minor axis
+        Vector2 coord = {a * std::cos(phi)*std::cos(azimuthal_angle) - b*std::sin(phi)*std::sin(azimuthal_angle), a*std::cos(phi)*std::sin(azimuthal_angle) + b*std::sin(phi)*std::cos(azimuthal_angle)};
+        return coord + center;
+    }
+
     inline std::vector<Vector2> rasterize_perimeter(int n_raster_points) const
     {
         auto phi_list = xt::linspace<double>(0.0, 2.0*Math::pi, n_raster_points, false);
         auto res = std::vector<Vector2>(n_raster_points);
 
-        const double a = semi_axes[0]; // major axis
-        const double b = semi_axes[1]; // minor axis
-
-        for (int idx_phi=0; idx_phi<n_raster_points; idx_phi++){
-            auto phi = phi_list[idx_phi];
-            Vector2 coord = {a * std::cos(phi)*std::cos(azimuthal_angle) - b*std::sin(phi)*std::sin(azimuthal_angle), a*std::cos(phi)*std::sin(azimuthal_angle) + b*std::sin(phi)*std::cos(azimuthal_angle)};
-            res[idx_phi] = coord + center;
+        for (int idx_phi=0; idx_phi<n_raster_points; idx_phi++)
+        {
+            res[idx_phi] = point_at_angle(phi_list[idx_phi]);
         }
 
         return res;
