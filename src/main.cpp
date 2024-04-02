@@ -1,4 +1,4 @@
-#include "flowtastic.hpp"
+#include "simulation.hpp"
 #include <fmt/format.h>
 #include <fmt/ostream.h>
 #include <filesystem>

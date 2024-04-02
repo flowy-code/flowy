@@ -10,13 +10,13 @@ namespace Flowtastic::Config
 class InputParams
 {
 public:
-    std::filesystem::path run_name{}; // Name of the run (used to save the parameters and the output)
-    std::filesystem::path source{};   // File name of ASCII digital elevation model (.asc file)
-    MatrixX vent_coordinates{};       // of shape [n_vents, 2]
+    std::filesystem::path run_name{};        // Name of the run (used to save the parameters and the output)
+    std::filesystem::path source{};          // File name of ASCII digital elevation model (.asc file)
+    std::vector<Vector2> vent_coordinates{}; // of shape [n_vents, 2]
 
-    int n_vents()
+    int n_vents() const
     {
-        return vent_coordinates.shape()[0];
+        return vent_coordinates.size();
     }
 
     bool save_hazard_data{}; // If true, a raster map is saved, such that the values represent the probability of a cell
@@ -123,21 +123,22 @@ public:
     std::optional<std::string> union_diff_file{};
 
     // from input_advanced
-    int npoints{}; // Number of points for the lobe profile
-    int n_init{};  // Number of repetitions of the first lobe (useful for initial spreading)
+    int npoints{ 30 }; // Number of points for rasterizing the ellipse
+    int n_init{ 0 };   // Number of repetitions of the first lobe (useful for initial spreading)
 
     /*This factor is to choose where the center of the new lobe will be:
       dist_fact = 0 => the center of the new lobe is on the border of the
                         previous one;
       dist fact > 0 => increase the distance of the center of the new lobe
                         from the border of the previous one;
-      dist_fact = 1 => the two lobes touch in one point only.*/
-    double dist_fact{};
+      dist_fact = 1 => the two lobes touch in one point only. Only dist_fact=1 is implemented */
+    double dist_fact{ 1 };
 
     /*
     Flag to select if it is cutted the volume of the area
     flag_threshold = 1  => volume
     flag_threshold = 2  => area
+    Not used/implemented?
     */
     int flag_threshold{};
 
@@ -148,8 +149,8 @@ public:
     a_beta, b_beta > 0 => n_lobes = min_n_lobes + 0.5 * ( max_n_lobes - min_n_lobes )
                                                  * beta(flow/n_flows,a_beta,b_beta)
     */
-    double a_beta{};
-    double b_beta{};
+    double a_beta{ 0 };
+    double b_beta{ 0 };
 
     double max_aspect_ratio{}; // Maximum aspect ration of the lobes
     int saveraster_flag{};     // if saveraster_flag = 1 then the raster output is saved as a *.asc file
@@ -196,7 +197,7 @@ public:
     std::optional<std::vector<std::filesystem::path>> restart_files{};
 
     // This seems to be described nowhere
-    std::optional<std::vector<std::filesystem::path>> restart_filling_parameters{};
+    std::optional<std::vector<double>> restart_filling_parameters{};
 };
 
 } // namespace Flowtastic::Config

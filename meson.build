@@ -7,10 +7,10 @@ add_global_arguments(['-Wno-unused-local-typedefs', '-Wno-array-bounds'], langua
 incdir = include_directories('include')
 
 sources = [
-  'src/flowtastic.cpp',
   'src/asc_file.cpp',
   'src/simulation.cpp',
-  'src/topography.cpp'
+  'src/topography.cpp',
+  'src/config_parser.cpp'
 ]
 
 # Library dependencies
