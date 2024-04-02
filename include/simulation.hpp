@@ -42,10 +42,13 @@ public:
     void compute_initial_lobe_position( int idx_flow, Lobe & lobe );
 
     // perturbes the initial azimuthal angle of the lobe, which is
-    void compute_lobe_axes( Lobe & lobe, const Vector2 & slope ) const; // computed from the terrain slop
+    void compute_lobe_axes( Lobe & lobe, const Vector2 & slope ) const; // computed from the terrain slope
+
     void perturb_lobe_angle( Lobe & lobe, const Vector2 & slope );
 
     int select_parent_lobe( int idx_descendant );
+
+    Vector2 find_preliminary_budding_point( const Lobe & lobe, int npoints );
 
     void run();
 

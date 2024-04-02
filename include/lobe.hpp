@@ -1,7 +1,9 @@
 #pragma once
 #include "definitions.hpp"
+#include "math.hpp"
 #include <fmt/format.h>
 #include <optional>
+#include <vector>
 
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wparentheses"
@@ -88,6 +90,22 @@ public:
             return true;
 
         return false;
+    }
+
+    inline std::vector<Vector2> rasterize_perimeter(int n_raster_points) const
+    {
+        auto phi_list = xt::linspace<double>(0, 2.0*Math::pi, n_raster_points, false);
+        auto res = std::vector<Vector2>(n_raster_points);
+        double a = semi_axes[0]; // major axis
+        double b = semi_axes[1]; // minor axis
+
+        for (int idx_phi=0; idx_phi<n_raster_points; idx_phi++){
+            auto phi = phi_list[idx_phi];
+            Vector2 coord = { a*std::cos(phi)-b*std::sin(phi), a*std::sin(phi)+b*std::cos(phi) };
+            res.push_back(coord);
+        }
+
+        return res;
     }
 };
 

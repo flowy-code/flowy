@@ -115,6 +115,19 @@ int Simulation::select_parent_lobe( int idx_descendant )
     return idx_parent;
 }
 
+Vector2 Simulation::find_preliminary_budding_point( const Lobe & lobe, int npoints )
+{
+    // First, we rasterize the perimeter of the ellipse
+    std::vector<Vector2> perimeter = lobe.rasterize_perimeter( npoints );
+
+    // Then, we find the point of minimal elevation amongst the rasterized points on the perimeter
+    auto min_elevation_point_it = std::min_element(
+        perimeter.begin(), perimeter.end(), [&]( const Vector2 & p1, const Vector2 & p2 )
+        { return topography.height_and_slope( p1 ).first < topography.height_and_slope( p2 ).first; } );
+
+    return *min_elevation_point_it;
+}
+
 void Simulation::run()
 {
     for( int idx_flow = 0; idx_flow < input.n_flows; idx_flow++ )
