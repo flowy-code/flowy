@@ -59,8 +59,8 @@ InputParams parse_config( const std::filesystem::path & path )
     set_if_specified( params.n_flows, tbl["n_flows"] );
     set_if_specified( params.n_lobes, tbl["n_lobes"] );
     set_if_specified( params.thickening_parameter, tbl["thickening_parameter"] );
-    params.prescribed_lobe_area          = tbl["prescribed_lobe_area"].value<double>();
-    params.prescribed_avg_lobe_thickness = tbl["prescribed_avg_lobe_thickness"].value<double>();
+    params.prescribed_lobe_area          = tbl["lobe_area"].value<double>();
+    params.prescribed_avg_lobe_thickness = tbl["avg_lobe_thickness"].value<double>();
 
     set_if_specified( params.min_n_lobes, tbl["min_n_lobes"] );
     set_if_specified( params.max_n_lobes, tbl["max_n_lobes"] );

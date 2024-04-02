@@ -150,6 +150,8 @@ void Simulation::run()
         int n_lobes = 0.5 * ( input.min_n_lobes + input.max_n_lobes );
         n_lobes_total += n_lobes;
 
+        lobes = std::vector<Lobe>(n_lobes);
+
         // Calculated for each flow with n_lobes number of lobes
         double delta_lobe_thickness
             = 2.0 * ( lobe_dimensions.avg_lobe_thickness - lobe_dimensions.thickness_min ) / ( n_lobes - 1.0 );
