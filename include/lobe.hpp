@@ -50,17 +50,17 @@ public:
     inline bool is_point_in_lobe( const Vector2 & coordinates ) const
     {
         // Translate the coordinates by the center of ellipse
-        double x = coordinates[0] - center[0];
-        double y = coordinates[1] - center[1];
+        const double x = coordinates[0] - center[0];
+        const double y = coordinates[1] - center[1];
 
         // Transform to the coordinate system centered on the center of the ellipse
         // To use eqn (x'/a)^2 + (y'/b)^2
         // The rotation matrix is [  {cos phi x, sin phi x}, {-sin phi x, cos phi x} ]
-        double x_prime = cos_azimuthal_angle * x + sin_azimuthal_angle * y;
-        double y_prime = -sin_azimuthal_angle * x + cos_azimuthal_angle * y;
+        const double x_prime = cos_azimuthal_angle * x + sin_azimuthal_angle * y;
+        const double y_prime = -sin_azimuthal_angle * x + cos_azimuthal_angle * y;
 
-        double ellipse_lhs = ( x_prime / semi_axes[0] ) * ( x_prime / semi_axes[0] )
-                             + ( y_prime / semi_axes[1] ) * ( y_prime / semi_axes[1] );
+        const double ellipse_lhs = ( x_prime / semi_axes[0] ) * ( x_prime / semi_axes[0] )
+                                   + ( y_prime / semi_axes[1] ) * ( y_prime / semi_axes[1] );
         // Check if the point lies in the lobe
         return ellipse_lhs <= 1;
     }

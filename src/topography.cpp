@@ -140,9 +140,12 @@ std::pair<double, Vector2> Topography::height_and_slope( const Vector2 & coordin
     else
         slope[1] = ( height_data( idx_x, idx_y ) - height_data( idx_x, idx_y_lower ) ) / cell_size();
 
+    // contribution of slope to height
+    const Vector2 diff              = coordinates - cell_center;
+    const double slope_contribution = slope[0] * diff[0] + slope[1] * diff[1];
+
     // For the height we linearly interpolate
-    double height
-        = height_data( idx_x, idx_y ) + xt::linalg::dot( coordinates - cell_center, xt::transpose( slope ) )[0];
+    const double height = height_data( idx_x, idx_y ) + slope_contribution;
 
     return { height, slope };
 }
