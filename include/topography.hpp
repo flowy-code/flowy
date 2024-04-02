@@ -33,6 +33,22 @@ public:
     VectorX x_data{};
     VectorX y_data{};
 
+    inline double get_height( int idx_x, int idx_y )
+    {
+        return height_data( idx_x, idx_y );
+    }
+
+    inline void set_height( int idx_x, int idx_y, double height )
+    {
+        height_data( idx_x, idx_y ) = height;
+    }
+
+    inline void set_height( const Vector2 & point, double height )
+    {
+        auto [idx_x, idx_y]         = locate_point( point );
+        height_data( idx_x, idx_y ) = height;
+    }
+
     inline double cell_size()
     {
         return x_data[1] - x_data[0];

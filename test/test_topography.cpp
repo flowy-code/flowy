@@ -122,21 +122,22 @@ TEST_CASE( "test_compute_intersection", "[intersection]" )
     }
 }
 
-TEST_CASE( "find_preliminary_budding_point", "[budding_pointgh]" )
+TEST_CASE( "find_preliminary_budding_point", "[budding_point]" )
 {
     Flowtastic::VectorX x_data      = xt::arange<double>( -2, 2, 1.0 );
     Flowtastic::VectorX y_data      = xt::arange<double>( -2, 2, 1.0 );
     Flowtastic::MatrixX height_data = 5.0 * xt::ones<double>( { x_data.size(), y_data.size() } );
-    height_data( 3, 3 )             = -5.0;
 
     auto topography = Flowtastic::Topography( height_data, x_data, y_data );
+
+    topography.set_height( { 0.5, 0.5 }, -5.0 );
 
     Flowtastic::Lobe my_lobe;
     my_lobe.center          = { 0, 0 };
     my_lobe.semi_axes       = { 0.8, 0.8 };
     my_lobe.azimuthal_angle = 0.0;
 
-    auto perimeter = my_lobe.rasterize_perimeter( 4 );
+    auto perimeter = my_lobe.rasterize_perimeter( 32 );
     for( auto & p : perimeter )
     {
         fmt::print( "p = {}\n", fmt::streamed( p ) );
