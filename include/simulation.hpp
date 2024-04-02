@@ -48,8 +48,6 @@ public:
 
     int select_parent_lobe( int idx_descendant );
 
-    Vector2 find_preliminary_budding_point( const Lobe & lobe, int npoints );
-
     void run();
 
 private:

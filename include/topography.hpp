@@ -62,6 +62,8 @@ public:
 
     // Figure out which cell a given point is in, returning the indices of the lowest left corner
     std::array<int, 2> locate_point( const Vector2 & coordinates );
+
+    Vector2 find_preliminary_budding_point( const Lobe & lobe, int npoints );
 };
 
 } // namespace Flowtastic

@@ -1,12 +1,8 @@
 #include "topography.hpp"
 #include "definitions.hpp"
-#include "fmt/ostream.h"
-#include "xtensor-blas/xlinalg.hpp"
 #include "xtensor/xbuilder.hpp"
-#include "xtensor/xiterator.hpp"
 #include <fmt/ranges.h>
 #include <algorithm>
-#include <limits>
 #include <stdexcept>
 
 namespace Flowtastic
@@ -184,6 +180,19 @@ void Topography::add_lobe( const Lobe & lobe )
     {
         height_data( indices[0], indices[1] ) += fraction * lobe.thickness;
     }
+}
+
+Vector2 Topography::find_preliminary_budding_point( const Lobe & lobe, int npoints )
+{
+    // First, we rasterize the perimeter of the ellipse
+    std::vector<Vector2> perimeter = lobe.rasterize_perimeter( npoints );
+
+    // Then, we find the point of minimal elevation amongst the rasterized points on the perimeter
+    auto min_elevation_point_it = std::min_element(
+        perimeter.begin(), perimeter.end(), [&]( const Vector2 & p1, const Vector2 & p2 )
+        { return height_and_slope( p1 ).first < height_and_slope( p2 ).first; } );
+
+    return *min_elevation_point_it;
 }
 
 } // namespace Flowtastic
