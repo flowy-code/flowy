@@ -20,6 +20,7 @@ public:
     int n_descendents      = 0;        // The cumulative number of descendent lobes
     int idx_parent         = 0;        // The idx of the parent lobe
     double alpha_inertial  = 0;        // The coefficient for the inertial contribution
+    double thickness       = 0;        // Each lobe has a thickness
 
     // Checks if the point lies inside the lobe
     inline bool is_point_in_lobe( const Vector2 & coordinates ) const

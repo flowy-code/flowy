@@ -173,4 +173,17 @@ std::pair<double, Vector2> Topography::height_and_slope( const Vector2 & coordin
     return { height, slope };
 }
 
+void Topography::add_lobe( const Lobe & lobe )
+{
+    // In this function we simply add the thickness of the lobe to the topography
+    // First, we find the intersected cells and the covered fractions
+    std::vector<std::pair<std::array<int, 2>, double>> intersection_data = compute_intersection( lobe );
+
+    // Then we add the tickness according to the fractions
+    for( auto const & [indices, fraction] : intersection_data )
+    {
+        height_data( indices[0], indices[1] ) += fraction * lobe.thickness;
+    }
+}
+
 } // namespace Flowtastic

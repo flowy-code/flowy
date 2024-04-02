@@ -102,13 +102,18 @@ void Simulation::run()
         int n_lobes = 0.5 * ( input.min_n_lobes + input.max_n_lobes );
         n_lobes_total += n_lobes;
 
+        // Calculated for each flow with n_lobes number of lobes
         double delta_lobe_thickness
             = 2.0 * ( lobe_dimensions.avg_lobe_thickness - lobe_dimensions.thickness_min ) / ( n_lobes - 1.0 );
 
-        // Build initial lobes which do  not propagate descendents
+        // Build initial lobes which do not propagate descendents
         for( int idx_lobe = 0; idx_lobe < input.n_init; idx_lobe++ )
         {
+
             compute_initial_lobe_position( idx_flow, lobes[idx_lobe] );
+
+            // Compute the thickness of the lobe
+            lobes[idx_lobe].thickness = lobe_dimensions.thickness_min + idx_lobe * delta_lobe_thickness;
 
             auto [height_lobe_center, slope] = topography.height_and_slope( lobes[idx_lobe].center );
 
@@ -116,7 +121,9 @@ void Simulation::run()
             perturb_lobe_angle( lobes[idx_lobe], slope );
             // compute lobe axes
             compute_lobe_axes( lobes[idx_lobe], slope );
-            // rasterize_lobe
+
+            // Add rasterized lobe
+            topography.add_lobe( lobes[idx_lobe] );
         }
     }
 }
