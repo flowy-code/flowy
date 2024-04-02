@@ -1,14 +1,24 @@
 #pragma once
 #include "definitions.hpp"
 #include <filesystem>
+#include <optional>
 
 namespace Flowtastic
 {
+
+struct AscCrop
+{
+    double x_min;
+    double x_max;
+    double y_min;
+    double y_max;
+};
+
 class AscFile
 {
 public:
     AscFile() = default;
-    AscFile( const std::filesystem::path & path );
+    AscFile( const std::filesystem::path & path, std::optional<AscCrop> crop = std::nullopt );
 
     Vector2 lower_left_corner = { 0, 0 }; // Coordinates of lower left corner
     double cell_size          = 0;        // side length of square cell
@@ -21,16 +31,6 @@ public:
         x_data{}; // one dimensional coordinates of the sampling grid in x direction (the lower left corner of each pixel)
     VectorX
         y_data{}; // one dimensional coordinates of the sampling grid in y direction (the lower left corner of each pixel)
-
-    int nrows()
-    {
-        return height_data.shape()[0];
-    }
-
-    int ncols()
-    {
-        return height_data.shape()[1];
-    }
 };
 
 } // namespace Flowtastic

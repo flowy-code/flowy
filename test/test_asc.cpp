@@ -20,7 +20,7 @@ TEST_CASE( "asc_file_test", "[asc]" )
     fmt::print( "data = {}\n", fmt::streamed( asc_file.height_data ) );
 
     // NOTE: that the order of rows in the asc file is opposite to the order of rows in the height_data
-    Flowtastic::MatrixX height_data_expected = { { 2.0, 1.2, 3 }, { 0.5512, -9999, 2 } };
+    Flowtastic::MatrixX height_data_expected = { { 2.0, 0.5512 }, { 1.2, -9999 }, { 3, 2 } };
 
     REQUIRE( asc_file.height_data == height_data_expected );
 
@@ -39,4 +39,25 @@ TEST_CASE( "asc_file_test", "[asc]" )
     REQUIRE( no_data_value_expected == asc_file.no_data_value );
     REQUIRE( x_data_expected == asc_file.x_data );
     REQUIRE( y_data_expected == asc_file.y_data );
+}
+
+TEST_CASE( "asc_file_test_with_crop", "[asc_crop]" )
+{
+    namespace fs = std::filesystem;
+
+    auto proj_root_path = fs::current_path();
+    auto asc_file_path  = proj_root_path / fs::path( "test/res/asc/file_crop.asc" );
+
+    Flowtastic::AscCrop crop{};
+
+    crop.x_min = 1.2;
+    crop.x_max = 8.2;
+    crop.y_min = 1.2;
+    crop.y_max = 5.2;
+
+    auto asc_file = Flowtastic::AscFile( asc_file_path, crop );
+
+    fmt::print( "data = {}\n", fmt::streamed( asc_file.height_data ) );
+    fmt::print( "x_data = {}\n", fmt::streamed( asc_file.x_data ) );
+    fmt::print( "y_data = {}\n", fmt::streamed( asc_file.y_data ) );
 }

@@ -1,4 +1,5 @@
 #include "asc_file.hpp"
+#include "xtensor/xmanipulation.hpp"
 #include <fmt/format.h>
 #include <algorithm>
 #include <fstream>
@@ -9,9 +10,9 @@
 
 namespace Flowtastic
 {
-AscFile::AscFile( const std::filesystem::path & path )
-{
 
+AscFile::AscFile( const std::filesystem::path & path, std::optional<AscCrop> crop )
+{
     std::ifstream file( path.string() ); // Open the file
     if( !file.is_open() )
     {
@@ -35,8 +36,8 @@ AscFile::AscFile( const std::filesystem::path & path )
         return line.substr( pos_space, std::string::npos );
     };
 
-    auto ncols_header = std::stoi( get_number_string() );
-    auto nrows_header = std::stoi( get_number_string() );
+    size_t ncols_header = std::stoi( get_number_string() );
+    size_t nrows_header = std::stoi( get_number_string() );
 
     auto lx           = std::stod( get_number_string() );
     auto ly           = std::stod( get_number_string() );
@@ -45,24 +46,43 @@ AscFile::AscFile( const std::filesystem::path & path )
     cell_size     = std::stod( get_number_string() );
     no_data_value = std::stod( get_number_string() );
 
-    height_data = xt::flip( xt::load_csv<double>( file, ' ' ), 0 );
+    height_data = xt::load_csv<double>( file, ' ' );
 
-    if( nrows_header != nrows() )
+    if( nrows_header != height_data.shape()[0] )
     {
-        throw std::runtime_error(
-            fmt::format( "nrows in header is {}, but there are {} rows of data", nrows_header, nrows() ) );
+        throw std::runtime_error( fmt::format(
+            "nrows in header is {}, but there are {} rows of data", nrows_header, height_data.shape()[0] ) );
     }
 
-    if( ncols_header != ncols() )
+    if( ncols_header != height_data.shape()[1] )
     {
-        throw std::runtime_error(
-            fmt::format( "ncols in header is {}, but there are {} cols of data", ncols_header, ncols() ) );
+        throw std::runtime_error( fmt::format(
+            "ncols in header is {}, but there are {} cols of data", ncols_header, height_data.shape()[1] ) );
     }
 
-    this->x_data
-        = xt::arange( lower_left_corner[0], lower_left_corner[0] + ( double( ncols() ) ) * cell_size, cell_size );
+    // Now we transform the height data to the shape that the rest of the code expects
+    // That means first, we flip the direction of the y-axis and then we transpose
+    height_data = xt::transpose( xt::flip( height_data, 0 ) );
 
-    this->y_data
-        = xt::arange( lower_left_corner[1], lower_left_corner[1] + ( double( nrows() ) ) * cell_size, cell_size );
+    // If cropping is used, we slice the height_data array
+    if( crop.has_value() )
+    {
+        int idx_x_min = std::clamp<int>( ( crop->x_min - lx ) / cell_size, 0, height_data.shape()[0] - 1 );
+        int idx_x_max = std::clamp<int>( ( crop->x_max - lx ) / cell_size, 0, height_data.shape()[0] - 1 );
+        int idx_y_min = std::clamp<int>( ( crop->y_min - ly ) / cell_size, 0, height_data.shape()[1] - 1 );
+        int idx_y_max = std::clamp<int>( ( crop->y_max - ly ) / cell_size, 0, height_data.shape()[1] - 1 );
+
+        height_data
+            = xt::view( height_data, xt::range( idx_x_min, idx_x_max + 1 ), xt::range( idx_y_min, idx_y_max + 1 ) );
+
+        lower_left_corner = { lx + idx_x_min * cell_size, ly + idx_y_min * cell_size };
+    }
+
+    this->x_data = xt::arange(
+        lower_left_corner[0], lower_left_corner[0] + ( double( height_data.shape()[0] ) ) * cell_size, cell_size );
+
+    this->y_data = xt::arange(
+        lower_left_corner[1], lower_left_corner[1] + ( double( height_data.shape()[1] ) ) * cell_size, cell_size );
 }
+
 } // namespace Flowtastic

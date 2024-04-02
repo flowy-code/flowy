@@ -5,6 +5,7 @@
 #include "xtensor/xtensor_forward.hpp"
 #include <xtensor/xfixed.hpp>
 #include <xtensor/xtensor.hpp>
+#include <xtensor/xview.hpp>
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wparentheses"
 #include "xtensor-blas/xlinalg.hpp"
