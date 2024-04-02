@@ -3,7 +3,10 @@
 #include "lobe.hpp"
 #include "math.hpp"
 #include "probability_dist.hpp"
+#include <fmt/chrono.h>
+#include <fmt/format.h>
 #include <algorithm>
+#include <chrono>
 #include <cmath>
 #include <random>
 #include <stdexcept>
@@ -145,12 +148,14 @@ void Simulation::run()
 {
     for( int idx_flow = 0; idx_flow < input.n_flows; idx_flow++ )
     {
+        auto t_flow_start = std::chrono::high_resolution_clock::now();
+
         // Determine n_lobes
         // @TODO: Calculate this later, using a beta distribution etc.
         int n_lobes = 0.5 * ( input.min_n_lobes + input.max_n_lobes );
         n_lobes_total += n_lobes;
 
-        lobes = std::vector<Lobe>(n_lobes);
+        lobes = std::vector<Lobe>( n_lobes );
 
         // Calculated for each flow with n_lobes number of lobes
         double delta_lobe_thickness
@@ -221,6 +226,12 @@ void Simulation::run()
             // Add rasterized lobe
             topography.add_lobe( lobe_cur );
         }
+
+        auto t_flow_end     = std::chrono::high_resolution_clock::now();
+        auto remaining_time = std::chrono::duration_cast<std::chrono::seconds>(
+            ( input.n_flows - idx_flow ) * ( t_flow_end - t_flow_start ) );
+
+        fmt::print( "remaining_time = {:%Hh %Mm %Ss}\n", remaining_time );
     }
 }
 

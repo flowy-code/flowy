@@ -27,7 +27,7 @@ int main( int argc, char * argv[] )
 
     auto input_params = Flowtastic::Config::parse_config( config_file_path );
 
-    auto simulation   = Flowtastic::Simulation( input_params, 0 );
+    auto simulation = Flowtastic::Simulation( input_params, 0 );
 
     simulation.run();
 }
