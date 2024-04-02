@@ -59,8 +59,10 @@ public:
         const double x_prime = cos_azimuthal_angle * x + sin_azimuthal_angle * y;
         const double y_prime = -sin_azimuthal_angle * x + cos_azimuthal_angle * y;
 
-        const double ellipse_lhs = ( x_prime / semi_axes[0] ) * ( x_prime / semi_axes[0] )
-                                   + ( y_prime / semi_axes[1] ) * ( y_prime / semi_axes[1] );
+        const double xp_over_a = x_prime / semi_axes[0];
+        const double yp_over_b = y_prime / semi_axes[1];
+
+        const double ellipse_lhs = xp_over_a * xp_over_a + yp_over_b * yp_over_b;
         // Check if the point lies in the lobe
         return ellipse_lhs <= 1;
     }
@@ -93,9 +95,12 @@ public:
 
         // Plugging this into the ellipse equation, yields an equation for t
         // alpha * t^2 + beta * t + gamma = 0
-        const double alpha = 1.0 / ( a * a ) * ( diff[0] * diff[0] ) + 1.0 / ( b * b ) * ( diff[1] * diff[1] );
-        const double beta  = 2.0 * ( x1_prime[0] * diff[0] / ( a * a ) + x1_prime[1] * diff[1] / ( b * b ) );
-        const double gamma = x1_prime[0] * x1_prime[0] / ( a * a ) + x1_prime[1] * x1_prime[1] / ( b * b ) - 1;
+        const double a2 = a*a;
+        const double b2 = b*b;
+
+        const double alpha = 1.0 / ( a2 ) * ( diff[0] * diff[0] ) + 1.0 /  b2  * ( diff[1] * diff[1] );
+        const double beta  = 2.0 * ( x1_prime[0] * diff[0] / a2  + x1_prime[1] * diff[1] / b2  );
+        const double gamma = x1_prime[0] * x1_prime[0] /  a2  + x1_prime[1] * x1_prime[1] /  b2  - 1.0;
 
         // The solution to this quadratic equation is
         // t = (-beta +- sqrt(beta^2 - 4*alpha*gamma)) / (2*alpha)
@@ -104,15 +109,17 @@ public:
         const double radicand = beta*beta - 4*alpha*gamma;
         if (radicand < 0)
             return false;
-
+        
+        const double sqrt_r = std::sqrt(radicand);
+        
         // Else, we compute the two points of intersection and check if they fall into the interval [0, 1]
-        const double t1 = (-beta - std::sqrt(radicand)) / (2.0*alpha);
-        const double t2 = (-beta + std::sqrt(radicand)) / (2.0*alpha);
+        const double t1 = (-beta - sqrt_r) / (2.0*alpha);
+        const double t2 = (-beta + sqrt_r) / (2.0*alpha);
 
-        if (t1 >= 0 && t1 <= 1.0)
+        if (t1 >= 0.0 && t1 <= 1.0)
             return true;
 
-        if (t2 >= 0 && t2 <= 1.0)
+        if (t2 >= 0.0 && t2 <= 1.0)
             return true;
 
         return false;
@@ -125,7 +132,7 @@ public:
     {
         const double a = semi_axes[0]; // major axis
         const double b = semi_axes[1]; // minor axis
-        Vector2 coord = {a * std::cos(phi)*std::cos(azimuthal_angle) - b*std::sin(phi)*std::sin(azimuthal_angle), a*std::cos(phi)*std::sin(azimuthal_angle) + b*std::sin(phi)*std::cos(azimuthal_angle)};
+        const Vector2 coord = {a * std::cos(phi)*cos_azimuthal_angle - b*std::sin(phi)*sin_azimuthal_angle, a*std::cos(phi)*sin_azimuthal_angle + b*std::sin(phi)*cos_azimuthal_angle};
         return coord + center;
     }
 
