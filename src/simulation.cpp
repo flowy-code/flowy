@@ -146,10 +146,10 @@ void Simulation::compute_descendent_lobe_position( Lobe & lobe, const Lobe & par
 
 void Simulation::run()
 {
+    auto t_run_start = std::chrono::high_resolution_clock::now();
+
     for( int idx_flow = 0; idx_flow < input.n_flows; idx_flow++ )
     {
-        auto t_flow_start = std::chrono::high_resolution_clock::now();
-
         // Determine n_lobes
         // @TODO: Calculate this later, using a beta distribution etc.
         int n_lobes = 0.5 * ( input.min_n_lobes + input.max_n_lobes );
@@ -227,12 +227,15 @@ void Simulation::run()
             topography.add_lobe( lobe_cur );
         }
 
-        auto t_flow_end     = std::chrono::high_resolution_clock::now();
+        auto t_cur          = std::chrono::high_resolution_clock::now();
         auto remaining_time = std::chrono::duration_cast<std::chrono::seconds>(
-            ( input.n_flows - idx_flow ) * ( t_flow_end - t_flow_start ) );
-
+            ( input.n_flows - idx_flow - 1 ) * ( t_cur - t_run_start ) / ( idx_flow + 1 ) );
         fmt::print( "remaining_time = {:%Hh %Mm %Ss}\n", remaining_time );
     }
+
+    auto t_cur      = std::chrono::high_resolution_clock::now();
+    auto total_time = std::chrono::duration_cast<std::chrono::seconds>( ( t_cur - t_run_start ) );
+    fmt::print( "total_time = {:%Hh %Mm %Ss}\n", total_time );
 }
 
 } // namespace Flowtastic
