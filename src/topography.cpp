@@ -73,26 +73,31 @@ std::vector<std::array<int, 2>> Topography::get_cells_intersecting_lobe( const L
 
 std::vector<std::pair<std::array<int, 2>, double>> Topography::compute_intersection( const Lobe & lobe, int N )
 {
-    std::vector<std::pair<std::array<int, 2>, double>> res{};
-
+    double N2               = N * N;
     auto cells_to_rasterize = get_cells_intersecting_lobe( lobe );
 
-    for( auto [idx_x, idx_y] : cells_to_rasterize )
+    std::vector<std::pair<std::array<int, 2>, double>> res{};
+    res.reserve( cells_to_rasterize.size() );
+
+    const double step = cell_size() / N;
+
+    for( const auto & [idx_x, idx_y] : cells_to_rasterize )
     {
-        const auto x_range_cell = xt::linspace<double>( x_data[idx_x], x_data[idx_x] + cell_size(), N );
-        const auto y_range_cell = xt::linspace<double>( y_data[idx_y], y_data[idx_y] + cell_size(), N );
-        int n_hits              = 0;
-        for( auto x : x_range_cell )
+        double n_hits = 0.0;
+
+        for( int ix = 0; ix < N; ix++ )
         {
-            for( auto y : y_range_cell )
+            const double x = x_data[idx_x] + step * ix;
+            for( int iy = 0; iy < N; iy++ )
             {
+                const double y = y_data[idx_y] + step * iy;
                 if( lobe.is_point_in_lobe( { x, y } ) )
                 {
-                    n_hits++;
+                    n_hits += 1.0;
                 }
             }
         }
-        double fraction = double( n_hits ) / double( N * N );
+        const double fraction = n_hits / N2;
         res.push_back( { { idx_x, idx_y }, fraction } );
     }
     return res;
