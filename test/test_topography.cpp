@@ -62,9 +62,9 @@ TEST_CASE( "get_cells_intersecting_lobe", "[intersecting_lobe_cells]" )
     auto topography = Flowtastic::Topography( height_data, x_data, y_data );
 
     Flowtastic::Lobe my_lobe;
-    my_lobe.center          = { 0.0, 0.0 };
-    my_lobe.semi_axes       = { 1.95, 0.95 };
-    my_lobe.azimuthal_angle = Flowtastic::Math::pi / 2.0;
+    my_lobe.center    = { 0.0, 0.0 };
+    my_lobe.semi_axes = { 1.95, 0.95 };
+    my_lobe.set_azimuthal_angle( Flowtastic::Math::pi / 2.0 );
 
     // clang-format off
     std::vector<std::array<int, 2>> cell_indices_expected = { 
@@ -96,9 +96,9 @@ TEST_CASE( "test_compute_intersection", "[intersection]" )
     auto topography = Flowtastic::Topography( height_data, x_data, y_data );
 
     Flowtastic::Lobe my_lobe;
-    my_lobe.center          = { 0, 0 };
-    my_lobe.semi_axes       = { 1 - 1e-14, 1 - 1e-14 };
-    my_lobe.azimuthal_angle = 0.0;
+    my_lobe.center    = { 0, 0 };
+    my_lobe.semi_axes = { 1 - 1e-14, 1 - 1e-14 };
+    my_lobe.set_azimuthal_angle( 0 );
 
     // clang-format off
     std::vector<std::array<int, 2>> cell_indices_expected = { 
@@ -133,9 +133,9 @@ TEST_CASE( "find_preliminary_budding_point", "[budding_point]" )
     topography.set_height( { 0.5, 0.5 }, -5.0 );
 
     Flowtastic::Lobe my_lobe;
-    my_lobe.center          = { 0, 0 };
-    my_lobe.semi_axes       = { 0.8, 0.8 };
-    my_lobe.azimuthal_angle = 0.0;
+    my_lobe.center    = { 0, 0 };
+    my_lobe.semi_axes = { 0.8, 0.8 };
+    my_lobe.set_azimuthal_angle( 0.0 );
 
     auto perimeter = my_lobe.rasterize_perimeter( 32 );
     for( auto & p : perimeter )

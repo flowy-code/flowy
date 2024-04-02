@@ -18,10 +18,10 @@
 
 TEST_CASE( "Testing if a given point is inside a lobe or not", "[is_point_in_lobe]" )
 {
-    auto my_lobe            = Flowtastic::Lobe();
-    my_lobe.azimuthal_angle = 0;        // The azimuthal angle of the major semi-axis with respect to the x-axis
-    my_lobe.center          = { 0, 0 }; // The center of the ellipse
-    my_lobe.semi_axes       = { 3, 1 };
+    auto my_lobe = Flowtastic::Lobe();
+    my_lobe.set_azimuthal_angle( 0 ); // The azimuthal angle of the major semi-axis with respect to the x-axis
+    my_lobe.center    = { 0, 0 };     // The center of the ellipse
+    my_lobe.semi_axes = { 3, 1 };
 
     Flowtastic::Vector2 test_point_in  = { 2.0, 0.5 };
     Flowtastic::Vector2 test_point_out = { 1.0, 4.0 };

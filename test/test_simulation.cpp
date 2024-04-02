@@ -45,9 +45,9 @@ TEST_CASE( "perturb_angle", "[perturb_angle]" )
     for( int i = 0; i < n_samples; i++ )
     {
         simulation.perturb_lobe_angle( my_lobe, slope );
-        angle_samples[i] = my_lobe.azimuthal_angle;
+        angle_samples[i] = my_lobe.get_azimuthal_angle();
 
-        REQUIRE( ( ( my_lobe.azimuthal_angle > -Math::pi ) && ( my_lobe.azimuthal_angle < Math::pi ) ) );
+        REQUIRE( ( ( my_lobe.get_azimuthal_angle() > -Math::pi ) && ( my_lobe.get_azimuthal_angle() < Math::pi ) ) );
     }
 
     double mean  = xt::mean( angle_samples )();
@@ -64,9 +64,9 @@ TEST_CASE( "budding_point", "[budding_point]" )
     using namespace Flowtastic;
 
     Lobe lobe_parent;
-    lobe_parent.center          = { -0.5, 0.5 };
-    lobe_parent.semi_axes       = { std::sqrt( 2 ) / 2, std::sqrt( 2 ) / 4 };
-    lobe_parent.azimuthal_angle = { -Math::pi / 4 };
+    lobe_parent.center    = { -0.5, 0.5 };
+    lobe_parent.semi_axes = { std::sqrt( 2 ) / 2, std::sqrt( 2 ) / 4 };
+    lobe_parent.set_azimuthal_angle( -Math::pi / 4 );
 
     Lobe lobe_cur;
     lobe_cur.semi_axes = lobe_parent.semi_axes;

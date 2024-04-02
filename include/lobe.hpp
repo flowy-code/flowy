@@ -10,12 +10,38 @@ namespace Flowtastic
 
 class Lobe
 {
+private:
+    double azimuthal_angle     = 0; // The azimuthal angle of the major semi-axis with respect to the x-axis
+    double sin_azimuthal_angle = 0;
+    double cos_azimuthal_angle = 1.0;
+
 public:
-    double azimuthal_angle        = 0;        // The azimuthal angle of the major semi-axis with respect to the x-axis
-    Vector2 center                = { 0, 0 }; // The center of the ellipse
-    Vector2 semi_axes             = { 1, 1 }; // The length of the semi-axies, first the major then the minor
-    int dist_n_lobes              = 0;        // The distance to the initial lobe, counted in number of lobes
-    int n_descendents             = 0;        // The cumulative number of descendent lobes
+    void set_azimuthal_angle( double azimuthal_angle )
+    {
+        this->azimuthal_angle = azimuthal_angle;
+        sin_azimuthal_angle   = std::sin( azimuthal_angle );
+        cos_azimuthal_angle   = std::cos( azimuthal_angle );
+    }
+
+    double get_azimuthal_angle() const
+    {
+        return azimuthal_angle;
+    }
+
+    double get_cos_azimuthal_angle() const
+    {
+        return cos_azimuthal_angle;
+    }
+
+    double get_sin_azimuthal_angle() const
+    {
+        return sin_azimuthal_angle;
+    }
+
+    Vector2 center                = { 0, 0 };     // The center of the ellipse
+    Vector2 semi_axes             = { 1, 1 };     // The length of the semi-axies, first the major then the minor
+    int dist_n_lobes              = 0;            // The distance to the initial lobe, counted in number of lobes
+    int n_descendents             = 0;            // The cumulative number of descendent lobes
     std::optional<int> idx_parent = std::nullopt; // The idx of the parent lobe
     double alpha_inertial         = 0;            // The coefficient for the inertial contribution
     double thickness              = 0;            // Each lobe has a thickness
@@ -30,8 +56,8 @@ public:
         // Transform to the coordinate system centered on the center of the ellipse
         // To use eqn (x'/a)^2 + (y'/b)^2
         // The rotation matrix is [  {cos phi x, sin phi x}, {-sin phi x, cos phi x} ]
-        double x_prime = std::cos( azimuthal_angle ) * x + std::sin( azimuthal_angle ) * y;
-        double y_prime = -std::sin( azimuthal_angle ) * x + std::cos( azimuthal_angle ) * y;
+        double x_prime = cos_azimuthal_angle * x + sin_azimuthal_angle * y;
+        double y_prime = -sin_azimuthal_angle * x + cos_azimuthal_angle * y;
 
         double ellipse_lhs = ( x_prime / semi_axes[0] ) * ( x_prime / semi_axes[0] )
                              + ( y_prime / semi_axes[1] ) * ( y_prime / semi_axes[1] );
@@ -44,12 +70,17 @@ public:
     {
         // This matrix transforms coordinates into the axes frame of the ellipse
         // clang-format off
-        MatrixX ellipse_coordinate_transform = { { std::cos( azimuthal_angle ), std::sin( azimuthal_angle ) },
-                                                 { -std::sin( azimuthal_angle ),std::cos( azimuthal_angle ) } };
+        const MatrixX ellipse_coordinate_transform = { { cos_azimuthal_angle, sin_azimuthal_angle },
+                                                 { -sin_azimuthal_angle,cos_azimuthal_angle } };
         //clang-format on
 
-        const Vector2 x1_prime = xt::linalg::dot( ellipse_coordinate_transform, x1 - center  );
-        const Vector2 x2_prime = xt::linalg::dot( ellipse_coordinate_transform, x2 - center  );
+        const Vector2 x1t = x1 - center;
+        const Vector2 x2t = x2 - center;
+
+        // Previously, this used xt::linalg::dot, but the handwritten version is much faster
+        const Vector2 x1_prime = {ellipse_coordinate_transform(0,0) * x1t[0] + ellipse_coordinate_transform(0,1) * x1t[1] , ellipse_coordinate_transform(1,0) * x1t[0] + ellipse_coordinate_transform(1,1) * x1t[1]  };
+        const Vector2 x2_prime = {ellipse_coordinate_transform(0,0) * x2t[0] + ellipse_coordinate_transform(0,1) * x2t[1] , ellipse_coordinate_transform(1,0) * x2t[0] + ellipse_coordinate_transform(1,1) * x2t[1]  };
+
         const Vector2 diff     = x2_prime - x1_prime;
 
         const double a = semi_axes[0];

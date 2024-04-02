@@ -54,8 +54,8 @@ void Simulation::compute_initial_lobe_position( int idx_flow, Lobe & lobe )
 
 void Simulation::perturb_lobe_angle( Lobe & lobe, const Vector2 & slope )
 {
-    lobe.azimuthal_angle    = std::atan2( slope[1], slope[0] ); // Sets the angle prior to perturbation
-    const double slope_norm = xt::linalg::norm( slope, 2 );     // Similar to np.linalg.norm
+    lobe.set_azimuthal_angle( std::atan2( slope[1], slope[0] ) ); // Sets the angle prior to perturbation
+    const double slope_norm = xt::linalg::norm( slope, 2 );       // Similar to np.linalg.norm
     const double slope_deg  = std::atan( slope_norm );
 
     if( input.max_slope_prob < 1 )
@@ -67,13 +67,13 @@ void Simulation::perturb_lobe_angle( Lobe & lobe, const Vector2 & slope )
 
             ProbabilityDist::truncated_normal_distribution<double> dist_truncated( 0, sigma, -Math::pi, Math::pi );
             const double angle_perturbation = dist_truncated( gen );
-            lobe.azimuthal_angle += angle_perturbation;
+            lobe.set_azimuthal_angle( lobe.get_azimuthal_angle() + angle_perturbation );
         }
         else
         {
             std::uniform_real_distribution<double> dist_uniform( -Math::pi, Math::pi );
             const double angle_perturbation = dist_uniform( gen );
-            lobe.azimuthal_angle += angle_perturbation;
+            lobe.set_azimuthal_angle( lobe.get_azimuthal_angle() + angle_perturbation );
         }
     }
 }
@@ -117,10 +117,10 @@ int Simulation::select_parent_lobe( int idx_descendant )
 void Simulation::add_inertial_contribution( Lobe & lobe, const Lobe & parent, const Vector2 & slope ) const
 {
     const double slope_norm = xt::linalg::norm( slope, 2 );
-    double cos_angle_parent = std::cos( parent.azimuthal_angle );
-    double sin_angle_parent = std::sin( parent.azimuthal_angle );
-    double cos_angle_lobe   = std::cos( lobe.azimuthal_angle );
-    double sin_angle_lobe   = std::sin( lobe.azimuthal_angle );
+    double cos_angle_parent = parent.get_cos_azimuthal_angle();
+    double sin_angle_parent = parent.get_sin_azimuthal_angle();
+    double cos_angle_lobe   = lobe.get_cos_azimuthal_angle();
+    double sin_angle_lobe   = lobe.get_sin_azimuthal_angle();
 
     double alpha_inertial = 0.0;
 
@@ -133,7 +133,7 @@ void Simulation::add_inertial_contribution( Lobe & lobe, const Lobe & parent, co
     const double x_avg = ( 1.0 - alpha_inertial ) * cos_angle_parent + alpha_inertial * cos_angle_lobe;
     const double y_avg = ( 1.0 - alpha_inertial ) * sin_angle_parent + alpha_inertial * sin_angle_lobe;
 
-    lobe.azimuthal_angle = std::atan2( y_avg, x_avg );
+    lobe.set_azimuthal_angle( std::atan2( y_avg, x_avg ) );
 }
 
 void Simulation::compute_descendent_lobe_position( Lobe & lobe, const Lobe & parent, Vector2 final_budding_point )
@@ -209,7 +209,7 @@ void Simulation::run()
 
             // Compute the final budding point
             // It is defined by the point on the perimeter of the parent lobe closest to the center of the new lobe
-            Vector2 final_budding_point = lobe_parent.point_at_angle( lobe_cur.azimuthal_angle );
+            Vector2 final_budding_point = lobe_parent.point_at_angle( lobe_cur.get_azimuthal_angle() );
 
             // Get the slope at the final budding point
             auto [height_budding_point, slope_budding_point] = topography.height_and_slope( final_budding_point );
