@@ -153,22 +153,23 @@ void Simulation::run()
         // Build initial lobes which do not propagate descendents
         for( int idx_lobe = 0; idx_lobe < input.n_init; idx_lobe++ )
         {
+            Lobe & lobe_cur = lobes[idx_lobe];
 
-            compute_initial_lobe_position( idx_flow, lobes[idx_lobe] );
+            compute_initial_lobe_position( idx_flow, lobe_cur );
 
             // Compute the thickness of the lobe
-            lobes[idx_lobe].thickness = lobe_dimensions.thickness_min + idx_lobe * delta_lobe_thickness;
+            lobe_cur.thickness = lobe_dimensions.thickness_min + idx_lobe * delta_lobe_thickness;
 
-            auto [height_lobe_center, slope] = topography.height_and_slope( lobes[idx_lobe].center );
+            auto [height_lobe_center, slope] = topography.height_and_slope( lobe_cur.center );
 
             // Perturb the angle (and set it)
-            perturb_lobe_angle( lobes[idx_lobe], slope );
+            perturb_lobe_angle( lobe_cur, slope );
 
             // compute lobe axes
-            compute_lobe_axes( lobes[idx_lobe], slope );
+            compute_lobe_axes( lobe_cur, slope );
 
             // Add rasterized lobe
-            topography.add_lobe( lobes[idx_lobe] );
+            topography.add_lobe( lobe_cur );
         }
 
         // Loop over the rest of the lobes (skipping the initial ones).
@@ -208,6 +209,12 @@ void Simulation::run()
                                             / xt::linalg::norm( final_budding_point - lobe_parent.center );
             Vector2 new_lobe_center = final_budding_point + direction_to_new_lobe * lobe_cur.semi_axes[0];
             lobe_cur.center         = new_lobe_center;
+
+            // Compute the thickness of the lobe
+            lobe_cur.thickness = lobe_dimensions.thickness_min + idx_lobe * delta_lobe_thickness;
+
+            // Add rasterized lobe
+            topography.add_lobe( lobe_cur );
         }
     }
 }
