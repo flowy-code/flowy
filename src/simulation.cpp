@@ -93,6 +93,28 @@ void Simulation::compute_lobe_axes( Lobe & lobe, const Vector2 & slope ) const
     lobe.semi_axes = { semi_major_axis, semi_minor_axis };
 }
 
+// Select which lobe amongst the existing lobes will be the parent for the new descendent lobe
+int Simulation::select_parent_lobe( int idx_descendant )
+{
+    // TODO: implement input.lobe_exponent, input.force_max_length and input.start_from_dist_flag
+    std::uniform_int_distribution<int> dist_int( 0, idx_descendant - 1 );
+    int idx_parent = dist_int( gen );
+
+    lobes[idx_descendant].idx_parent   = idx_parent;
+    lobes[idx_descendant].dist_n_lobes = lobes[idx_parent].dist_n_lobes + 1;
+
+    // Loop over all ancestors and increase n_descendents
+    std::optional<int> idx_parent_current = idx_parent;
+    while( idx_parent_current.has_value() )
+    {
+        Lobe & lobe_current = lobes[idx_parent_current.value()];
+        lobe_current.n_descendents++;
+        idx_parent_current = lobe_current.idx_parent;
+    }
+
+    return idx_parent;
+}
+
 void Simulation::run()
 {
     for( int idx_flow = 0; idx_flow < input.n_flows; idx_flow++ )
@@ -124,6 +146,15 @@ void Simulation::run()
 
             // Add rasterized lobe
             topography.add_lobe( lobes[idx_lobe] );
+        }
+
+        // Loop over the rest of the lobes (skipping the initial ones).
+        // Each lobe is a descendant of a parent lobe
+        for( int idx_lobe = input.n_init; idx_lobe < n_lobes; idx_lobe++ )
+        {
+            // Select which of the previously created lobes is the parent lobe
+            // from which the new descendent lobe will bud
+            auto parent_idx = select_parent_lobe( idx_lobe );
         }
     }
 }

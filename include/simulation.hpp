@@ -45,6 +45,8 @@ public:
     void compute_lobe_axes( Lobe & lobe, const Vector2 & slope ) const; // computed from the terrain slop
     void perturb_lobe_angle( Lobe & lobe, const Vector2 & slope );
 
+    int select_parent_lobe( int idx_descendant );
+
     void run();
 
 private:

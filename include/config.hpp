@@ -48,7 +48,7 @@ public:
     flag `start_from_dist_flag` is set). The closer that `lobe_exponent` is to 0, the
     larger is the probability that the new lobe will be generated from a
     "younger" lobe (which is some "distance", in number of lobes,s away from the vent).
-    lobe_exponent = 1 => th                                                                  e parent lobe is chosen
+    lobe_exponent = 1 => the parent lobe is chosen
     with a uniform probability distribution. lobe_exponent = 0 => the new lobe is generated from the last one.
     */
     double lobe_exponent{};
