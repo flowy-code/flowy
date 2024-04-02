@@ -60,10 +60,10 @@ std::vector<std::array<int, 2>> Topography::get_cells_intersecting_lobe( const L
             Vector2 point_rt = { x_data[idx_x] + cell_size(), y_data[idx_y] + cell_size() };
             // clang-format off
             if(
-                   lobe.is_point_in_lobe( point_lb )
-                || lobe.is_point_in_lobe( point_lt )
-                || lobe.is_point_in_lobe( point_rb )
-                || lobe.is_point_in_lobe( point_rt )
+                   lobe.line_segment_intersects( point_lb,point_rb )
+                || lobe.line_segment_intersects( point_rb,point_rt )
+                || lobe.line_segment_intersects( point_rt,point_lt )
+                || lobe.line_segment_intersects( point_lt,point_lb )
             )
             {
                 res.push_back( { idx_x, idx_y } );

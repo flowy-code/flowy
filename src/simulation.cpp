@@ -3,7 +3,10 @@
 #include "lobe.hpp"
 #include "math.hpp"
 #include "probability_dist.hpp"
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wparentheses"
 #include "xtensor-blas/xlinalg.hpp"
+#pragma GCC diagnostic pop
 #include <algorithm>
 #include <cmath>
 #include <random>
