@@ -8,6 +8,13 @@
 namespace Flowtastic
 {
 
+bool Topography::is_point_near_boundary( const Vector2 & coordinates )
+{
+    const bool near_x_boundary = coordinates[0] < x_data[0] + cell_size() || coordinates[0] >= x_data.periodic( -1 );
+    const bool near_y_boundary = coordinates[1] < y_data[0] + cell_size() || coordinates[1] >= y_data.periodic( -1 );
+    return near_x_boundary || near_y_boundary;
+}
+
 std::array<int, 2> Topography::locate_point( const Vector2 & coordinates )
 {
     const bool outside_x = coordinates[0] < x_data[0] || coordinates[0] >= x_data.periodic( -1 ) + cell_size();

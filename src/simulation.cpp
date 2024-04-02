@@ -195,6 +195,13 @@ void Simulation::run()
 
             Lobe & lobe_parent = lobes[idx_parent];
 
+            // stopping condition (parent lobe close the domain boundary or at a not defined z value)
+            if( topography.is_point_near_boundary( lobe_parent.center )
+                || topography.get_height( lobe_parent.center ) < asc_file.no_data_value + 1 )
+            {
+                break;
+            }
+
             // Find the preliminary budding point on the perimeter of the parent lobe (npoints is the number of raster
             // points on the ellipse)
             Flowtastic::Vector2 budding_point = topography.find_preliminary_budding_point( lobe_parent, input.npoints );

@@ -38,6 +38,12 @@ public:
         return height_data( idx_x, idx_y );
     }
 
+    inline double get_height( const Vector2 & point )
+    {
+        auto [idx_x, idx_y] = locate_point( point );
+        return height_data( idx_x, idx_y );
+    }
+
     inline void set_height( int idx_x, int idx_y, double height )
     {
         height_data( idx_x, idx_y ) = height;
@@ -75,6 +81,9 @@ public:
 
     // Adds the lobe thickness to the topography, according to its fractional intersection with the cells
     void add_lobe( const Lobe & lobe );
+
+    // Check if a point is near the boundary
+    bool is_point_near_boundary( const Vector2 & coordinates );
 
     // Figure out which cell a given point is in, returning the indices of the lowest left corner
     std::array<int, 2> locate_point( const Vector2 & coordinates );
