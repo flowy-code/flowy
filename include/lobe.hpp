@@ -71,19 +71,17 @@ public:
     inline bool line_segment_intersects( const Vector2 & x1, const Vector2 & x2 ) const
     {
         // This matrix transforms coordinates into the axes frame of the ellipse
-        // clang-format off
-        const MatrixX ellipse_coordinate_transform = { { cos_azimuthal_angle, sin_azimuthal_angle },
-                                                 { -sin_azimuthal_angle,cos_azimuthal_angle } };
-        //clang-format on
+        const double cos = cos_azimuthal_angle;
+        const double sin = sin_azimuthal_angle;
 
         const Vector2 x1t = x1 - center;
         const Vector2 x2t = x2 - center;
 
-        // Previously, this used xt::linalg::dot, but the handwritten version is much faster
-        const Vector2 x1_prime = {ellipse_coordinate_transform(0,0) * x1t[0] + ellipse_coordinate_transform(0,1) * x1t[1] , ellipse_coordinate_transform(1,0) * x1t[0] + ellipse_coordinate_transform(1,1) * x1t[1]  };
-        const Vector2 x2_prime = {ellipse_coordinate_transform(0,0) * x2t[0] + ellipse_coordinate_transform(0,1) * x2t[1] , ellipse_coordinate_transform(1,0) * x2t[0] + ellipse_coordinate_transform(1,1) * x2t[1]  };
+        // Previously, this was implemented as a matrix multiplication with xtensor, but the handwritten version is much faster
+        const Vector2 x1_prime = { cos * x1t[0] + sin * x1t[1], -sin * x1t[0] + cos * x1t[1] };
+        const Vector2 x2_prime = { cos * x2t[0] + sin * x2t[1], -sin * x2t[0] + cos * x2t[1] };
 
-        const Vector2 diff     = x2_prime - x1_prime;
+        const Vector2 diff = x2_prime - x1_prime;
 
         const double a = semi_axes[0];
         const double b = semi_axes[1];
@@ -95,55 +93,55 @@ public:
 
         // Plugging this into the ellipse equation, yields an equation for t
         // alpha * t^2 + beta * t + gamma = 0
-        const double a2 = a*a;
-        const double b2 = b*b;
+        const double a2 = a * a;
+        const double b2 = b * b;
 
-        const double alpha = 1.0 / ( a2 ) * ( diff[0] * diff[0] ) + 1.0 /  b2  * ( diff[1] * diff[1] );
-        const double beta  = 2.0 * ( x1_prime[0] * diff[0] / a2  + x1_prime[1] * diff[1] / b2  );
-        const double gamma = x1_prime[0] * x1_prime[0] /  a2  + x1_prime[1] * x1_prime[1] /  b2  - 1.0;
+        const double alpha = 1.0 / ( a2 ) * ( diff[0] * diff[0] ) + 1.0 / b2 * ( diff[1] * diff[1] );
+        const double beta  = 2.0 * ( x1_prime[0] * diff[0] / a2 + x1_prime[1] * diff[1] / b2 );
+        const double gamma = x1_prime[0] * x1_prime[0] / a2 + x1_prime[1] * x1_prime[1] / b2 - 1.0;
 
         // The solution to this quadratic equation is
         // t = (-beta +- sqrt(beta^2 - 4*alpha*gamma)) / (2*alpha)
-        
-        // Therefore, if beta^2 - 4*alpha*gamma < 0, the line segment misses the ellipse
-        const double radicand = beta*beta - 4*alpha*gamma;
-        if (radicand < 0)
-            return false;
-        
-        const double sqrt_r = std::sqrt(radicand);
-        
-        // Else, we compute the two points of intersection and check if they fall into the interval [0, 1]
-        const double t1 = (-beta - sqrt_r) / (2.0*alpha);
-        const double t2 = (-beta + sqrt_r) / (2.0*alpha);
 
-        if (t1 >= 0.0 && t1 <= 1.0)
+        // Therefore, if beta^2 - 4*alpha*gamma < 0, the line segment misses the ellipse
+        const double radicand = beta * beta - 4 * alpha * gamma;
+        if( radicand < 0 )
+            return false;
+
+        const double sqrt_r = std::sqrt( radicand );
+
+        // Else, we compute the two points of intersection and check if they fall into the interval [0, 1]
+        const double t1 = ( -beta - sqrt_r ) / ( 2.0 * alpha );
+        const double t2 = ( -beta + sqrt_r ) / ( 2.0 * alpha );
+
+        if( t1 >= 0.0 && t1 <= 1.0 )
             return true;
 
-        if (t2 >= 0.0 && t2 <= 1.0)
+        if( t2 >= 0.0 && t2 <= 1.0 )
             return true;
 
         return false;
     }
 
-
     // Gives a point on the perimeter of the ellipse
     // The angle is relative to the semi major axis angle
-    inline Vector2 point_at_angle(const double phi) const
+    inline Vector2 point_at_angle( const double phi ) const
     {
-        const double a = semi_axes[0]; // major axis
-        const double b = semi_axes[1]; // minor axis
-        const Vector2 coord = {a * std::cos(phi)*cos_azimuthal_angle - b*std::sin(phi)*sin_azimuthal_angle, a*std::cos(phi)*sin_azimuthal_angle + b*std::sin(phi)*cos_azimuthal_angle};
+        const double a      = semi_axes[0]; // major axis
+        const double b      = semi_axes[1]; // minor axis
+        const Vector2 coord = { a * std::cos( phi ) * cos_azimuthal_angle - b * std::sin( phi ) * sin_azimuthal_angle,
+                                a * std::cos( phi ) * sin_azimuthal_angle + b * std::sin( phi ) * cos_azimuthal_angle };
         return coord + center;
     }
 
-    inline std::vector<Vector2> rasterize_perimeter(int n_raster_points) const
+    inline std::vector<Vector2> rasterize_perimeter( int n_raster_points ) const
     {
-        auto phi_list = xt::linspace<double>(0.0, 2.0*Math::pi, n_raster_points, false);
-        auto res = std::vector<Vector2>(n_raster_points);
+        auto phi_list = xt::linspace<double>( 0.0, 2.0 * Math::pi, n_raster_points, false );
+        auto res      = std::vector<Vector2>( n_raster_points );
 
-        for (int idx_phi=0; idx_phi<n_raster_points; idx_phi++)
+        for( int idx_phi = 0; idx_phi < n_raster_points; idx_phi++ )
         {
-            res[idx_phi] = point_at_angle(phi_list[idx_phi]);
+            res[idx_phi] = point_at_angle( phi_list[idx_phi] );
         }
 
         return res;
