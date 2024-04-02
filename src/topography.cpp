@@ -26,7 +26,7 @@ std::array<int, 2> Topography::locate_point( const Vector2 & coordinates )
 Topography::BoundingBox Topography::bounding_box( const Vector2 & center, double radius )
 {
     const auto [idx_x_lower, idx_y_lower] = locate_point( center );
-    int number_of_cells_to_include        = std::ceil( radius / cell_size() );
+    const int number_of_cells_to_include        = std::ceil( radius / cell_size() );
 
     Topography::BoundingBox res{};
     res.idx_x_lower  = std::clamp<int>( idx_x_lower - number_of_cells_to_include, 0, x_data.size() - 1 );
@@ -73,7 +73,7 @@ std::vector<std::array<int, 2>> Topography::get_cells_intersecting_lobe( const L
 
 std::vector<std::pair<std::array<int, 2>, double>> Topography::compute_intersection( const Lobe & lobe, int N )
 {
-    double N2               = N * N;
+    const double N2               = N * N;
     auto cells_to_rasterize = get_cells_intersecting_lobe( lobe );
 
     std::vector<std::pair<std::array<int, 2>, double>> res{};
