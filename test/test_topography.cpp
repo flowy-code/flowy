@@ -1,3 +1,4 @@
+#include "catch2/matchers/internal/catch_matchers_impl.hpp"
 #include "definitions.hpp"
 #include "fmt/core.h"
 #include "lobe.hpp"
@@ -119,4 +120,33 @@ TEST_CASE( "test_compute_intersection", "[intersection]" )
         REQUIRE_THAT( indices, Catch::Matchers::RangeEquals( cell_indices_expected[i] ) );
         REQUIRE_THAT( fraction, Catch::Matchers::WithinRel( expected_area_fraction, 5e-2 ) );
     }
+}
+
+TEST_CASE( "find_preliminary_budding_point", "[budding_pointgh]" )
+{
+    Flowtastic::VectorX x_data      = xt::arange<double>( -2, 2, 1.0 );
+    Flowtastic::VectorX y_data      = xt::arange<double>( -2, 2, 1.0 );
+    Flowtastic::MatrixX height_data = 5.0 * xt::ones<double>( { x_data.size(), y_data.size() } );
+    height_data( 3, 3 )             = -5.0;
+
+    auto topography = Flowtastic::Topography( height_data, x_data, y_data );
+
+    Flowtastic::Lobe my_lobe;
+    my_lobe.center          = { 0, 0 };
+    my_lobe.semi_axes       = { 0.8, 0.8 };
+    my_lobe.azimuthal_angle = 0.0;
+
+    auto perimeter = my_lobe.rasterize_perimeter( 4 );
+    for( auto & p : perimeter )
+    {
+        fmt::print( "p = {}\n", fmt::streamed( p ) );
+        fmt::print( "height = {}\n\n", topography.height_and_slope( p ).first );
+    }
+
+    Flowtastic::Vector2 budding_point = topography.find_preliminary_budding_point( my_lobe, 32 );
+
+    fmt::print( "budding_point  = {}", budding_point );
+
+    // The budding point should be on the diagonal
+    REQUIRE_THAT( budding_point[0], Catch::Matchers::WithinRel( budding_point[1] ) );
 }

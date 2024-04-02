@@ -141,12 +141,12 @@ std::pair<double, Vector2> Topography::height_and_slope( const Vector2 & coordin
     // f(0,1) = z01
     // f(1,1) = z11
     // c = f(0,0)
-    // alpha = f(1,0) - f(0,0)
-    // beta  = f(0,1) - f(0,0)
+    // alpha = f(0,1) - f(0,0)
+    // beta  = f(1,0) - f(0,0)
     // gamma = f(1,1) - f(1,0) + f(0,0) - f(0,1)
     const double c     = z00;
-    const double alpha = z10 - z00;
-    const double beta  = z01 - z00;
+    const double alpha = z01 - z00;
+    const double beta  = z10 - z00;
     const double gamma = z11 - z10 + z00 - z01;
 
     // Finally we get the desired value of z at the coordinatex (xc, yc)
