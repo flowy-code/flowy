@@ -5,11 +5,6 @@
 #include <optional>
 #include <vector>
 
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wparentheses"
-#include <xtensor-blas/xlinalg.hpp>
-#pragma GCC diagnostic pop
-
 namespace Flowtastic
 {
 
@@ -92,6 +87,9 @@ public:
         return false;
     }
 
+
+    // Gives a point on the perimeter of the ellipse
+    // The angle is relative to the semi major axis angle
     inline Vector2 point_at_angle(const double phi) const
     {
         const double a = semi_axes[0]; // major axis

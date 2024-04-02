@@ -3,10 +3,6 @@
 #include "lobe.hpp"
 #include "math.hpp"
 #include "probability_dist.hpp"
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wparentheses"
-#include "xtensor-blas/xlinalg.hpp"
-#pragma GCC diagnostic pop
 #include <algorithm>
 #include <cmath>
 #include <random>
@@ -137,6 +133,14 @@ void Simulation::add_inertial_contribution( Lobe & lobe, const Lobe & parent, co
     lobe.azimuthal_angle = std::atan2( y_avg, x_avg );
 }
 
+void Simulation::compute_descendent_lobe_position( Lobe & lobe, const Lobe & parent, Vector2 final_budding_point )
+{
+    Vector2 direction_to_new_lobe
+        = ( final_budding_point - parent.center ) / xt::linalg::norm( final_budding_point - parent.center );
+    Vector2 new_lobe_center = final_budding_point + direction_to_new_lobe * lobe.semi_axes[0];
+    lobe.center             = new_lobe_center;
+}
+
 void Simulation::run()
 {
     for( int idx_flow = 0; idx_flow < input.n_flows; idx_flow++ )
@@ -205,10 +209,9 @@ void Simulation::run()
 
             // compute the new lobe axes
             compute_lobe_axes( lobe_cur, slope_budding_point );
-            Vector2 direction_to_new_lobe = ( final_budding_point - lobe_parent.center )
-                                            / xt::linalg::norm( final_budding_point - lobe_parent.center );
-            Vector2 new_lobe_center = final_budding_point + direction_to_new_lobe * lobe_cur.semi_axes[0];
-            lobe_cur.center         = new_lobe_center;
+
+            // Get new lobe center
+            compute_descendent_lobe_position( lobe_cur, lobe_parent, final_budding_point );
 
             // Compute the thickness of the lobe
             lobe_cur.thickness = lobe_dimensions.thickness_min + idx_lobe * delta_lobe_thickness;

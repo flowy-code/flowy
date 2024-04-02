@@ -3,10 +3,6 @@
 #include "lobe.hpp"
 #include "math.hpp"
 #include "simulation.hpp"
-#include "xtensor-blas/xlinalg.hpp"
-#include "xtensor/xbuilder.hpp"
-#include "xtensor/xmath.hpp"
-#include "xtensor/xtensor_forward.hpp"
 #include <fmt/format.h>
 #include <fmt/ostream.h>
 #include <catch2/catch_test_macros.hpp>
@@ -61,4 +57,28 @@ TEST_CASE( "perturb_angle", "[perturb_angle]" )
 
     REQUIRE_THAT( mean, Catch::Matchers::WithinAbs( 0, 0.01 ) );
     REQUIRE( sigma < sigma_gaussian );
+}
+
+TEST_CASE( "budding_point", "[budding_point]" )
+{
+    using namespace Flowtastic;
+
+    Lobe lobe_parent;
+    lobe_parent.center          = { -0.5, 0.5 };
+    lobe_parent.semi_axes       = { std::sqrt( 2 ) / 2, std::sqrt( 2 ) / 4 };
+    lobe_parent.azimuthal_angle = { -Math::pi / 4 };
+
+    Lobe lobe_cur;
+    lobe_cur.semi_axes = lobe_parent.semi_axes;
+
+    Vector2 final_budding_point = lobe_parent.point_at_angle( 0 );
+
+    Simulation::compute_descendent_lobe_position( lobe_cur, lobe_parent, final_budding_point );
+
+    fmt::print( "budding_point = {}\n", fmt::streamed( final_budding_point ) );
+    fmt::print( "lobe_cur.center = {}\n", fmt::streamed( lobe_cur.center ) );
+
+    Vector2 lobe_center_expected = { 0.5, -0.5 };
+
+    REQUIRE( xt::isclose( lobe_cur.center, lobe_center_expected )() );
 }

@@ -25,7 +25,7 @@ exe = executable('flowtastic', sources + 'src/main.cpp',
 tests = [
   ['Test_ASC', 'test/test_asc.cpp'],
   ['Test_Slope', 'test/test_slope.cpp'],
-  ['Test_Perturb_Angle', 'test/test_perturb_angle.cpp'],
+  ['Test_Simulation', 'test/test_simulation.cpp'],
   ['Test_Topography', 'test/test_topography.cpp'],
   ['Test_Lobe', 'test/test_lobe.cpp'],
 ]
