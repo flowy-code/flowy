@@ -24,14 +24,15 @@ _deps = [
   dependency('tomlplusplus')
 ]
 
-flowy_executable = executable('flowy', _sources + 'src/main.cpp',
+flowyexe = executable('flowy', 
+  _sources + 'src/main.cpp',
   install : true,
   dependencies : _deps,
   include_directories : incdir,
   cpp_args : cpp_args
 )
 
-flowy_shared_lib = library('flowy', 
+flowylib = library('flowy', 
   _sources, 
   install:true, 
   dependencies : _deps, 
