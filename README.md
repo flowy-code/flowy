@@ -1,6 +1,5 @@
 # Flowtastic - A code to simulate lava emplacement.
-
-![Logo](res/logo.png "Flowtastic Logo")
+<img src="res/logo.png" width="200"/>
 
 ## About 
 
