@@ -54,9 +54,11 @@ Topography::BoundingBox Topography::bounding_box( const Vector2 & center, double
     return res;
 }
 
-std::vector<std::array<int, 2>> Topography::get_cells_intersecting_lobe( const Lobe & lobe )
+std::pair<std::vector<std::array<int, 2>>, std::vector<std::array<int, 2>>>
+Topography::get_cells_intersecting_lobe( const Lobe & lobe )
 {
-    std::vector<std::array<int, 2>> res{};
+    std::vector<std::array<int, 2>> cells_intersecting{};
+    std::vector<std::array<int, 2>> cells_enclosed{};
 
     // First, we find all candidates with the bounding_box function from the topography
     const auto bbox = bounding_box( lobe.center, lobe.semi_axes[0] );
@@ -79,26 +81,34 @@ std::vector<std::array<int, 2>> Topography::get_cells_intersecting_lobe( const L
                 || lobe.line_segment_intersects( point_lt,point_lb )
             )
             {
-                res.push_back( { idx_x, idx_y } );
+                cells_intersecting.push_back( { idx_x, idx_y } );
+            } else {
+                if (lobe.is_point_in_lobe(point_lb))
+                    cells_enclosed.push_back( {idx_x, idx_y} );
             }
             // clang-format on
         }
     }
 
-    return res;
+    return { cells_intersecting, cells_enclosed };
 }
 
 std::vector<std::pair<std::array<int, 2>, double>> Topography::compute_intersection( const Lobe & lobe, int N )
 {
-    const double N2         = N * N;
-    auto cells_to_rasterize = get_cells_intersecting_lobe( lobe );
+    const double N2                           = N * N;
+    auto [cells_intersecting, cells_enclosed] = get_cells_intersecting_lobe( lobe );
 
     std::vector<std::pair<std::array<int, 2>, double>> res{};
-    res.reserve( cells_to_rasterize.size() );
+    res.reserve( cells_intersecting.size() + cells_enclosed.size() );
 
     const double step = cell_size() / N;
 
-    for( const auto & [idx_x, idx_y] : cells_to_rasterize )
+    for( const auto & [idx_x, idx_y] : cells_enclosed )
+    {
+        res.push_back( { { idx_x, idx_y }, 1.0 } );
+    }
+
+    for( const auto & [idx_x, idx_y] : cells_intersecting )
     {
         double n_hits = 0.0;
 
@@ -117,6 +127,7 @@ std::vector<std::pair<std::array<int, 2>, double>> Topography::compute_intersect
         const double fraction = n_hits / N2;
         res.push_back( { { idx_x, idx_y }, fraction } );
     }
+
     return res;
 }
 

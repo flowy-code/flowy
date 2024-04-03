@@ -78,12 +78,12 @@ TEST_CASE( "get_cells_intersecting_lobe", "[intersecting_lobe_cells]" )
         { 2, 3 } };
     // clang-format on
 
-    auto cell_indices = topography.get_cells_intersecting_lobe( my_lobe );
+    auto [cells_intersecting, cells_enclosed] = topography.get_cells_intersecting_lobe( my_lobe );
 
-    for( size_t i = 0; i < cell_indices.size(); i++ )
+    for( size_t i = 0; i < cells_intersecting.size(); i++ )
     {
-        fmt::print( " {} \n", cell_indices[i] );
-        REQUIRE_THAT( cell_indices[i], Catch::Matchers::RangeEquals( cell_indices_expected[i] ) );
+        fmt::print( " {} \n", cells_intersecting[i] );
+        REQUIRE_THAT( cells_intersecting[i], Catch::Matchers::RangeEquals( cell_indices_expected[i] ) );
     }
 }
 

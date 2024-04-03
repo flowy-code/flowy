@@ -72,8 +72,9 @@ public:
     // Is completely contained in the bounding box
     BoundingBox bounding_box( const Vector2 & center, double radius );
 
-    // Find all the cells that intersect the lobe
-    std::vector<std::array<int, 2>> get_cells_intersecting_lobe( const Lobe & lobe );
+    // Find all the cells that intersect the lobe and all the cells that are fully enclosed by the lobe
+    std::pair<std::vector<std::array<int, 2>>, std::vector<std::array<int, 2>>>
+    get_cells_intersecting_lobe( const Lobe & lobe );
 
     // Find the fraction of the cells covered by the lobe by rasterizing each cell
     // into a grid of N*N points
