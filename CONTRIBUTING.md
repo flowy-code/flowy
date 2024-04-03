@@ -4,7 +4,7 @@
 We love pull requests from everyone. By participating in this project, you
 agree to abide by the contributor covenant suggested [code of conduct].
 
-[code of conduct]: https://github.com/flowtastic-code/flowtastic/blob/main/CODE_OF_CONDUCT.md
+[code of conduct]: https://github.com/flowy-code/flowy/blob/main/CODE_OF_CONDUCT.md
 
 Do make sure to run tests and generally **BE PREPARED** to have your code vetted and
 checked. Do **NOT** submit code you would not be prepared to defend or maintain,
@@ -12,7 +12,7 @@ unless you are fixing a bug.
 
 Push to your fork and [submit a pull request][pr].
 
-[pr]: https://github.com/flowtastic-code/flowtastic/compare
+[pr]: https://github.com/flowy-code/flowy/compare
 
 At this point you're waiting on us. We like to at least comment on pull requests
 within four business days (and, typically, three business day). We may suggest

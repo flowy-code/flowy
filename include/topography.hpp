@@ -4,7 +4,7 @@
 #include "lobe.hpp"
 #include <utility>
 
-namespace Flowtastic
+namespace Flowy
 {
 
 class Topography
@@ -94,4 +94,4 @@ public:
     Vector2 find_preliminary_budding_point( const Lobe & lobe, int npoints );
 };
 
-} // namespace Flowtastic
+} // namespace Flowy

@@ -6,7 +6,7 @@
 #include <algorithm>
 #include <stdexcept>
 
-namespace Flowtastic
+namespace Flowy
 {
 
 AscFile Topography::to_asc_file()
@@ -198,4 +198,4 @@ Vector2 Topography::find_preliminary_budding_point( const Lobe & lobe, int npoin
     return *min_elevation_point_it;
 }
 
-} // namespace Flowtastic
+} // namespace Flowy

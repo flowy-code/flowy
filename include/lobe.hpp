@@ -5,7 +5,7 @@
 #include <optional>
 #include <vector>
 
-namespace Flowtastic
+namespace Flowy
 {
 
 class Lobe
@@ -148,4 +148,4 @@ public:
     }
 };
 
-} // namespace Flowtastic
+} // namespace Flowy

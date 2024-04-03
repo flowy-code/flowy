@@ -8,7 +8,7 @@
 #include <random>
 #include <vector>
 
-namespace Flowtastic
+namespace Flowy
 {
 
 class CommonLobeDimensions
@@ -96,4 +96,4 @@ private:
     std::mt19937 gen{};
 };
 
-} // namespace Flowtastic
+} // namespace Flowy

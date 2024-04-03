@@ -9,7 +9,7 @@
 #include <xtensor/xtensor.hpp>
 #include <xtensor/xtensor_config.hpp>
 
-namespace Flowtastic::Utility
+namespace Flowy::Utility
 {
 /**
  * @brief Dump tensor to CSV. This is just a copy of the xtensor::dump_csv,
@@ -49,4 +49,4 @@ void dump_csv( std::ostream & stream, const xt::xexpression<E> & e, const char &
         }
     }
 }
-} // namespace Flowtastic::Utility
+} // namespace Flowy::Utility

@@ -16,13 +16,13 @@
 
 TEST_CASE( "bounding_box", "[bounding_box]" )
 {
-    Flowtastic::VectorX x_data      = xt::arange<double>( 0.5, 19.5, 1.0 );
-    Flowtastic::VectorX y_data      = xt::arange<double>( 4.5, 10.5, 1.0 );
-    Flowtastic::MatrixX height_data = xt::zeros<double>( { x_data.size(), y_data.size() } );
+    Flowy::VectorX x_data      = xt::arange<double>( 0.5, 19.5, 1.0 );
+    Flowy::VectorX y_data      = xt::arange<double>( 4.5, 10.5, 1.0 );
+    Flowy::MatrixX height_data = xt::zeros<double>( { x_data.size(), y_data.size() } );
 
-    auto topography = Flowtastic::Topography( height_data, x_data, y_data );
+    auto topography = Flowy::Topography( height_data, x_data, y_data );
 
-    Flowtastic::Vector2 point = { 11.4, 7.6 };
+    Flowy::Vector2 point = { 11.4, 7.6 };
 
     int idx_point_x_expected  = 10;
     int idx_point_y_expected  = 3;
@@ -55,16 +55,16 @@ TEST_CASE( "bounding_box", "[bounding_box]" )
 
 TEST_CASE( "get_cells_intersecting_lobe", "[intersecting_lobe_cells]" )
 {
-    Flowtastic::VectorX x_data      = xt::arange<double>( -2.0, 2.0, 1.0 );
-    Flowtastic::VectorX y_data      = xt::arange<double>( -2.0, 2.0, 1.0 );
-    Flowtastic::MatrixX height_data = xt::zeros<double>( { x_data.size(), y_data.size() } ); // not really needed here
+    Flowy::VectorX x_data      = xt::arange<double>( -2.0, 2.0, 1.0 );
+    Flowy::VectorX y_data      = xt::arange<double>( -2.0, 2.0, 1.0 );
+    Flowy::MatrixX height_data = xt::zeros<double>( { x_data.size(), y_data.size() } ); // not really needed here
 
-    auto topography = Flowtastic::Topography( height_data, x_data, y_data );
+    auto topography = Flowy::Topography( height_data, x_data, y_data );
 
-    Flowtastic::Lobe my_lobe;
+    Flowy::Lobe my_lobe;
     my_lobe.center    = { 0.0, 0.0 };
     my_lobe.semi_axes = { 1.95, 0.95 };
-    my_lobe.set_azimuthal_angle( Flowtastic::Math::pi / 2.0 );
+    my_lobe.set_azimuthal_angle( Flowy::Math::pi / 2.0 );
 
     // clang-format off
     std::vector<std::array<int, 2>> cell_indices_expected = { 
@@ -89,13 +89,13 @@ TEST_CASE( "get_cells_intersecting_lobe", "[intersecting_lobe_cells]" )
 
 TEST_CASE( "test_compute_intersection", "[intersection]" )
 {
-    Flowtastic::VectorX x_data      = xt::arange<double>( -3, 3, 1.0 );
-    Flowtastic::VectorX y_data      = xt::arange<double>( -3, 3, 1.0 );
-    Flowtastic::MatrixX height_data = xt::zeros<double>( { x_data.size(), y_data.size() } );
+    Flowy::VectorX x_data      = xt::arange<double>( -3, 3, 1.0 );
+    Flowy::VectorX y_data      = xt::arange<double>( -3, 3, 1.0 );
+    Flowy::MatrixX height_data = xt::zeros<double>( { x_data.size(), y_data.size() } );
 
-    auto topography = Flowtastic::Topography( height_data, x_data, y_data );
+    auto topography = Flowy::Topography( height_data, x_data, y_data );
 
-    Flowtastic::Lobe my_lobe;
+    Flowy::Lobe my_lobe;
     my_lobe.center    = { 0, 0 };
     my_lobe.semi_axes = { 1 - 1e-14, 1 - 1e-14 };
     my_lobe.set_azimuthal_angle( 0 );
@@ -107,7 +107,7 @@ TEST_CASE( "test_compute_intersection", "[intersection]" )
         { 3, 2 },
         { 3, 3 } };
     // clang-format on
-    double expected_area_fraction = Flowtastic::Math::pi / 4.0;
+    double expected_area_fraction = Flowy::Math::pi / 4.0;
 
     auto intersection_data = topography.compute_intersection( my_lobe, 30 );
 
@@ -124,15 +124,15 @@ TEST_CASE( "test_compute_intersection", "[intersection]" )
 
 TEST_CASE( "find_preliminary_budding_point", "[budding_point]" )
 {
-    Flowtastic::VectorX x_data      = xt::arange<double>( -2, 2, 1.0 );
-    Flowtastic::VectorX y_data      = xt::arange<double>( -2, 2, 1.0 );
-    Flowtastic::MatrixX height_data = 5.0 * xt::ones<double>( { x_data.size(), y_data.size() } );
+    Flowy::VectorX x_data      = xt::arange<double>( -2, 2, 1.0 );
+    Flowy::VectorX y_data      = xt::arange<double>( -2, 2, 1.0 );
+    Flowy::MatrixX height_data = 5.0 * xt::ones<double>( { x_data.size(), y_data.size() } );
 
-    auto topography = Flowtastic::Topography( height_data, x_data, y_data );
+    auto topography = Flowy::Topography( height_data, x_data, y_data );
 
     topography.set_height( { 0.5, 0.5 }, -5.0 );
 
-    Flowtastic::Lobe my_lobe;
+    Flowy::Lobe my_lobe;
     my_lobe.center    = { 0, 0 };
     my_lobe.semi_axes = { 0.8, 0.8 };
     my_lobe.set_azimuthal_angle( 0.0 );
@@ -144,7 +144,7 @@ TEST_CASE( "find_preliminary_budding_point", "[budding_point]" )
         fmt::print( "height = {}\n\n", topography.height_and_slope( p ).first );
     }
 
-    Flowtastic::Vector2 budding_point = topography.find_preliminary_budding_point( my_lobe, 32 );
+    Flowy::Vector2 budding_point = topography.find_preliminary_budding_point( my_lobe, 32 );
 
     fmt::print( "budding_point  = {}", budding_point );
 

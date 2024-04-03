@@ -2,7 +2,7 @@ import numpy as np
 import pandas as pd
 
 dataframe = pd.read_csv(
-    "/home/moritz/lavaflow/flowtastic/examples/ETNA_LFS1/tinit_33.asc",
+    "/home/moritz/lavaflow/flowy/examples/ETNA_LFS1/tinit_33.asc",
     skiprows=6,
     delimiter=" ",
     header=None

@@ -10,7 +10,7 @@
 
 TEST_CASE( "height_and_slope_test", "[topography]" )
 {
-    auto topography = Flowtastic::Topography();
+    auto topography = Flowy::Topography();
     // x and y axes have the usual meaning: we assume that the y axis is already "flipped" from the ASC file default
     // (top to down)
     topography.height_data = { { 4.0, 1.0 }, { 4.0, 1.0 } };
@@ -23,10 +23,10 @@ TEST_CASE( "height_and_slope_test", "[topography]" )
     topography.set_height( 0, 1, 1 ); // Top row to 1
     topography.set_height( 1, 1, 1 ); // Top row to 1
 
-    Flowtastic::Vector2 coord = { 1.5, 3 };
+    Flowy::Vector2 coord = { 1.5, 3 };
     // Expected values
     auto height_expected = 0.5 * ( topography.height_data( 0, 0 ) + topography.height_data( 0, 1 ) );
-    Flowtastic::Vector2 slope_expected
+    Flowy::Vector2 slope_expected
         = { 0.0, ( topography.height_data( 0, 1 ) - topography.height_data( 0, 0 ) ) / topography.cell_size() };
 
     auto [height, slope] = topography.height_and_slope( coord );

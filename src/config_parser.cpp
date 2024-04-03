@@ -3,7 +3,7 @@
 #include <toml++/toml.h>
 #include <stdexcept>
 
-namespace Flowtastic::Config
+namespace Flowy::Config
 {
 
 void set_if_specified( auto & opt, const auto & toml_opt )
@@ -114,4 +114,4 @@ InputParams parse_config( const std::filesystem::path & path )
 
     return params;
 }
-} // namespace Flowtastic::Config
+} // namespace Flowy::Config

@@ -1,4 +1,4 @@
-name: flowtasticenv
+name: flowyenv
 channels:
   - conda-forge
 dependencies:

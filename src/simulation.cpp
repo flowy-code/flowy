@@ -11,7 +11,7 @@
 #include <random>
 #include <stdexcept>
 
-namespace Flowtastic
+namespace Flowy
 {
 
 CommonLobeDimensions::CommonLobeDimensions( const Config::InputParams & input, const AscFile & asc_file )
@@ -207,7 +207,7 @@ void Simulation::run()
 
             // Find the preliminary budding point on the perimeter of the parent lobe (npoints is the number of raster
             // points on the ellipse)
-            Flowtastic::Vector2 budding_point = topography.find_preliminary_budding_point( lobe_parent, input.npoints );
+            Flowy::Vector2 budding_point = topography.find_preliminary_budding_point( lobe_parent, input.npoints );
 
             auto [height_lobe_center, slope_parent] = topography.height_and_slope( lobe_parent.center );
 
@@ -252,4 +252,4 @@ void Simulation::run()
     asc_file.save( input.output_folder / "output.asc" );
 }
 
-} // namespace Flowtastic
+} // namespace Flowy

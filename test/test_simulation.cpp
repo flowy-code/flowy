@@ -13,7 +13,7 @@
 TEST_CASE( "perturb_angle", "[perturb_angle]" )
 {
     namespace fs = std::filesystem;
-    using namespace Flowtastic;
+    using namespace Flowy;
 
     auto proj_root_path = fs::current_path();
     // Stupidly, we need an asc file to construct Simulation at the moment
@@ -61,7 +61,7 @@ TEST_CASE( "perturb_angle", "[perturb_angle]" )
 
 TEST_CASE( "budding_point", "[budding_point]" )
 {
-    using namespace Flowtastic;
+    using namespace Flowy;
 
     Lobe lobe_parent;
     lobe_parent.center    = { -0.5, 0.5 };

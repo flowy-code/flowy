@@ -10,9 +10,9 @@ namespace fs = std::filesystem;
 
 int main( int argc, char * argv[] )
 {
-    using namespace Flowtastic;
+    using namespace Flowy;
 
-    argparse::ArgumentParser program( "flowtastic" );
+    argparse::ArgumentParser program( "flowy" );
 
     program.add_argument( "config_file" ).help( "The config file to be used. Has to be in TOML format." );
     program.add_argument( "-a", "--asc_file" ).help( "The .asc file to be used for the terrain." );

@@ -3,7 +3,7 @@
 #include <filesystem>
 #include <optional>
 
-namespace Flowtastic
+namespace Flowy
 {
 
 struct AscCrop
@@ -34,4 +34,4 @@ public:
         y_data{}; // one dimensional coordinates of the sampling grid in y direction (the lower left corner of each pixel)
 };
 
-} // namespace Flowtastic
+} // namespace Flowy

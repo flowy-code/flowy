@@ -1,9 +1,9 @@
-# Flowtastic - A code to simulate lava emplacement.
+# Flowy - A code to simulate lava emplacement.
 <img src="res/logo.png" width="200"/>
 
 ## About 
 
-Flowtastic is a probabilistic code to simulate the emplacement of lava. It is a re-implementation of the Mr. Lava Loba method [1,2] in C++20.
+Flowy is a probabilistic code to simulate the emplacement of lava. It is a re-implementation of the Mr. Lava Loba method [1,2] in C++20.
 
 ## Installation of dependencies with [`micromamba`](https://mamba.readthedocs.io/en/latest/user_guide/micromamba.html)
 To install micromamba, execute
@@ -17,7 +17,7 @@ Then, create and activate the environment.
 
 ```bash
 micromamba create -f environment.yml
-micromamba activate flowtasticenv
+micromamba activate flowyenv
 ```
 
 ## Compilation and Installation
@@ -29,7 +29,7 @@ meson setup build
 meson compile -C build
 ```
 
-To install `flowtastic` to your `conda` environment, run the following:
+To install `flowy` to your `conda` environment, run the following:
 
 ```bash
 meson setup build --prefix $CONDA_PREFIX

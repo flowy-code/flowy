@@ -113,7 +113,7 @@ def plot_height_data_pyplot(path_asc_file_initial: Path, path_asc_file_final: Pa
 
 
 if __name__ == "__main__":
-    path_asc_file_initial = "/home/moritz/lavaflow/flowtastic/output_hawai/initial.asc"
-    path_asc_file_final = "/home/moritz/lavaflow/flowtastic/output_hawai/output.asc"
+    path_asc_file_initial = "/home/moritz/lavaflow/flowy/output_hawai/initial.asc"
+    path_asc_file_final = "/home/moritz/lavaflow/flowy/output_hawai/output.asc"
     plot_height_data_pyvista(path_asc_file_initial, path_asc_file_final)
     plot_height_data_pyplot(path_asc_file_initial, path_asc_file_final)

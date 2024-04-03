@@ -4,7 +4,7 @@
 #include <optional>
 #include <string>
 
-namespace Flowtastic::Config
+namespace Flowy::Config
 {
 
 class InputParams
@@ -204,4 +204,4 @@ public:
     std::optional<std::vector<double>> restart_filling_parameters{};
 };
 
-} // namespace Flowtastic::Config
+} // namespace Flowy::Config

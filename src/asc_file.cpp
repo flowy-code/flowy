@@ -5,7 +5,7 @@
 #include <fstream>
 #include <stdexcept>
 
-namespace Flowtastic
+namespace Flowy
 {
 
 AscFile::AscFile( const std::filesystem::path & path, std::optional<AscCrop> crop )
@@ -106,4 +106,4 @@ void AscFile::save( const std::filesystem::path & path )
     file.close();
 }
 
-} // namespace Flowtastic
+} // namespace Flowy

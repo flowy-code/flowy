@@ -1,7 +1,7 @@
-#include "flowtastic.hpp"
+#include "flowy.hpp"
 #include "simulation.hpp"
 
-namespace Flowtastic
+namespace Flowy
 {
 
-} // namespace Flowtastic
+} // namespace Flowy

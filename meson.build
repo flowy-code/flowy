@@ -1,4 +1,4 @@
-project('flowtastic', 'cpp',
+project('flowy', 'cpp',
   version : '0.1',
   default_options : ['warning_level=3', 'cpp_std=c++20', 'optimization=3'])
 
@@ -16,7 +16,7 @@ sources = [
 # Library dependencies
 pdflib_dep = dependency('pdf_cpplib', fallback : ['pdf_cpplib', 'pdflib_dep'])
 
-exe = executable('flowtastic', sources + 'src/main.cpp',
+exe = executable('flowy', sources + 'src/main.cpp',
   install : true,
   dependencies : [pdflib_dep, dependency('xtensor'), dependency('xtensor-blas'), dependency('fmt'), dependency('tomlplusplus')],
   include_directories : incdir
