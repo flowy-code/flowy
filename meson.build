@@ -40,6 +40,9 @@ flowylib = library('flowy',
   cpp_args : cpp_args
 )
 
+flowylib_dep = declare_dependency(include_directories : incdir,
+  link_with : flowylib, dependencies: _deps)
+
 tests = [
   ['Test_ASC', 'test/test_asc.cpp'],
   ['Test_Slope', 'test/test_slope.cpp'],
