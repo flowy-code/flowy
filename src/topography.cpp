@@ -1,4 +1,5 @@
 #include "topography.hpp"
+#include "asc_file.hpp"
 #include "definitions.hpp"
 #include "xtensor/xbuilder.hpp"
 #include <fmt/ranges.h>
@@ -7,6 +8,15 @@
 
 namespace Flowtastic
 {
+
+AscFile Topography::to_asc_file()
+{
+    AscFile asc_file{};
+    asc_file.lower_left_corner = { x_data[0], y_data[0] };
+    asc_file.cell_size         = cell_size();
+    asc_file.height_data       = height_data;
+    return asc_file;
+}
 
 bool Topography::is_point_near_boundary( const Vector2 & coordinates )
 {

@@ -29,6 +29,9 @@ public:
 
     Topography() = default;
 
+    // Creates an AscFile object that represents the topography
+    AscFile to_asc_file();
+
     MatrixX height_data{}; // The heights of the cells
     VectorX x_data{};
     VectorX y_data{};

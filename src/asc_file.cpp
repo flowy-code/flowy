@@ -1,12 +1,9 @@
 #include "asc_file.hpp"
-#include "xtensor/xmanipulation.hpp"
+#include "dump_csv.hpp"
 #include <fmt/format.h>
 #include <algorithm>
 #include <fstream>
-#include <istream>
 #include <stdexcept>
-#include <xtensor/xbuilder.hpp>
-#include <xtensor/xcsv.hpp>
 
 namespace Flowtastic
 {
@@ -83,6 +80,30 @@ AscFile::AscFile( const std::filesystem::path & path, std::optional<AscCrop> cro
 
     this->y_data = xt::arange(
         lower_left_corner[1], lower_left_corner[1] + ( double( height_data.shape()[1] ) ) * cell_size, cell_size );
+}
+
+void AscFile::save( const std::filesystem::path & path )
+{
+    std::fstream file;
+    file.open( path, std::fstream::in | std::fstream::out | std::fstream::trunc );
+
+    if( !file.is_open() )
+    {
+        throw std::runtime_error( fmt::format( "Unable to create output asc file: '{}'", path.string() ) );
+    }
+
+    file << fmt::format( "ncols {}\n", height_data.shape()[0] );
+    file << fmt::format( "nrows {}\n", height_data.shape()[1] );
+    file << fmt::format( "xllcorner {}\n", lower_left_corner[0] );
+    file << fmt::format( "yllcorner {}\n", lower_left_corner[1] );
+    file << fmt::format( "cellsize {}\n", cell_size );
+    file << fmt::format( "NODATA_value {}\n", no_data_value );
+
+    // We have to undo the transformation we applied to the height data
+    auto height_data_out = xt::transpose( xt::flip( height_data, 0 ) );
+    Utility::dump_csv( file, height_data_out, ' ' );
+
+    file.close();
 }
 
 } // namespace Flowtastic

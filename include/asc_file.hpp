@@ -19,6 +19,7 @@ class AscFile
 public:
     AscFile() = default;
     AscFile( const std::filesystem::path & path, std::optional<AscCrop> crop = std::nullopt );
+    void save( const std::filesystem::path & path );
 
     Vector2 lower_left_corner = { 0, 0 }; // Coordinates of lower left corner
     double cell_size          = 0;        // side length of square cell
