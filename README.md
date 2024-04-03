@@ -22,7 +22,7 @@ micromamba activate flowyenv
 
 ## Compilation and Installation
 
-We use `meson` to compile and build Seldon. 
+We use `meson` to compile and build `flowy`. 
 
 ```bash
 meson setup build
