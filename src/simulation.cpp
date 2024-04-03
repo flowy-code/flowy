@@ -146,12 +146,11 @@ void Simulation::compute_descendent_lobe_position( Lobe & lobe, const Lobe & par
 
 void Simulation::run()
 {
-    auto t_run_start = std::chrono::high_resolution_clock::now();
-
     // Save initial topography to asc file
     auto asc_file = topography.to_asc_file();
     asc_file.save( input.output_folder / "initial.asc" );
 
+    auto t_run_start = std::chrono::high_resolution_clock::now();
     for( int idx_flow = 0; idx_flow < input.n_flows; idx_flow++ )
     {
         // Determine n_lobes
@@ -244,13 +243,13 @@ void Simulation::run()
         fmt::print( "remaining_time = {:%Hh %Mm %Ss}\n", remaining_time );
     }
 
-    // Save final topography to asc file
-    asc_file = topography.to_asc_file();
-    asc_file.save( input.output_folder / "output.asc" );
-
     auto t_cur      = std::chrono::high_resolution_clock::now();
     auto total_time = std::chrono::duration_cast<std::chrono::seconds>( ( t_cur - t_run_start ) );
     fmt::print( "total_time = {:%Hh %Mm %Ss}\n", total_time );
+
+    // Save final topography to asc file
+    asc_file = topography.to_asc_file();
+    asc_file.save( input.output_folder / "output.asc" );
 }
 
 } // namespace Flowtastic
