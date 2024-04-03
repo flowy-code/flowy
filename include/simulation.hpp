@@ -4,6 +4,7 @@
 #include "definitions.hpp"
 #include "lobe.hpp"
 #include "topography.hpp"
+#include <filesystem>
 #include <random>
 #include <vector>
 
@@ -29,6 +30,9 @@ public:
     Simulation( const Config::InputParams & input, std::optional<int> rng_seed )
             : input( input ), gen( std::mt19937( rng_seed.value_or( std::random_device()() ) ) )
     {
+        // Create output directory
+        std::filesystem::create_directories( input.output_folder ); // Create the output directory
+
         // Crop if all of these have a value
         if( input.east_to_vent.has_value() && input.west_to_vent.has_value() && input.south_to_vent.has_value()
             && input.north_to_vent.has_value() )
