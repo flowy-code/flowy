@@ -60,11 +60,53 @@ def plot_height_data_pyvista(
     asc_file_initial = AscFile(path_asc_file_initial)
     asc_file_final = AscFile(path_asc_file_final)
 
-    asc_file_initial.filter_height_data()
-    asc_file_final.filter_height_data()
+    # asc_file_initial.filter_height_data()
+    # asc_file_final.filter_height_data()
 
+    # x_data = asc_file_initial.x_data()
+    # y_data = asc_file_initial.y_data()
+    # min_height = asc_file_initial.min_height()
+
+    # grid = pv.ImageData()
+    # grid.dimensions = [len(x_data), len(y_data), 1]
+
+    # grid.point_data["height_initial"] = (
+    #     asc_file_initial.height_data.flatten(order="F") - min_height
+    # )
+    # grid.point_data["height_final"] = (
+    #     asc_file_final.height_data.flatten(order="F") - min_height
+    # )
+    # grid.point_data["flow"] = (
+    #     grid.point_data["height_final"] - grid.point_data["height_initial"]
+    # )
+
+    # grid = grid.threshold(asc_file_final.nd + 1, scalars="height_initial")
+
+    # grid_initial = grid.warp_by_scalar("height_initial", warp_factor)
+    # grid_final = grid.warp_by_scalar("height_final", warp_factor).threshold(
+    #     threshold, scalars="flow"
+    # )
+    
+
+    # # Create an unstructured grid from the grid_initial, with a thickness
+    # z_cells = np.linspace(0,1,10)
+
+    # xx = np.repeat(grid.x, len(z_cells), axis=-1)
+    # yy = np.repeat(grid.y, len(z_cells), axis=-1)
+    # zz = np.repeat(grid.z, len(z_cells), axis=-1) - np.cumsum(z_cells).reshape((1, 1, -1))
+
+    # terrain_mesh = pv.StructuredGrid(xx, yy, zz)
+    # terrain_mesh["Elevation"] = zz.ravel(order="F")
+
+    # p = pv.Plotter()
+    # # p.add_mesh(grid_initial, scalars="height_initial", color=True, smooth_shading=True)
+    # p.add_mesh(terrain_mesh, scalars="Elevation", color=True, smooth_shading=True)
+    # # p.add_mesh(grid_final, color="red", opacity=0.8, smooth_shading=True)
+    # p.show()
     x_data = asc_file_initial.x_data()
     y_data = asc_file_initial.y_data()
+    height_data = asc_file_initial.height_data
+
     min_height = asc_file_initial.min_height()
 
     grid = pv.ImageData()
@@ -79,16 +121,26 @@ def plot_height_data_pyvista(
     grid.point_data["flow"] = (
         grid.point_data["height_final"] - grid.point_data["height_initial"]
     )
-
-    grid = grid.threshold(asc_file_final.nd + 1, scalars="height_initial")
-
     grid_initial = grid.warp_by_scalar("height_initial", warp_factor)
+    # For the lava flow 
     grid_final = grid.warp_by_scalar("height_final", warp_factor).threshold(
         threshold, scalars="flow"
     )
 
     p = pv.Plotter()
-    p.add_mesh(grid_initial, scalars="height_initial", color=True, smooth_shading=True)
+
+    # For the terrain
+    z_cells = np.linspace(0,10, 10)
+    xx = np.repeat(grid_initial.x, len(z_cells), axis=-1)
+    yy = np.repeat(grid_initial.y, len(z_cells), axis=-1)
+    zz = np.repeat(grid_initial.z, len(z_cells), axis=-1) - np.cumsum(z_cells).reshape((1, 1, -1))
+    mesh = pv.StructuredGrid(xx, yy, zz)
+    mesh["Elevation"] = zz.ravel(order="F")
+    mesh = mesh.threshold(asc_file_final.nd + 1, scalars="Elevation")
+    opacity_terrain = [0, 0.2, 0.9, 0.6, 0.3]
+    # opacity_terrain = "sigmoid_r"
+
+    p.add_mesh(mesh, scalars="Elevation", color=True, smooth_shading=True, opacity=opacity_terrain)
     p.add_mesh(grid_final, color="red", opacity=0.8, smooth_shading=True)
     p.show()
 
@@ -113,7 +165,7 @@ def plot_height_data_pyplot(path_asc_file_initial: Path, path_asc_file_final: Pa
 
 
 if __name__ == "__main__":
-    path_asc_file_initial = "/home/moritz/lavaflow/flowy/output_hawai/initial.asc"
-    path_asc_file_final = "/home/moritz/lavaflow/flowy/output_hawai/output.asc"
+    path_asc_file_initial = "output_hawaii/initial.asc"
+    path_asc_file_final = "output_hawaii/output.asc"
     plot_height_data_pyvista(path_asc_file_initial, path_asc_file_final)
     plot_height_data_pyplot(path_asc_file_initial, path_asc_file_final)
