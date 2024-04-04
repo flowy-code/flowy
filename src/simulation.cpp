@@ -3,6 +3,7 @@
 #include "lobe.hpp"
 #include "math.hpp"
 #include "probability_dist.hpp"
+#include "reservoir_sampling.hpp"
 #include <fmt/chrono.h>
 #include <fmt/format.h>
 #include <algorithm>
@@ -97,9 +98,6 @@ void Simulation::compute_lobe_axes( Lobe & lobe, const Vector2 & slope ) const
 // Select which lobe amongst the existing lobes will be the parent for the new descendent lobe
 int Simulation::select_parent_lobe( int idx_descendant )
 {
-    auto candidate_parent_lobes = std::vector<int>{};
-    candidate_parent_lobes.reserve( idx_descendant );
-
     int idx_parent{};
 
     // Generate from the last lobe
@@ -117,9 +115,9 @@ int Simulation::select_parent_lobe( int idx_descendant )
         // Otherwise, draw from an exponential distribution
         auto weight_probability_callback
             = [&]( int idx_current ) -> double { return lobes[idx_current].parent_weight; };
-        auto dist_discrete
-            = std::discrete_distribution( idx_descendant, 0, idx_descendant, weight_probability_callback );
-        idx_parent = dist_discrete( gen );
+
+        idx_parent = ProbabilityDist::ReservoirSampling::reservoir_sampling_A_ExpJ(
+            1, idx_descendant, weight_probability_callback, gen )[0];
     }
 
     // Update the lobe information
