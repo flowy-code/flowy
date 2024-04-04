@@ -36,7 +36,7 @@ TEST_CASE( "bounding_box", "[bounding_box]" )
     fmt::print( "point.idx_x = {}, point.idx_y = {}\n", point_indices[0], point_indices[1] );
 
     // Note: this bounding box is chosen such that no clamping will occur
-    auto bbox = topography.bounding_box( point, 2 );
+    auto bbox = topography.bounding_box( point, 2, 2 );
     fmt::print( "bbox.idx_x_higher = {}\n", bbox.idx_x_higher );
     fmt::print( "bbox.idx_x_lower = {}\n", bbox.idx_x_lower );
     fmt::print( "bbox.idx_y_lower = {}\n", bbox.idx_y_lower );

@@ -40,16 +40,17 @@ std::array<int, 2> Topography::locate_point( const Vector2 & coordinates )
     return { idx_x_lower, idx_y_lower };
 }
 
-Topography::BoundingBox Topography::bounding_box( const Vector2 & center, double radius )
+Topography::BoundingBox Topography::bounding_box( const Vector2 & center, double extent_x, double extent_y )
 {
-    const auto [idx_x_lower, idx_y_lower] = locate_point( center );
-    const int number_of_cells_to_include  = std::ceil( radius / cell_size() );
+    const auto [idx_x_lower, idx_y_lower]  = locate_point( center );
+    const int number_of_cells_to_include_x = std::ceil( extent_x / cell_size() );
+    const int number_of_cells_to_include_y = std::ceil( extent_y / cell_size() );
 
     Topography::BoundingBox res{};
-    res.idx_x_lower  = std::clamp<int>( idx_x_lower - number_of_cells_to_include, 0, x_data.size() - 1 );
-    res.idx_x_higher = std::clamp<int>( idx_x_lower + number_of_cells_to_include, 0, x_data.size() - 1 );
-    res.idx_y_lower  = std::clamp<int>( idx_y_lower - number_of_cells_to_include, 0, y_data.size() - 1 );
-    res.idx_y_higher = std::clamp<int>( idx_y_lower + number_of_cells_to_include, 0, y_data.size() - 1 );
+    res.idx_x_lower  = std::clamp<int>( idx_x_lower - number_of_cells_to_include_x, 0, x_data.size() - 1 );
+    res.idx_x_higher = std::clamp<int>( idx_x_lower + number_of_cells_to_include_x, 0, x_data.size() - 1 );
+    res.idx_y_lower  = std::clamp<int>( idx_y_lower - number_of_cells_to_include_y, 0, y_data.size() - 1 );
+    res.idx_y_higher = std::clamp<int>( idx_y_lower + number_of_cells_to_include_y, 0, y_data.size() - 1 );
 
     return res;
 }
@@ -61,7 +62,8 @@ Topography::get_cells_intersecting_lobe( const Lobe & lobe )
     std::vector<std::array<int, 2>> cells_enclosed{};
 
     // First, we find all candidates with the bounding_box function from the topography
-    const auto bbox = bounding_box( lobe.center, lobe.semi_axes[0] );
+    auto extent_xy  = lobe.extent_xy();
+    const auto bbox = bounding_box( lobe.center, extent_xy[0], extent_xy[1] );
 
     // Now we test all the candidate cells from the big bounding box for intersection with the lobe
     for( int idx_x = bbox.idx_x_lower; idx_x <= bbox.idx_x_higher; idx_x++ )

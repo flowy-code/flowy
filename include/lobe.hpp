@@ -38,6 +38,25 @@ public:
         return sin_azimuthal_angle;
     }
 
+    // return the extent of the lobe in x and y direction
+    // that is the maximum difference (in the x/y coordinate only)
+    // between the center and any point on the boundary
+    std::array<double, 2> extent_xy() const
+    {
+        // the cartesina coordianates of the semi major axes
+        const double ax = cos_azimuthal_angle * semi_axes[0];
+        const double ay = sin_azimuthal_angle * semi_axes[0];
+
+        // the cartesian coordianates of the semi mainor axes
+        const double bx = -sin_azimuthal_angle * semi_axes[1];
+        const double by = cos_azimuthal_angle * semi_axes[1];
+
+        const double extent_x = ( ax * ax + bx * bx ) / std::sqrt( ax * ax + bx * bx );
+        const double extent_y = ( ay * ay + by * by ) / std::sqrt( ay * ay + by * by );
+
+        return { extent_x, extent_y };
+    }
+
     Vector2 center                = { 0, 0 };     // The center of the ellipse
     Vector2 semi_axes             = { 1, 1 };     // The length of the semi-axies, first the major then the minor
     int dist_n_lobes              = 0;            // The distance to the initial lobe, counted in number of lobes
