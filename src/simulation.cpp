@@ -41,9 +41,10 @@ CommonLobeDimensions::CommonLobeDimensions( const Config::InputParams & input, c
                         * ( input.min_n_lobes + input.max_n_lobes ) );
     }
 
-    max_semiaxis  = std::sqrt( lobe_area * input.max_aspect_ratio / Math::pi );
-    max_cells     = std::ceil( 2.0 * max_semiaxis / asc_file.cell_size ) + 2;
-    thickness_min = 2.0 * input.thickness_ratio / ( input.thickness_ratio + 1.0 ) * avg_lobe_thickness;
+    exp_lobe_exponent = std::exp( input.lobe_exponent );
+    max_semiaxis      = std::sqrt( lobe_area * input.max_aspect_ratio / Math::pi );
+    max_cells         = std::ceil( 2.0 * max_semiaxis / asc_file.cell_size ) + 2;
+    thickness_min     = 2.0 * input.thickness_ratio / ( input.thickness_ratio + 1.0 ) * avg_lobe_thickness;
 }
 
 void Simulation::compute_initial_lobe_position( int idx_flow, Lobe & lobe )
@@ -99,48 +100,43 @@ int Simulation::select_parent_lobe( int idx_descendant )
     auto candidate_parent_lobes = std::vector<int>{};
     candidate_parent_lobes.reserve( idx_descendant );
 
+    int idx_parent{};
+
     // Generate from the last lobe
     if( input.lobe_exponent == 0 )
     {
-        return idx_descendant - 1;
+        idx_parent = idx_descendant - 1;
     }
-
-    // Draw from a uniform random distribution if exponent is 1
-    if( input.lobe_exponent == 1 )
+    else if( input.lobe_exponent == 1 ) // Draw from a uniform random distribution if exponent is 1
     {
         std::uniform_int_distribution<int> dist_int( 0, idx_descendant - 1 );
-        int idx_parent = dist_int( gen );
-
-        lobes[idx_descendant].idx_parent   = idx_parent;
-        lobes[idx_descendant].dist_n_lobes = lobes[idx_parent].dist_n_lobes + 1;
-
-        // Loop over all ancestors and increase n_descendents
-        std::optional<int> idx_parent_current = idx_parent;
-        while( idx_parent_current.has_value() )
-        {
-            Lobe & lobe_current = lobes[idx_parent_current.value()];
-            lobe_current.n_descendents++;
-            idx_parent_current = lobe_current.idx_parent;
-        }
-
-        return idx_parent;
+        idx_parent = dist_int( gen );
+    }
+    else
+    {
+        // Otherwise, draw from an exponential distribution
+        auto weight_probability_callback
+            = [&]( int idx_current ) -> double { return lobes[idx_current].parent_weight; };
+        auto dist_discrete
+            = std::discrete_distribution( idx_descendant, 0, idx_descendant, weight_probability_callback );
+        idx_parent = dist_discrete( gen );
     }
 
-    // Otherwise, draw from an exponential distribution
+    // Update the lobe information
+    lobes[idx_descendant].idx_parent   = idx_parent;
+    lobes[idx_descendant].dist_n_lobes = lobes[idx_parent].dist_n_lobes + 1;
+    lobes[idx_descendant].parent_weight *= lobe_dimensions.exp_lobe_exponent;
 
-    auto weight_probability_callback = [&]( int idx_current ) -> double
+    // Loop over all ancestors and increase n_descendents
+    std::optional<int> idx_parent_current = idx_parent;
+    while( idx_parent_current.has_value() )
     {
-        if( input.force_max_length == 1 && lobes[idx_current].dist_n_lobes > input.max_length )
-        {
+        Lobe & lobe_current = lobes[idx_parent_current.value()];
+        lobe_current.n_descendents++;
+        idx_parent_current = lobe_current.idx_parent;
+    }
 
-            return 0.0;
-        }
-        double weight = std::exp( lobes[idx_current].dist_n_lobes * input.lobe_exponent );
-        return weight;
-    };
-
-    auto dist_discrete = std::discrete_distribution( idx_descendant, 0, idx_descendant, weight_probability_callback );
-    return dist_discrete( gen );
+    return idx_parent;
 }
 
 void Simulation::add_inertial_contribution( Lobe & lobe, const Lobe & parent, const Vector2 & slope ) const
@@ -248,7 +244,9 @@ void Simulation::run()
 
             // Compute the final budding point
             // It is defined by the point on the perimeter of the parent lobe closest to the center of the new lobe
-            Vector2 final_budding_point = lobe_parent.point_at_angle( lobe_cur.get_azimuthal_angle() );
+            Vector2 final_budding_point
+                = 2.0 * lobe_parent.center - lobe_parent.point_at_angle( lobe_cur.get_azimuthal_angle() );
+            // Vector2 final_budding_point = lobe_parent.point_at_angle( lobe_cur.get_azimuthal_angle() );
 
             // Get the slope at the final budding point
             auto [height_budding_point, slope_budding_point] = topography.height_and_slope( final_budding_point );

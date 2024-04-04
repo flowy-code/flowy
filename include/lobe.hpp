@@ -57,9 +57,10 @@ public:
         return { extent_x, extent_y };
     }
 
-    Vector2 center                = { 0, 0 };     // The center of the ellipse
-    Vector2 semi_axes             = { 1, 1 };     // The length of the semi-axies, first the major then the minor
-    int dist_n_lobes              = 0;            // The distance to the initial lobe, counted in number of lobes
+    Vector2 center                = { 0, 0 }; // The center of the ellipse
+    Vector2 semi_axes             = { 1, 1 }; // The length of the semi-axies, first the major then the minor
+    int dist_n_lobes              = 0;        // The distance to the initial lobe, counted in number of lobes
+    double parent_weight          = 1;
     int n_descendents             = 0;            // The cumulative number of descendent lobes
     std::optional<int> idx_parent = std::nullopt; // The idx of the parent lobe
     double alpha_inertial         = 0;            // The coefficient for the inertial contribution

@@ -22,6 +22,7 @@ public:
     double max_semiaxis       = 0;
     int max_cells             = 0;
     double thickness_min      = 0;
+    double exp_lobe_exponent  = 1;
 };
 
 class Simulation
