@@ -92,7 +92,6 @@ public:
     void run();
 
 private:
-    int n_lobes_total = 0; // This is the total number of lobes, accumulated over all flows
     CommonLobeDimensions lobe_dimensions;
     std::mt19937 gen{};
 };

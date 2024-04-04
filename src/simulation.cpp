@@ -171,6 +171,8 @@ void Simulation::compute_descendent_lobe_position( Lobe & lobe, const Lobe & par
 
 void Simulation::run()
 {
+    int n_lobes_total = 0; // This is the total number of lobes, accumulated over all flows
+
     // Save initial topography to asc file
     auto asc_file = topography.to_asc_file();
     asc_file.save( input.output_folder / "initial.asc" );
@@ -265,14 +267,18 @@ void Simulation::run()
         }
 
         auto t_cur          = std::chrono::high_resolution_clock::now();
-        auto remaining_time = std::chrono::duration_cast<std::chrono::seconds>(
+        auto remaining_time = std::chrono::duration_cast<std::chrono::milliseconds>(
             ( input.n_flows - idx_flow - 1 ) * ( t_cur - t_run_start ) / ( idx_flow + 1 ) );
-        fmt::print( "remaining_time = {:%Hh %Mm %Ss}\n", remaining_time );
+        fmt::print( "     remaining_time = {:%Hh %Mm %Ss}\n", remaining_time );
     }
 
     auto t_cur      = std::chrono::high_resolution_clock::now();
-    auto total_time = std::chrono::duration_cast<std::chrono::seconds>( ( t_cur - t_run_start ) );
+    auto total_time = std::chrono::duration_cast<std::chrono::milliseconds>( ( t_cur - t_run_start ) );
     fmt::print( "total_time = {:%Hh %Mm %Ss}\n", total_time );
+
+    fmt::print( "Total number of processed lobes = {}\n", n_lobes_total );
+
+    fmt::print( "n_lobes/ms = {}\n", ( n_lobes_total / total_time.count() ) );
 
     // Save final topography to asc file
     asc_file = topography.to_asc_file();
