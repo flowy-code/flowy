@@ -55,6 +55,36 @@ void Simulation::compute_initial_lobe_position( int idx_flow, Lobe & lobe )
     lobe.center  = input.vent_coordinates[idx_vent];
 }
 
+void Simulation::write_lobe_data_to_file( const std::vector<Lobe> & lobes, const std::filesystem::path & path )
+{
+    std::fstream file;
+    file.open( path, std::fstream::in | std::fstream::out | std::fstream::trunc );
+
+    if( !file.is_open() )
+    {
+        throw std::runtime_error( fmt::format( "Unable to create output asc file: '{}'", path.string() ) );
+    }
+
+    file << fmt::format( "azimuthal_angle,centerx,centery,major_axis,minor_axis,dist_n_lobes,parent_weight,"
+                         "n_descendents,idx_parent,alpha_intertial,thickness\n" );
+
+    for( const auto & lobe : lobes )
+    {
+        file << fmt::format( "{},", lobe.get_azimuthal_angle() );
+        file << fmt::format( "{},", lobe.center( 0 ) );
+        file << fmt::format( "{},", lobe.center( 1 ) );
+        file << fmt::format( "{},", lobe.semi_axes( 0 ) );
+        file << fmt::format( "{},", lobe.semi_axes( 1 ) );
+        file << fmt::format( "{},", lobe.dist_n_lobes );
+        file << fmt::format( "{},", lobe.parent_weight );
+        file << fmt::format( "{},", lobe.n_descendents );
+        file << fmt::format( "{},", lobe.idx_parent.value_or( -1 ) );
+        file << fmt::format( "{},", lobe.alpha_inertial );
+        file << fmt::format( "{}\n", lobe.thickness );
+    }
+    file.close();
+}
+
 void Simulation::perturb_lobe_angle( Lobe & lobe, const Vector2 & slope )
 {
     lobe.set_azimuthal_angle( std::atan2( slope[1], slope[0] ) ); // Sets the angle prior to perturbation
@@ -167,6 +197,11 @@ void Simulation::compute_descendent_lobe_position( Lobe & lobe, const Lobe & par
     lobe.center             = new_lobe_center;
 }
 
+bool Simulation::stop_condition( const Vector2 & point )
+{
+    return topography.is_point_near_boundary( point ) || topography.get_height( point ) < asc_file.no_data_value + 1;
+}
+
 void Simulation::run()
 {
     int n_lobes_total     = 0; // This is the total number of lobes, accumulated over all flows
@@ -184,7 +219,8 @@ void Simulation::run()
         int n_lobes = 0.5 * ( input.min_n_lobes + input.max_n_lobes );
         n_lobes_total += n_lobes;
 
-        lobes = std::vector<Lobe>( n_lobes );
+        lobes = std::vector<Lobe>{};
+        lobes.reserve( n_lobes );
 
         // Calculated for each flow with n_lobes number of lobes
         double delta_lobe_thickness
@@ -193,6 +229,7 @@ void Simulation::run()
         // Build initial lobes which do not propagate descendents
         for( int idx_lobe = 0; idx_lobe < input.n_init; idx_lobe++ )
         {
+            lobes.emplace_back();
             Lobe & lobe_cur = lobes[idx_lobe];
 
             compute_initial_lobe_position( idx_flow, lobe_cur );
@@ -218,6 +255,7 @@ void Simulation::run()
         // Each lobe is a descendant of a parent lobe
         for( int idx_lobe = input.n_init; idx_lobe < n_lobes; idx_lobe++ )
         {
+            lobes.emplace_back();
             Lobe & lobe_cur = lobes[idx_lobe];
 
             // Select which of the previously created lobes is the parent lobe
@@ -227,8 +265,7 @@ void Simulation::run()
             Lobe & lobe_parent = lobes[idx_parent];
 
             // stopping condition (parent lobe close the domain boundary or at a not defined z value)
-            if( topography.is_point_near_boundary( lobe_parent.center )
-                || topography.get_height( lobe_parent.center ) < asc_file.no_data_value + 1 )
+            if( stop_condition( lobe_parent.center ) )
             {
                 break;
             }
@@ -251,6 +288,10 @@ void Simulation::run()
                 = 2.0 * lobe_parent.center - lobe_parent.point_at_angle( lobe_cur.get_azimuthal_angle() );
             // Vector2 final_budding_point = lobe_parent.point_at_angle( lobe_cur.get_azimuthal_angle() );
 
+            if( stop_condition( final_budding_point ) )
+            {
+                break;
+            }
             // Get the slope at the final budding point
             auto [height_budding_point, slope_budding_point] = topography.height_and_slope( final_budding_point );
 
@@ -260,6 +301,11 @@ void Simulation::run()
             // Get new lobe center
             compute_descendent_lobe_position( lobe_cur, lobe_parent, final_budding_point );
 
+            if( stop_condition( lobe_cur.center ) )
+            {
+                break;
+            }
+
             // Compute the thickness of the lobe
             lobe_cur.thickness = lobe_dimensions.thickness_min + idx_lobe * delta_lobe_thickness;
 
@@ -267,6 +313,8 @@ void Simulation::run()
             topography.add_lobe( lobe_cur );
             n_lobes_processed++;
         }
+
+        // write_lobe_data_to_file( lobes, fmt::format( "flow_{}_lobes_{}.txt", idx_flow, n_lobes_processed ) );
 
         auto t_cur          = std::chrono::high_resolution_clock::now();
         auto remaining_time = std::chrono::duration_cast<std::chrono::milliseconds>(
