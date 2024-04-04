@@ -10,6 +10,7 @@
 #include <cmath>
 #include <random>
 #include <stdexcept>
+#include <vector>
 
 namespace Flowy
 {
@@ -95,23 +96,51 @@ void Simulation::compute_lobe_axes( Lobe & lobe, const Vector2 & slope ) const
 // Select which lobe amongst the existing lobes will be the parent for the new descendent lobe
 int Simulation::select_parent_lobe( int idx_descendant )
 {
-    // TODO: implement input.lobe_exponent, input.force_max_length and input.start_from_dist_flag
-    std::uniform_int_distribution<int> dist_int( 0, idx_descendant - 1 );
-    int idx_parent = dist_int( gen );
+    auto candidate_parent_lobes = std::vector<int>{};
+    candidate_parent_lobes.reserve( idx_descendant );
 
-    lobes[idx_descendant].idx_parent   = idx_parent;
-    lobes[idx_descendant].dist_n_lobes = lobes[idx_parent].dist_n_lobes + 1;
-
-    // Loop over all ancestors and increase n_descendents
-    std::optional<int> idx_parent_current = idx_parent;
-    while( idx_parent_current.has_value() )
+    // Generate from the last lobe
+    if( input.lobe_exponent == 0 )
     {
-        Lobe & lobe_current = lobes[idx_parent_current.value()];
-        lobe_current.n_descendents++;
-        idx_parent_current = lobe_current.idx_parent;
+        return idx_descendant - 1;
     }
 
-    return idx_parent;
+    // Draw from a uniform random distribution if exponent is 1
+    if( input.lobe_exponent == 1 )
+    {
+        std::uniform_int_distribution<int> dist_int( 0, idx_descendant - 1 );
+        int idx_parent = dist_int( gen );
+
+        lobes[idx_descendant].idx_parent   = idx_parent;
+        lobes[idx_descendant].dist_n_lobes = lobes[idx_parent].dist_n_lobes + 1;
+
+        // Loop over all ancestors and increase n_descendents
+        std::optional<int> idx_parent_current = idx_parent;
+        while( idx_parent_current.has_value() )
+        {
+            Lobe & lobe_current = lobes[idx_parent_current.value()];
+            lobe_current.n_descendents++;
+            idx_parent_current = lobe_current.idx_parent;
+        }
+
+        return idx_parent;
+    }
+
+    // Otherwise, draw from an exponential distribution
+
+    auto weight_probability_callback = [&]( int idx_current ) -> double
+    {
+        if( input.force_max_length == 1 && lobes[idx_current].dist_n_lobes > input.max_length )
+        {
+
+            return 0.0;
+        }
+        double weight = std::exp( lobes[idx_current].dist_n_lobes * input.lobe_exponent );
+        return weight;
+    };
+
+    auto dist_discrete = std::discrete_distribution( idx_descendant, 0, idx_descendant, weight_probability_callback );
+    return dist_discrete( gen );
 }
 
 void Simulation::add_inertial_contribution( Lobe & lobe, const Lobe & parent, const Vector2 & slope ) const

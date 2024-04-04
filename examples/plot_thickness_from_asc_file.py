@@ -137,10 +137,11 @@ def plot_height_data_pyvista(
     mesh = pv.StructuredGrid(xx, yy, zz)
     mesh["Elevation"] = zz.ravel(order="F")
     mesh = mesh.threshold(asc_file_final.nd + 1, scalars="Elevation")
-    opacity_terrain = [0, 0.2, 0.9, 0.6, 0.3]
+    # opacity_terrain = [0, 0.2, 0.9, 0.6, 0.3]
     # opacity_terrain = "sigmoid_r"
+    opacity_terrain=None
 
-    p.add_mesh(mesh, scalars="Elevation", color=True, smooth_shading=True, opacity=opacity_terrain)
+    p.add_mesh(mesh, scalars="Elevation", color=True, smooth_shading=True, opacity=opacity_terrain, cmap='gray')
     p.add_mesh(grid_final, color="red", opacity=0.8, smooth_shading=True)
     p.show()
 

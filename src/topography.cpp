@@ -203,7 +203,8 @@ Vector2 Topography::find_preliminary_budding_point( const Lobe & lobe, int npoin
 
     // Then, we find the point of minimal elevation amongst the rasterized points on the perimeter
     auto min_elevation_point_it = std::min_element(
-        perimeter.begin(), perimeter.end(), [&]( const Vector2 & p1, const Vector2 & p2 )
+        perimeter.begin(), perimeter.end(),
+        [&]( const Vector2 & p1, const Vector2 & p2 )
         { return height_and_slope( p1 ).first < height_and_slope( p2 ).first; } );
 
     return *min_elevation_point_it;
