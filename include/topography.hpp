@@ -70,7 +70,7 @@ public:
     // Compute the indices of a rectangular bounding box
     // The box is computed such that a circle with centered at 'center' with radius 'radius'
     // Is completely contained in the bounding box
-    BoundingBox bounding_box( const Vector2 & center, double radius );
+    BoundingBox bounding_box( const Vector2 & center, double extent_x, double extent_y );
 
     // Find all the cells that intersect the lobe and all the cells that are fully enclosed by the lobe
     std::pair<std::vector<std::array<int, 2>>, std::vector<std::array<int, 2>>>
