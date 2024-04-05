@@ -47,6 +47,9 @@ class AscFile:
             self.cell,
         )
 
+    def max_height(self):
+        return np.max(self.height_data)
+
     def min_height(self):
         return np.min(self.height_data[self.height_data > self.nd + 1])
 
@@ -83,7 +86,6 @@ def plot_pyvista(
 
     x_data = asc_file_initial.x_data()
     y_data = asc_file_initial.y_data()
-    height_data = asc_file_initial.height_data
 
     min_height = asc_file_initial.min_height()
 
@@ -164,10 +166,17 @@ def plot_pyplot(
     y_data = asc_file_initial.y_data()
     min_height = asc_file_initial.min_height()
 
-    plt.contourf(x_data, y_data, asc_file_initial.height_data - min_height)
-    plt.contour(
-        x_data, y_data, asc_file_final.height_data - asc_file_initial.height_data
+    plt.contourf(
+        x_data,
+        y_data,
+        asc_file_initial.height_data - min_height,
+        levels=20,
+        cmap="gray",
     )
+
+    lava_thickness = asc_file_final.height_data - asc_file_initial.height_data
+    lava_thickness[lava_thickness < 1e-10] = float("nan")
+    plt.contourf(x_data, y_data, lava_thickness, cmap="magma")
     if interactive:
         plt.show()
     if image_outfile is not None:
