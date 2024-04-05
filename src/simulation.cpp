@@ -66,10 +66,11 @@ void Simulation::write_lobe_data_to_file( const std::vector<Lobe> & lobes, const
     }
 
     file << fmt::format( "azimuthal_angle,centerx,centery,major_axis,minor_axis,dist_n_lobes,parent_weight,"
-                         "n_descendents,idx_parent,alpha_intertial,thickness\n" );
+                         "n_descendents,idx_parent,alpha_intertial,thickness,height_center,slopex,slopey\n" );
 
     for( const auto & lobe : lobes )
     {
+
         file << fmt::format( "{},", lobe.get_azimuthal_angle() );
         file << fmt::format( "{},", lobe.center( 0 ) );
         file << fmt::format( "{},", lobe.center( 1 ) );
@@ -80,7 +81,13 @@ void Simulation::write_lobe_data_to_file( const std::vector<Lobe> & lobes, const
         file << fmt::format( "{},", lobe.n_descendents );
         file << fmt::format( "{},", lobe.idx_parent.value_or( -1 ) );
         file << fmt::format( "{},", lobe.alpha_inertial );
-        file << fmt::format( "{}\n", lobe.thickness );
+        file << fmt::format( "{},", lobe.thickness );
+
+        auto const [height, slope] = topography.height_and_slope( lobe.center );
+        file << fmt::format( "{},", height );
+        file << fmt::format( "{},", slope[0] );
+        file << fmt::format( "{}", slope[1] );
+        file << "\n";
     }
     file.close();
 }
