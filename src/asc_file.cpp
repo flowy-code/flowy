@@ -100,7 +100,8 @@ void AscFile::save( const std::filesystem::path & path )
     file << fmt::format( "NODATA_value {}\n", no_data_value );
 
     // We have to undo the transformation we applied to the height data
-    auto height_data_out = xt::transpose( xt::flip( height_data, 0 ) );
+    // Therefore, we transpose and *then* we flip the y-axis
+    auto height_data_out = xt::flip( xt::transpose( height_data ), 0 );
     Utility::dump_csv( file, height_data_out, ' ' );
 
     file.close();
