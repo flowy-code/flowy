@@ -35,9 +35,9 @@ std::array<int, 2> Topography::locate_point( const Vector2 & coordinates )
         throw std::runtime_error( "Cannot locate point, because coordinates are outside of grid!" );
     }
 
-    const int idx_x_lower = int( ( coordinates[0] - x_data[0] ) / cell_size() );
-    const int idx_y_lower = int( ( coordinates[1] - y_data[0] ) / cell_size() );
-    return { idx_x_lower, idx_y_lower };
+    const int idx_x = int( ( coordinates[0] - x_data[0] ) / cell_size() );
+    const int idx_y = int( ( coordinates[1] - y_data[0] ) / cell_size() );
+    return { idx_x, idx_y };
 }
 
 Topography::BoundingBox Topography::bounding_box( const Vector2 & center, double extent_x, double extent_y )
@@ -138,49 +138,47 @@ std::pair<double, Vector2> Topography::height_and_slope( const Vector2 & coordin
     const auto [idx_x, idx_y] = locate_point( coordinates );
     const Vector2 cell_center = { x_data[idx_x] + 0.5 * cell_size(), y_data[idx_y] + 0.5 * cell_size() };
 
-    // We use central finite difference to compute the slope at the cell
-    int idx_x_lower  = idx_x - 1;
-    int idx_y_lower  = idx_y - 1;
-    int idx_x_higher = idx_x + 1;
-    int idx_y_higher = idx_y + 1;
+    int idx_x_lower{}, idx_x_higher{};
+    int idx_y_lower{}, idx_y_higher{};
 
-    if( idx_x_lower < 0 )
+    if( coordinates[0] > cell_center[0] )
     {
-        idx_x_lower = 0;
+        idx_x_lower  = idx_x;
+        idx_x_higher = std::min<int>( idx_x + 1, x_data.size() - 1 );
     }
-
-    if( idx_y_lower < 0 )
+    else
     {
-        idx_y_lower = 0;
-    }
-
-    if( size_t( idx_x_higher ) == x_data.size() )
-    {
+        idx_x_lower  = std::max<int>( idx_x - 1, 0 );
         idx_x_higher = idx_x;
     }
 
-    if( size_t( idx_y_higher ) == y_data.size() )
+    if( coordinates[1] > cell_center[1] )
     {
+        idx_y_lower  = idx_y;
+        idx_y_higher = std::min<int>( idx_y + 1, y_data.size() - 1 );
+    }
+    else
+    {
+        idx_y_lower  = std::max<int>( idx_y - 1, 0 );
         idx_y_higher = idx_y;
     }
 
-    Vector2 slope{};
-    if( coordinates[0] > cell_center[0] )
-        slope[0] = ( height_data( idx_x_higher, idx_y ) - height_data( idx_x, idx_y ) ) / cell_size();
-    else
-        slope[0] = ( height_data( idx_x, idx_y ) - height_data( idx_x_lower, idx_y ) ) / cell_size();
+    const Vector2 cell_center_lower_left
+        = { x_data[idx_x_lower] + 0.5 * cell_size(), y_data[idx_y_lower] + 0.5 * cell_size() };
 
-    if( coordinates[1] > cell_center[1] )
-        slope[1] = ( height_data( idx_x, idx_y_higher ) - height_data( idx_x, idx_y ) ) / cell_size();
-    else
-        slope[1] = ( height_data( idx_x, idx_y ) - height_data( idx_x, idx_y_lower ) ) / cell_size();
+    const double Z00 = height_data( idx_x_lower, idx_y_lower );
+    const double Z10 = height_data( idx_x_higher, idx_y_lower );
+    const double Z01 = height_data( idx_x_lower, idx_y_higher );
+    const double Z11 = height_data( idx_x_higher, idx_y_higher );
 
-    // contribution of slope to height
-    const Vector2 diff              = coordinates - cell_center;
-    const double slope_contribution = slope[0] * diff[0] + slope[1] * diff[1];
+    const double alpha = Z10 - Z00;
+    const double beta  = Z01 - Z00;
+    const double gamma = Z11 + Z00 - Z10 - Z01;
 
-    // For the height we linearly interpolate
-    const double height = height_data( idx_x, idx_y ) + slope_contribution;
+    const Vector2 xp = ( coordinates - cell_center_lower_left ) / cell_size();
+
+    const double height = Z00 + alpha * xp[0] + beta * xp[1] + gamma * xp[0] * xp[1];
+    const Vector2 slope = { alpha + gamma * xp[1], beta + gamma * xp[0] };
 
     return { height, slope };
 }
