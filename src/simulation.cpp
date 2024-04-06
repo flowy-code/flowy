@@ -102,8 +102,9 @@ void Simulation::perturb_lobe_angle( Lobe & lobe, const Vector2 & slope )
     {
         if( slope_deg > 0.0 && input.max_slope_prob > 0 )
         {
-            const double sigma
-                = ( 1.0 - input.max_slope_prob ) / input.max_slope_prob * ( Math::pi / 2.0 - slope_deg ) / slope_deg;
+            // Since we use radians instead of degrees, max_slope_prob has to be rescaled accordingly
+            const double sigma = ( 1.0 - input.max_slope_prob ) / input.max_slope_prob * Math::pi / 180
+                                 * ( Math::pi / 2.0 - slope_deg ) / slope_deg;
 
             ProbabilityDist::truncated_normal_distribution<double> dist_truncated( 0, sigma, -Math::pi, Math::pi );
             const double angle_perturbation = dist_truncated( gen );
@@ -199,8 +200,8 @@ void Simulation::add_inertial_contribution( Lobe & lobe, const Lobe & parent, co
         alpha_inertial = std::pow( ( 1.0 - std::pow( 2.0 * std::atan( slope_norm ) / Math::pi, eta ) ), ( 1.0 / eta ) );
     }
 
-    const double x_avg = ( 1.0 - alpha_inertial ) * cos_angle_parent + alpha_inertial * cos_angle_lobe;
-    const double y_avg = ( 1.0 - alpha_inertial ) * sin_angle_parent + alpha_inertial * sin_angle_lobe;
+    const double x_avg = ( 1.0 - alpha_inertial ) * cos_angle_lobe + alpha_inertial * cos_angle_parent;
+    const double y_avg = ( 1.0 - alpha_inertial ) * sin_angle_lobe + alpha_inertial * sin_angle_parent;
 
     lobe.set_azimuthal_angle( std::atan2( y_avg, x_avg ) );
 }
@@ -263,7 +264,7 @@ void Simulation::run()
             compute_lobe_axes( lobe_cur, slope );
 
             // Add rasterized lobe
-            topography.add_lobe( lobe_cur );
+            // topography.add_lobe( lobe_cur );
             n_lobes_processed++;
         }
 
@@ -303,9 +304,10 @@ void Simulation::run()
             // It is defined by the point on the perimeter of the parent lobe closest to the center of the new lobe
 
             auto angle_diff             = lobe_parent.get_azimuthal_angle() - lobe_cur.get_azimuthal_angle();
-            Vector2 final_budding_point = lobe_parent.point_at_angle( Math::pi - angle_diff );
+            Vector2 final_budding_point = lobe_parent.point_at_angle( -angle_diff );
             // Vector2 final_budding_point = lobe_parent.point_at_angle( lobe_cur.get_azimuthal_angle() );
 
+            // final_budding_point = budding_point;
             if( stop_condition( final_budding_point, lobe_parent.semi_axes[0] ) )
             {
                 lobes.pop_back();
@@ -330,13 +332,18 @@ void Simulation::run()
             lobe_cur.thickness = lobe_dimensions.thickness_min + idx_lobe * delta_lobe_thickness;
 
             // Add rasterized lobe
-            topography.add_lobe( lobe_cur );
+            // topography.add_lobe( lobe_cur );
             n_lobes_processed++;
         }
 
         if( input.write_lobes_csv )
         {
             write_lobe_data_to_file( lobes, input.output_folder / fmt::format( "lobes_{}.csv", idx_flow ) );
+        }
+
+        for( auto & lobe : lobes )
+        {
+            topography.add_lobe( lobe );
         }
 
         auto t_cur          = std::chrono::high_resolution_clock::now();
