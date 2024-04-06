@@ -364,6 +364,8 @@ void Simulation::run()
         fmt::print( "n_lobes/ms = {}\n", lobes_per_ms );
     }
 
+    fmt::print( "Used RNG seed: {}\n", rng_seed );
+
     // Save final topography to asc file
     asc_file = topography.to_asc_file();
     asc_file.save( input.output_folder / "output.asc" );

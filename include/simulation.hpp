@@ -28,9 +28,12 @@ public:
 class Simulation
 {
 public:
-    Simulation( const Config::InputParams & input, std::optional<int> rng_seed )
-            : input( input ), gen( std::mt19937( rng_seed.value_or( std::random_device()() ) ) )
+    Simulation( const Config::InputParams & input, std::optional<int> rng_seed ) : input( input )
     {
+
+        this->rng_seed = rng_seed.value_or( std::random_device()() );
+        gen            = std::mt19937( this->rng_seed );
+
         // Create output directory
         std::filesystem::create_directories( input.output_folder ); // Create the output directory
 
@@ -97,6 +100,7 @@ public:
     void run();
 
 private:
+    int rng_seed;
     std::mt19937 gen{};
 };
 
