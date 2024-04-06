@@ -92,7 +92,6 @@ public:
     {
         // This matrix transforms coordinates into the axes frame of the ellipse
 
-
         const double cos = cos_azimuthal_angle;
         const double sin = sin_azimuthal_angle;
 
