@@ -88,9 +88,11 @@ public:
     }
 
     // Checks if a line segment between x1 and x2 intersects the lobe
-    inline bool line_segment_intersects( const Vector2 & x1, const Vector2 & x2 ) const
+    inline std::optional<std::array<Vector2, 2>> line_segment_intersects( const Vector2 & x1, const Vector2 & x2 ) const
     {
         // This matrix transforms coordinates into the axes frame of the ellipse
+
+
         const double cos = cos_azimuthal_angle;
         const double sin = sin_azimuthal_angle;
 
@@ -126,7 +128,7 @@ public:
         // Therefore, if beta^2 - 4*alpha*gamma < 0, the line segment misses the ellipse
         const double radicand = beta * beta - 4 * alpha * gamma;
         if( radicand < 0 )
-            return false;
+            return std::nullopt;
 
         const double sqrt_r = std::sqrt( radicand );
 
@@ -134,13 +136,15 @@ public:
         const double t1 = ( -beta - sqrt_r ) / ( 2.0 * alpha );
         const double t2 = ( -beta + sqrt_r ) / ( 2.0 * alpha );
 
-        if( t1 >= 0.0 && t1 <= 1.0 )
-            return true;
+        if( ( t1 >= 0.0 && t1 <= 1.0 ) && ( t2 >= 0.0 && t2 <= 1.0 ) )
+        {
+            Vector2 v1                 = x1 + t1 * diff;
+            Vector2 v2                 = x1 + t2 * diff;
+            std::array<Vector2, 2> res = { v1, v2 };
+            return res;
+        }
 
-        if( t2 >= 0.0 && t2 <= 1.0 )
-            return true;
-
-        return false;
+        return std::nullopt;
     }
 
     // Gives a point on the perimeter of the ellipse

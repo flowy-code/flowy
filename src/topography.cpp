@@ -81,10 +81,10 @@ Topography::get_cells_intersecting_lobe( const Lobe & lobe )
             Vector2 point_rt = { x_data[idx_x] + cell_size(), y_data[idx_y] + cell_size() };
             // clang-format off
             if(
-                   lobe.line_segment_intersects( point_lb,point_rb )
-                || lobe.line_segment_intersects( point_rb,point_rt )
-                || lobe.line_segment_intersects( point_rt,point_lt )
-                || lobe.line_segment_intersects( point_lt,point_lb )
+                   lobe.line_segment_intersects( point_lb,point_rb ).has_value()
+                || lobe.line_segment_intersects( point_rb,point_rt ).has_value()
+                || lobe.line_segment_intersects( point_rt,point_lt ).has_value()
+                || lobe.line_segment_intersects( point_lt,point_lb ).has_value()
             )
             {
                 cells_intersecting.push_back( { idx_x, idx_y } );
