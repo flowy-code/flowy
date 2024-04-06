@@ -86,7 +86,7 @@ public:
 
     void perturb_lobe_angle( Lobe & lobe, const Vector2 & slope );
 
-    int select_parent_lobe( int idx_descendant );
+    int select_parent_lobe( Lobe & lobe_descendent, int idx_descendant );
 
     void add_inertial_contribution( Lobe & lobe, const Lobe & parent, const Vector2 & slope ) const;
 

@@ -133,7 +133,7 @@ void Simulation::compute_lobe_axes( Lobe & lobe, const Vector2 & slope ) const
 }
 
 // Select which lobe amongst the existing lobes will be the parent for the new descendent lobe
-int Simulation::select_parent_lobe( int idx_descendant )
+int Simulation::select_parent_lobe( Lobe & lobe_descendent, int idx_descendant )
 {
 
     // Their implementation
@@ -167,9 +167,9 @@ int Simulation::select_parent_lobe( int idx_descendant )
     }
 
     // Update the lobe information
-    lobes[idx_descendant].idx_parent   = idx_parent;
-    lobes[idx_descendant].dist_n_lobes = lobes[idx_parent].dist_n_lobes + 1;
-    lobes[idx_descendant].parent_weight *= lobe_dimensions.exp_lobe_exponent;
+    lobe_descendent.idx_parent   = idx_parent;
+    lobe_descendent.dist_n_lobes = lobes[idx_parent].dist_n_lobes + 1;
+    lobe_descendent.parent_weight *= lobe_dimensions.exp_lobe_exponent;
 
     // Loop over all ancestors and increase n_descendents
     std::optional<int> idx_parent_current = idx_parent;
@@ -247,7 +247,7 @@ void Simulation::run()
         for( int idx_lobe = 0; idx_lobe < input.n_init; idx_lobe++ )
         {
             lobes.emplace_back();
-            Lobe & lobe_cur = lobes[idx_lobe];
+            Lobe & lobe_cur = lobes.back();
 
             compute_initial_lobe_position( idx_flow, lobe_cur );
 
@@ -264,7 +264,6 @@ void Simulation::run()
 
             // Add rasterized lobe
             topography.add_lobe( lobe_cur );
-
             n_lobes_processed++;
         }
 
@@ -273,17 +272,18 @@ void Simulation::run()
         for( int idx_lobe = input.n_init; idx_lobe < n_lobes; idx_lobe++ )
         {
             lobes.emplace_back();
-            Lobe & lobe_cur = lobes[idx_lobe];
+            Lobe & lobe_cur = lobes.back();
 
             // Select which of the previously created lobes is the parent lobe
             // from which the new descendent lobe will bud
-            auto idx_parent = select_parent_lobe( idx_lobe );
+            auto idx_parent = select_parent_lobe( lobe_cur, idx_lobe );
 
             Lobe & lobe_parent = lobes[idx_parent];
 
             // stopping condition (parent lobe close the domain boundary or at a not defined z value)
             if( stop_condition( lobe_parent.center, lobe_parent.semi_axes[0] ) )
             {
+                lobes.pop_back();
                 break;
             }
 
@@ -307,6 +307,7 @@ void Simulation::run()
 
             if( stop_condition( final_budding_point, lobe_parent.semi_axes[0] ) )
             {
+                lobes.pop_back();
                 break;
             }
             // Get the slope at the final budding point
@@ -320,6 +321,7 @@ void Simulation::run()
 
             if( stop_condition( lobe_cur.center, lobe_cur.semi_axes[0] ) )
             {
+                lobes.pop_back();
                 break;
             }
 
