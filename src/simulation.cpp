@@ -111,7 +111,7 @@ void Simulation::perturb_lobe_angle( Lobe & lobe, const Vector2 & slope )
         }
         else
         {
-            std::uniform_real_distribution<double> dist_uniform( -Math::pi, Math::pi );
+            std::uniform_real_distribution<double> dist_uniform( -Math::pi / 2, Math::pi / 2 );
             const double angle_perturbation = dist_uniform( gen );
             lobe.set_azimuthal_angle( lobe.get_azimuthal_angle() + angle_perturbation );
         }
@@ -135,6 +135,15 @@ void Simulation::compute_lobe_axes( Lobe & lobe, const Vector2 & slope ) const
 // Select which lobe amongst the existing lobes will be the parent for the new descendent lobe
 int Simulation::select_parent_lobe( int idx_descendant )
 {
+
+    // Their implementation
+    // std::uniform_real_distribution<double> dist( 0, 1 );
+    // double idx0 = dist( gen );
+    // auto idx1 = std::pow( idx0, input.lobe_exponent );
+    // auto idx2 = idx_descendant * idx1;
+    // int idx_parent = std::floor( idx2 );
+    // idx_parent = idx_descendant - 1;
+
     int idx_parent{};
 
     // Generate from the last lobe
@@ -204,9 +213,10 @@ void Simulation::compute_descendent_lobe_position( Lobe & lobe, const Lobe & par
     lobe.center             = new_lobe_center;
 }
 
-bool Simulation::stop_condition( const Vector2 & point )
+bool Simulation::stop_condition( const Vector2 & point, double radius )
 {
-    return topography.is_point_near_boundary( point ) || topography.get_height( point ) < asc_file.no_data_value + 1;
+    return topography.is_point_near_boundary( point, radius )
+           || topography.get_height( point ) < asc_file.no_data_value + 1;
 }
 
 void Simulation::run()
@@ -272,7 +282,7 @@ void Simulation::run()
             Lobe & lobe_parent = lobes[idx_parent];
 
             // stopping condition (parent lobe close the domain boundary or at a not defined z value)
-            if( stop_condition( lobe_parent.center ) )
+            if( stop_condition( lobe_parent.center, lobe_parent.semi_axes[0] ) )
             {
                 break;
             }

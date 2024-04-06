@@ -92,7 +92,7 @@ public:
 
     void write_lobe_data_to_file( const std::vector<Lobe> & lobes, const std::filesystem::path & output_path );
 
-    bool stop_condition( const Vector2 & point );
+    bool stop_condition( const Vector2 & point, double radius );
 
     void run();
 

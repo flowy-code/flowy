@@ -87,7 +87,7 @@ public:
     void add_lobe( const Lobe & lobe );
 
     // Check if a point is near the boundary
-    bool is_point_near_boundary( const Vector2 & coordinates );
+    bool is_point_near_boundary( const Vector2 & coordinates, double radius );
 
     // Figure out which cell a given point is in, returning the indices of the lowest left corner
     std::array<int, 2> locate_point( const Vector2 & coordinates );

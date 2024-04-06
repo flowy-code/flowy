@@ -18,10 +18,14 @@ AscFile Topography::to_asc_file()
     return asc_file;
 }
 
-bool Topography::is_point_near_boundary( const Vector2 & coordinates )
+bool Topography::is_point_near_boundary( const Vector2 & coordinates, double radius )
 {
-    const bool near_x_boundary = coordinates[0] < x_data[0] + cell_size() || coordinates[0] >= x_data.periodic( -1 );
-    const bool near_y_boundary = coordinates[1] < y_data[0] + cell_size() || coordinates[1] >= y_data.periodic( -1 );
+    int n = std::ceil( radius / cell_size() );
+
+    const bool near_x_boundary
+        = coordinates[0] < x_data[0] + n * cell_size() || coordinates[0] >= x_data.periodic( -1 ) - n * cell_size();
+    const bool near_y_boundary
+        = coordinates[1] < y_data[0] + n * cell_size() || coordinates[1] >= y_data.periodic( -1 ) - n * cell_size();
     return near_x_boundary || near_y_boundary;
 }
 
