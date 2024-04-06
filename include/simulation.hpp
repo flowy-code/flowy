@@ -91,6 +91,8 @@ public:
 
     int select_parent_lobe( Lobe & lobe_descendent, int idx_descendant );
 
+    static void compute_descendent_information( std::vector<Lobe> & lobes );
+
     void add_inertial_contribution( Lobe & lobe, const Lobe & parent, const Vector2 & slope ) const;
 
     void write_lobe_data_to_file( const std::vector<Lobe> & lobes, const std::filesystem::path & output_path );

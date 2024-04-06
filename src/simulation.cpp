@@ -172,16 +172,18 @@ int Simulation::select_parent_lobe( Lobe & lobe_descendent, int idx_descendant )
     lobe_descendent.dist_n_lobes = lobes[idx_parent].dist_n_lobes + 1;
     lobe_descendent.parent_weight *= lobe_dimensions.exp_lobe_exponent;
 
-    // Loop over all ancestors and increase n_descendents
-    std::optional<int> idx_parent_current = idx_parent;
-    while( idx_parent_current.has_value() )
-    {
-        Lobe & lobe_current = lobes[idx_parent_current.value()];
-        lobe_current.n_descendents++;
-        idx_parent_current = lobe_current.idx_parent;
-    }
-
     return idx_parent;
+}
+
+void Simulation::compute_descendent_information( std::vector<Lobe> & lobes )
+{
+    for( auto & lobe : lobes )
+    {
+        if( lobe.idx_parent.has_value() )
+        {
+            lobes[lobe.idx_parent.value()].n_descendents++;
+        }
+    }
 }
 
 void Simulation::add_inertial_contribution( Lobe & lobe, const Lobe & parent, const Vector2 & slope ) const
@@ -335,6 +337,8 @@ void Simulation::run()
             // topography.add_lobe( lobe_cur );
             n_lobes_processed++;
         }
+
+        compute_descendent_information( lobes );
 
         if( input.write_lobes_csv )
         {
