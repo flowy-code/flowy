@@ -348,7 +348,11 @@ void Simulation::run()
 
     fmt::print( "Total number of processed lobes = {}\n", n_lobes_processed );
 
-    fmt::print( "n_lobes/ms = {}\n", ( n_lobes_processed / total_time.count() ) );
+    if( total_time.count() > 0 )
+    {
+        auto lobes_per_ms = n_lobes_processed / total_time.count();
+        fmt::print( "n_lobes/ms = {}\n", lobes_per_ms );
+    }
 
     // Save final topography to asc file
     asc_file = topography.to_asc_file();
