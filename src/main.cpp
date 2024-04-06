@@ -49,7 +49,7 @@ int main( int argc, char * argv[] )
     fmt::print( "=================================================================\n" );
     fmt::print( "Using input file: {}\n", config_file_path.string() );
     fmt::print( "Output directory path set to: {}\n", input_params.output_folder.string() );
-    auto simulation = Simulation( input_params, 0 );
+    auto simulation = Simulation( input_params, input_params.rng_seed );
     simulation.run();
     fmt::print( "=================================================================\n" );
 }
