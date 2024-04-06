@@ -301,8 +301,9 @@ void Simulation::run()
 
             // Compute the final budding point
             // It is defined by the point on the perimeter of the parent lobe closest to the center of the new lobe
-            Vector2 final_budding_point
-                = 2.0 * lobe_parent.center - lobe_parent.point_at_angle( lobe_cur.get_azimuthal_angle() );
+
+            auto angle_diff             = lobe_parent.get_azimuthal_angle() - lobe_cur.get_azimuthal_angle();
+            Vector2 final_budding_point = lobe_parent.point_at_angle( angle_diff );
             // Vector2 final_budding_point = lobe_parent.point_at_angle( lobe_cur.get_azimuthal_angle() );
 
             if( stop_condition( final_budding_point, lobe_parent.semi_axes[0] ) )
