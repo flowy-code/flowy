@@ -137,34 +137,34 @@ int Simulation::select_parent_lobe( Lobe & lobe_descendent, int idx_descendant )
 {
 
     // Their implementation
-    // std::uniform_real_distribution<double> dist( 0, 1 );
-    // double idx0 = dist( gen );
-    // auto idx1 = std::pow( idx0, input.lobe_exponent );
-    // auto idx2 = idx_descendant * idx1;
-    // int idx_parent = std::floor( idx2 );
-    // idx_parent = idx_descendant - 1;
+    std::uniform_real_distribution<double> dist( 0, 1 );
+    double idx0    = dist( gen );
+    auto idx1      = std::pow( idx0, input.lobe_exponent );
+    auto idx2      = idx_descendant * idx1;
+    int idx_parent = std::floor( idx2 );
+    idx_parent     = idx_descendant - 1;
 
-    int idx_parent{};
+    // int idx_parent{};
 
-    // Generate from the last lobe
-    if( input.lobe_exponent == 0 )
-    {
-        idx_parent = idx_descendant - 1;
-    }
-    else if( input.lobe_exponent == 1 ) // Draw from a uniform random distribution if exponent is 1
-    {
-        std::uniform_int_distribution<int> dist_int( 0, idx_descendant - 1 );
-        idx_parent = dist_int( gen );
-    }
-    else
-    {
-        // Otherwise, draw from an exponential distribution
-        auto weight_probability_callback
-            = [&]( int idx_current ) -> double { return lobes[idx_current].parent_weight; };
+    // // Generate from the last lobe
+    // if( input.lobe_exponent == 0 )
+    // {
+    //     idx_parent = idx_descendant - 1;
+    // }
+    // else if( input.lobe_exponent == 1 ) // Draw from a uniform random distribution if exponent is 1
+    // {
+    //     std::uniform_int_distribution<int> dist_int( 0, idx_descendant - 1 );
+    //     idx_parent = dist_int( gen );
+    // }
+    // else
+    // {
+    //     // Otherwise, draw from an exponential distribution
+    //     auto weight_probability_callback
+    //         = [&]( int idx_current ) -> double { return lobes[idx_current].parent_weight; };
 
-        idx_parent = ProbabilityDist::ReservoirSampling::reservoir_sampling_A_ExpJ(
-            1, idx_descendant, weight_probability_callback, gen )[0];
-    }
+    //     idx_parent = ProbabilityDist::ReservoirSampling::reservoir_sampling_A_ExpJ(
+    //         1, idx_descendant, weight_probability_callback, gen )[0];
+    // }
 
     // Update the lobe information
     lobe_descendent.idx_parent   = idx_parent;
@@ -303,7 +303,7 @@ void Simulation::run()
             // It is defined by the point on the perimeter of the parent lobe closest to the center of the new lobe
 
             auto angle_diff             = lobe_parent.get_azimuthal_angle() - lobe_cur.get_azimuthal_angle();
-            Vector2 final_budding_point = lobe_parent.point_at_angle( angle_diff );
+            Vector2 final_budding_point = 2.0 * lobe_parent.center - lobe_parent.point_at_angle( angle_diff );
             // Vector2 final_budding_point = lobe_parent.point_at_angle( lobe_cur.get_azimuthal_angle() );
 
             if( stop_condition( final_budding_point, lobe_parent.semi_axes[0] ) )
