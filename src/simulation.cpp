@@ -331,7 +331,10 @@ void Simulation::run()
             n_lobes_processed++;
         }
 
-        // write_lobe_data_to_file( lobes, fmt::format( "flow_{}_lobes_{}.txt", idx_flow, n_lobes_processed ) );
+        if( input.write_lobes_csv )
+        {
+            write_lobe_data_to_file( lobes, input.output_folder / fmt::format( "lobes_{}.csv", idx_flow ) );
+        }
 
         auto t_cur          = std::chrono::high_resolution_clock::now();
         auto remaining_time = std::chrono::duration_cast<std::chrono::milliseconds>(

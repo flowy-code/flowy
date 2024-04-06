@@ -13,6 +13,10 @@ public:
     // The folder output is written to
     std::filesystem::path output_folder = "./output";
 
+    // If set to true one csv file, per flow, is written to the output folder.
+    // The files are named 'lobes_{idx_flow}.csv' and contain information about the lobes in that specific flow
+    bool write_lobes_csv = false;
+
     // mr lava loba settings from input.py
     std::filesystem::path run_name{};        // Name of the run (used to save the parameters and the output)
     std::filesystem::path source{};          // File name of ASCII digital elevation model (.asc file)

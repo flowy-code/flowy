@@ -35,6 +35,10 @@ InputParams parse_config( const std::filesystem::path & path )
     toml::table tbl;
     tbl = toml::parse_file( path.string() );
 
+    // our own
+    set_if_specified( params.write_lobes_csv, tbl["write_lobes_csv"] );
+
+    // From input.py
     std::string run_name_string;
     set_if_specified( run_name_string, tbl["run_name"] );
     params.run_name = std::filesystem::path( run_name_string );
@@ -85,7 +89,7 @@ InputParams parse_config( const std::filesystem::path & path )
     params.eps                   = tbl["eps"].value<double>();
     params.union_diff_file       = tbl["union_diff_file"].value<std::string>();
 
-    // "Advanced" settings
+    // from input_advanced.py
     set_if_specified( params.npoints, tbl["Advanced"]["npoints"] );
     set_if_specified( params.n_init, tbl["Advanced"]["n_init"] );
     set_if_specified( params.dist_fact, tbl["Advanced"]["dist_fact"] );

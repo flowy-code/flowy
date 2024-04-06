@@ -1,6 +1,8 @@
 # name of the run (used to save the parameters and the output)
 run_name = "HAWAII"  # is the easternmost fissure
 
+write_lobes_csv = false
+
 # File name of ASCII digital elevation model
 source = "test20m.asc"
 
