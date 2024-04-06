@@ -184,7 +184,7 @@ std::pair<double, Vector2> Topography::height_and_slope( const Vector2 & coordin
     const double height = Z00 + alpha * xp[0] + beta * xp[1] + gamma * xp[0] * xp[1];
     const Vector2 slope = { alpha + gamma * xp[1], beta + gamma * xp[0] };
 
-    return { height, slope };
+    return { height, slope/cell_size() };
 }
 
 void Topography::add_lobe( const Lobe & lobe )
