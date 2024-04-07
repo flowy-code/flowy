@@ -70,7 +70,6 @@ void Simulation::write_lobe_data_to_file( const std::vector<Lobe> & lobes, const
 
     for( const auto & lobe : lobes )
     {
-
         file << fmt::format( "{},", lobe.get_azimuthal_angle() );
         file << fmt::format( "{},", lobe.center( 0 ) );
         file << fmt::format( "{},", lobe.center( 1 ) );
@@ -137,35 +136,26 @@ void Simulation::compute_lobe_axes( Lobe & lobe, const Vector2 & slope ) const
 int Simulation::select_parent_lobe( Lobe & lobe_descendent, int idx_descendant )
 {
 
-    // Their implementation
-    std::uniform_real_distribution<double> dist( 0, 1 );
-    double idx0    = dist( gen );
-    auto idx1      = std::pow( idx0, input.lobe_exponent );
-    auto idx2      = idx_descendant * idx1;
-    int idx_parent = std::floor( idx2 );
-    idx_parent     = idx_descendant - 1;
+    int idx_parent{};
 
-    // int idx_parent{};
-
-    // // Generate from the last lobe
-    // if( input.lobe_exponent == 0 )
-    // {
-    //     idx_parent = idx_descendant - 1;
-    // }
-    // else if( input.lobe_exponent == 1 ) // Draw from a uniform random distribution if exponent is 1
-    // {
-    //     std::uniform_int_distribution<int> dist_int( 0, idx_descendant - 1 );
-    //     idx_parent = dist_int( gen );
-    // }
-    // else
-    // {
-    //     // Otherwise, draw from an exponential distribution
-    //     auto weight_probability_callback
-    //         = [&]( int idx_current ) -> double { return lobes[idx_current].parent_weight; };
-
-    //     idx_parent = ProbabilityDist::ReservoirSampling::reservoir_sampling_A_ExpJ(
-    //         1, idx_descendant, weight_probability_callback, gen )[0];
-    // }
+    // TODO: force max length
+    // Generate from the last lobe
+    if( input.lobe_exponent <= 0 )
+    {
+        idx_parent = idx_descendant - 1;
+    }
+    else if( input.lobe_exponent >= 1 ) // Draw from a uniform random distribution if exponent is 1
+    {
+        std::uniform_int_distribution<int> dist_int( 0, idx_descendant - 1 );
+        idx_parent = dist_int( gen );
+    }
+    else
+    {
+        std::uniform_real_distribution<double> dist( 0, 1 );
+        const double idx0 = dist( gen );
+        const auto idx1   = std::pow( idx0, input.lobe_exponent );
+        idx_parent        = idx_descendant * idx1;
+    }
 
     // Update the lobe information
     lobe_descendent.idx_parent   = idx_parent;
@@ -266,7 +256,7 @@ void Simulation::run()
             compute_lobe_axes( lobe_cur, slope );
 
             // Add rasterized lobe
-            // topography.add_lobe( lobe_cur );
+            topography.add_lobe( lobe_cur );
             n_lobes_processed++;
         }
 
@@ -334,7 +324,7 @@ void Simulation::run()
             lobe_cur.thickness = lobe_dimensions.thickness_min + idx_lobe * delta_lobe_thickness;
 
             // Add rasterized lobe
-            // topography.add_lobe( lobe_cur );
+            topography.add_lobe( lobe_cur );
             n_lobes_processed++;
         }
 
@@ -343,11 +333,6 @@ void Simulation::run()
         if( input.write_lobes_csv )
         {
             write_lobe_data_to_file( lobes, input.output_folder / fmt::format( "lobes_{}.csv", idx_flow ) );
-        }
-
-        for( auto & lobe : lobes )
-        {
-            topography.add_lobe( lobe );
         }
 
         auto t_cur          = std::chrono::high_resolution_clock::now();
