@@ -39,6 +39,12 @@ meson install -C build
 ## Benchmark
 TODO!
 
+## Gallery
+
+### Mt Etna 2001 LFS1 flow field
+<img src="res/etna_pv.png" width="400"/>
+<img src="res/etna_pplot.png" width="400"/>
+
 ## References
 [1] Mattia de' Michieli Vitturi, Simone Tarquini, "MrLavaLoba: A new probabilistic model for the simulation of lava flows as a settling process"
 Journal of Volcanology and Geothermal Research, 2018.
