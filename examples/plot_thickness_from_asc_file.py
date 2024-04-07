@@ -32,6 +32,7 @@ class AscFile:
             self.nd,
         ) = values
         self.height_data = np.loadtxt(path_to_file, skiprows=6, delimiter=" ")
+        self.height_data = np.transpose(np.flipud(self.height_data))
 
     def x_data(self):
         return np.arange(
@@ -42,8 +43,8 @@ class AscFile:
 
     def y_data(self):
         return np.arange(
-            self.lx,
-            self.lx + self.height_data.shape[0] * self.cell,
+            self.ly,
+            self.ly + self.height_data.shape[1] * self.cell,
             self.cell,
         )
 
@@ -68,11 +69,12 @@ def plot_pyvista(
         1.0,
         "--warp",
         min=0.0,
-        max=1.0,
         help="Factor by which to warp the terrain height.",
     ),
     threshold: float = typer.Option(
-        0.01, "--thresh", help="Any elevation smaller than the threshold is not plotted"
+        1e-12,
+        "--thresh",
+        help="Any elevation smaller than the threshold is not plotted",
     ),
     image_outfile: Path = typer.Option(
         None,
@@ -84,36 +86,42 @@ def plot_pyvista(
     asc_file_initial = AscFile(path_asc_file_initial)
     asc_file_final = AscFile(path_asc_file_final)
 
+    asc_file_initial.filter_height_data()
+    asc_file_final.filter_height_data()
+
     x_data = asc_file_initial.x_data()
     y_data = asc_file_initial.y_data()
-
     min_height = asc_file_initial.min_height()
+    cell = asc_file_initial.cell
 
-    grid = pv.ImageData()
+    # We define an ImageData mesh
+    grid = pv.ImageData(spacing=[cell, cell, cell])
     grid.dimensions = [len(x_data), len(y_data), 1]
 
-    grid.point_data["height_initial"] = (
-        asc_file_initial.height_data.flatten(order="F") - min_height
-    )
-    grid.point_data["height_final"] = (
-        asc_file_final.height_data.flatten(order="F") - min_height
-    )
-    grid.point_data["flow"] = (
+    # Then we give it the initial and final height, as well as the flow thickness as point data
+    grid.point_data["height_initial"] = asc_file_initial.height_data.flatten(order="F")
+    grid.point_data["height_final"] = asc_file_final.height_data.flatten(order="F")
+    grid.point_data["flow_thickness"] = (
         grid.point_data["height_final"] - grid.point_data["height_initial"]
     )
-    grid_initial = grid.warp_by_scalar("height_initial", warp_factor)
-    # For the lava flow
-    grid_final = grid.warp_by_scalar("height_final", warp_factor).threshold(
-        threshold, scalars="flow"
+
+    grid_initial = grid.warp_by_scalar(
+        "height_initial", warp_factor / asc_file_initial.cell
     )
+    # For the lava flow
+    grid_final = grid.warp_by_scalar(
+        "height_final", warp_factor / asc_file_initial.cell
+    ).threshold(threshold, scalars="flow_thickness")
 
     # For the terrain
     z_cells = np.linspace(0, 10, 10)
+
     xx = np.repeat(grid_initial.x, len(z_cells), axis=-1)
     yy = np.repeat(grid_initial.y, len(z_cells), axis=-1)
     zz = np.repeat(grid_initial.z, len(z_cells), axis=-1) - np.cumsum(z_cells).reshape(
         (1, 1, -1)
     )
+
     mesh = pv.StructuredGrid(xx, yy, zz)
     mesh["Elevation"] = zz.ravel(order="F")
     mesh = mesh.threshold(asc_file_final.nd + 1, scalars="Elevation")
@@ -125,6 +133,7 @@ def plot_pyvista(
         p = pv.Plotter(off_screen=False)
     else:
         p = pv.Plotter(off_screen=True)
+
     p.add_mesh(
         mesh,
         scalars="Elevation",
@@ -133,14 +142,30 @@ def plot_pyvista(
         opacity=opacity_terrain,
         cmap="gray",
     )
-    p.add_mesh(grid_final, color="red", opacity=0.8, smooth_shading=True)
+
+    p.add_mesh(
+        grid_final,
+        scalars="flow_thickness",
+        cmap="magma",
+        opacity=1.0,
+        smooth_shading=True,
+    )
+
+    # Callback for getting the last camera position
+    def take_screenshot(x, path):
+        if path is not None:
+            x.screenshot(path)
 
     if interactive:
-        p.show()
-    if image_outfile is not None:
-        p.screenshot(image_outfile)
-    else:
-        p.screenshot("./image.png")
+        p.show(
+            before_close_callback=lambda x: take_screenshot(x, image_outfile),
+            auto_close=False,
+        )
+
+    # if image_outfile is not None:
+    #     p.screenshot(image_outfile)
+    # else:
+    #     p.screenshot("./image.png")
 
 
 @app.command()
@@ -169,14 +194,18 @@ def plot_pyplot(
     plt.contourf(
         x_data,
         y_data,
-        asc_file_initial.height_data - min_height,
-        levels=20,
+        (asc_file_initial.height_data - min_height).T,
+        levels=50,
         cmap="gray",
     )
 
+    plt.xlabel("x [m]")
+    plt.ylabel("y [m]")
+
     lava_thickness = asc_file_final.height_data - asc_file_initial.height_data
     lava_thickness[lava_thickness < 1e-10] = float("nan")
-    plt.contourf(x_data, y_data, lava_thickness, cmap="magma")
+    plt.contourf(x_data, y_data, lava_thickness.T, cmap="magma")
+
     if interactive:
         plt.show()
     if image_outfile is not None:
