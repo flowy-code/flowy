@@ -137,9 +137,14 @@ public:
 
         if( ( t1 >= 0.0 && t1 <= 1.0 ) || ( t2 >= 0.0 && t2 <= 1.0 ) )
         {
-            const Vector2 v1           = x1 + std::clamp( t1, 0.0, 1.0 ) * diff;
-            const Vector2 v2           = x1 + std::clamp( t2, 0.0, 1.0 ) * diff;
-            std::array<Vector2, 2> res = { v1, v2 };
+            const Vector2 v1_p = x1_prime + std::clamp( t1, 0.0, 1.0 ) * diff;
+            const Vector2 v2_p = x1_prime + std::clamp( t2, 0.0, 1.0 ) * diff;
+
+            // Revert the coordinate transformation into the center of the ellipse
+            const Vector2 v1 = { cos * v1_p[0] - sin * v1_p[1], +sin * v1_p[0] + cos * v1_p[1] };
+            const Vector2 v2 = { cos * v2_p[0] - sin * v2_p[1], +sin * v2_p[0] + cos * v2_p[1] };
+
+            std::array<Vector2, 2> res = { v1 + center, v2 + center };
             return res;
         }
 
