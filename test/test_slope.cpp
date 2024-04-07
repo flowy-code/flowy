@@ -27,7 +27,7 @@ TEST_CASE( "height_and_slope_test", "[topography]" )
     // Expected values
     auto height_expected = 0.5 * ( topography.height_data( 0, 0 ) + topography.height_data( 0, 1 ) );
     Flowy::Vector2 slope_expected
-        = { 0.0, ( topography.height_data( 0, 1 ) - topography.height_data( 0, 0 ) ) / topography.cell_size() };
+        = { 0.0, -( topography.height_data( 0, 1 ) - topography.height_data( 0, 0 ) ) / topography.cell_size() };
 
     auto [height, slope] = topography.height_and_slope( coord );
 
