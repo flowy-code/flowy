@@ -135,10 +135,10 @@ public:
         const double t1 = ( -beta - sqrt_r ) / ( 2.0 * alpha );
         const double t2 = ( -beta + sqrt_r ) / ( 2.0 * alpha );
 
-        if( ( t1 >= 0.0 && t1 <= 1.0 ) && ( t2 >= 0.0 && t2 <= 1.0 ) )
+        if( ( t1 >= 0.0 && t1 <= 1.0 ) || ( t2 >= 0.0 && t2 <= 1.0 ) )
         {
-            Vector2 v1                 = x1 + t1 * diff;
-            Vector2 v2                 = x1 + t2 * diff;
+            const Vector2 v1           = x1 + std::clamp( t1, 0.0, 1.0 ) * diff;
+            const Vector2 v2           = x1 + std::clamp( t2, 0.0, 1.0 ) * diff;
             std::array<Vector2, 2> res = { v1, v2 };
             return res;
         }
