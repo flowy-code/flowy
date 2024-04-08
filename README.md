@@ -37,7 +37,16 @@ meson install -C build
 ```
 
 ## Benchmark
-TODO!
+Both codes were run on the examples and the runtime was averaged over 10 runs. Flowy is about __100 times faster__ on the Kilauea example and about __50 times faster__ on the Mt. Etna example.
+
+<img src="res/barplot.png" width="800"/>
+
+
+### Runtime in seconds  
+|               | Etna                | Kilauea             |
+|---            |---                  |  ---                |
+| Flowy         |   $13.343 \pm 0.1$ s| $0.779 \pm 0.1$ s  |
+| Mr. Lava Loba |  $686.330 \pm 3.3$ s| $81.989 \pm 2.1$ s  |
 
 ## Gallery
 
