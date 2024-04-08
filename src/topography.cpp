@@ -5,6 +5,7 @@
 #include <fmt/ranges.h>
 #include <algorithm>
 #include <stdexcept>
+#include <vector>
 
 namespace Flowy
 {
@@ -65,37 +66,77 @@ Topography::get_cells_intersecting_lobe( const Lobe & lobe )
     std::vector<std::array<int, 2>> cells_intersecting{};
     std::vector<std::array<int, 2>> cells_enclosed{};
 
-    // First, we find all candidates with the bounding_box function from the topography
-    auto extent_xy  = lobe.extent_xy();
-    const auto bbox = bounding_box( lobe.center, extent_xy[0], extent_xy[1] );
+    auto extent_xy = lobe.extent_xy();
+    int idx_y_min  = ( lobe.center[1] - extent_xy[1] - y_data[0] ) / cell_size();
+    int idx_y_max  = ( lobe.center[1] + extent_xy[1] - y_data[0] ) / cell_size();
 
-    // Now we test all the candidate cells from the big bounding box for intersection with the lobe
-    for( int idx_x = bbox.idx_x_lower; idx_x <= bbox.idx_x_higher; idx_x++ )
+    const int n_rows = idx_y_max - idx_y_min + 1;
+    auto idx_x_left  = std::vector<int>( n_rows + 1, -1 );
+    auto idx_x_right = std::vector<int>( n_rows + 1, -1 );
+
+    for( int idx_y = idx_y_min; idx_y <= idx_y_max + 1; idx_y++ )
     {
-        for( int idx_y = bbox.idx_y_lower; idx_y <= bbox.idx_y_higher; idx_y++ )
+        const int idx_row = idx_y - idx_y_min;
+
+        const double y   = y_data[idx_y];
+        const Vector2 x1 = { lobe.center[0] - extent_xy[0], y };
+        const Vector2 x2 = { lobe.center[0] + extent_xy[0], y };
+
+        auto points = lobe.line_segment_intersects( x1, x2 );
+        if( points.has_value() )
         {
-            // We check all corners of each cell
-            Vector2 point_lb = { x_data[idx_x], y_data[idx_y] };
-            Vector2 point_lt = { x_data[idx_x], y_data[idx_y] + cell_size() };
-            Vector2 point_rb = { x_data[idx_x] + cell_size(), y_data[idx_y] };
-            Vector2 point_rt = { x_data[idx_x] + cell_size(), y_data[idx_y] + cell_size() };
-            // clang-format off
-            if(
-                   lobe.line_segment_intersects( point_lb,point_rb ).has_value()
-                || lobe.line_segment_intersects( point_rb,point_rt ).has_value()
-                || lobe.line_segment_intersects( point_rt,point_lt ).has_value()
-                || lobe.line_segment_intersects( point_lt,point_lb ).has_value()
-            )
+            const auto p1        = points.value()[0];
+            const auto p2        = points.value()[1];
+            idx_x_left[idx_row]  = ( p1[0] - x_data[0] ) / cell_size();
+            idx_x_right[idx_row] = ( p2[0] - x_data[0] ) / cell_size();
+        }
+
+        const int idx_left_cur  = idx_x_left[idx_row];
+        const int idx_right_cur = idx_x_right[idx_row];
+
+        // The bottom of the next row, is the top of the previous one
+        if( idx_row > 0 )
+        {
+            const double idx_x_left_prev  = idx_x_left[idx_row - 1];
+            const double idx_x_right_prev = idx_x_right[idx_row - 1];
+
+            if( idx_y == idx_y_min + 1 )
             {
-                cells_intersecting.push_back( { idx_x, idx_y } );
-            } else {
-                if (lobe.is_point_in_lobe(point_lb))
-                    cells_enclosed.push_back( {idx_x, idx_y} );
+                for( int idx_x = idx_left_cur; idx_x <= idx_right_cur; idx_x++ )
+                {
+                    cells_intersecting.push_back( { idx_x, idx_y - 1 } );
+                }
             }
-            // clang-format on
+            else if( idx_y == idx_y_max + 1 )
+            {
+                for( int idx_x = idx_x_left_prev; idx_x <= idx_x_right_prev; idx_x++ )
+                {
+                    cells_intersecting.push_back( { idx_x, idx_y - 1 } );
+                }
+            }
+            else
+            {
+                const int start_left = std::min<int>( idx_x_left_prev, idx_x_left[idx_row] );
+                const int stop_left  = std::max<int>( idx_x_left_prev, idx_x_left[idx_row] );
+                for( int idx_x = start_left; idx_x <= stop_left; idx_x++ )
+                {
+                    cells_intersecting.push_back( { idx_x, idx_y - 1 } );
+                }
+
+                const int start_right = std::min<int>( idx_x_right_prev, idx_x_right[idx_row] );
+                const int stop_right  = std::max<int>( idx_x_right_prev, idx_x_right[idx_row] );
+                for( int idx_x = start_right; idx_x <= stop_right; idx_x++ )
+                {
+                    cells_intersecting.push_back( { idx_x, idx_y - 1 } );
+                }
+
+                for( int idx_x = stop_left + 1; idx_x < start_right; idx_x++ )
+                {
+                    cells_enclosed.push_back( { idx_x, idx_y - 1 } );
+                }
+            }
         }
     }
-
     return { cells_intersecting, cells_enclosed };
 }
 
