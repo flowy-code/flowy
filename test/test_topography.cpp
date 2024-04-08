@@ -80,11 +80,7 @@ TEST_CASE( "get_cells_intersecting_lobe", "[intersecting_lobe_cells]" )
 
     auto [cells_intersecting, cells_enclosed] = topography.get_cells_intersecting_lobe( my_lobe );
 
-    for( size_t i = 0; i < cells_intersecting.size(); i++ )
-    {
-        fmt::print( " {} \n", cells_intersecting[i] );
-        REQUIRE_THAT( cells_intersecting[i], Catch::Matchers::RangeEquals( cell_indices_expected[i] ) );
-    }
+    REQUIRE_THAT( cell_indices_expected, Catch::Matchers::UnorderedRangeEquals( cells_intersecting ) );
 }
 
 TEST_CASE( "test_compute_intersection", "[intersection]" )
@@ -111,15 +107,17 @@ TEST_CASE( "test_compute_intersection", "[intersection]" )
 
     auto intersection_data = topography.compute_intersection( my_lobe, 30 );
 
+    std::vector<std::array<int, 2>> cell_indices{};
     for( size_t i = 0; i < cell_indices_expected.size(); i++ )
     {
         auto indices  = intersection_data[i].first;
         auto fraction = intersection_data[i].second;
-
+        cell_indices.push_back( indices );
         fmt::print( " indices = {}, fraction = {}, fraction_expected {}\n", indices, fraction, expected_area_fraction );
-        REQUIRE_THAT( indices, Catch::Matchers::RangeEquals( cell_indices_expected[i] ) );
         REQUIRE_THAT( fraction, Catch::Matchers::WithinRel( expected_area_fraction, 5e-2 ) );
     }
+
+    REQUIRE_THAT( cell_indices_expected, Catch::Matchers::UnorderedRangeEquals( cell_indices ) );
 }
 
 TEST_CASE( "find_preliminary_budding_point", "[budding_point]" )
