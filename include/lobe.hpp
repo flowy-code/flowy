@@ -87,17 +87,18 @@ public:
         return ellipse_lhs <= 1;
     }
 
-    // Checks if a line segment between x1 and x2 intersects the lobe
+    // Returns the first point and the last point inside of the lobe, when going in a sraight line from x1 to x2
+    // If the line does not intersect the lobe, std::nullopt is returned
     inline std::optional<std::array<Vector2, 2>> line_segment_intersects( const Vector2 & x1, const Vector2 & x2 ) const
     {
-        // This matrix transforms coordinates into the axes frame of the ellipse
-
         const double cos = cos_azimuthal_angle;
         const double sin = sin_azimuthal_angle;
 
         const Vector2 x1t = x1 - center;
         const Vector2 x2t = x2 - center;
 
+        // This transforms the coordinates into the axes frame of the ellipse
+        // (the new x-axis is parallel to the major axis, and the orign is the center of the ellipse)
         // Previously, this was implemented as a matrix multiplication with xtensor, but the handwritten version is much faster
         const Vector2 x1_prime = { cos * x1t[0] + sin * x1t[1], -sin * x1t[0] + cos * x1t[1] };
         const Vector2 x2_prime = { cos * x2t[0] + sin * x2t[1], -sin * x2t[0] + cos * x2t[1] };
@@ -135,8 +136,11 @@ public:
         const double t1 = ( -beta - sqrt_r ) / ( 2.0 * alpha );
         const double t2 = ( -beta + sqrt_r ) / ( 2.0 * alpha );
 
+        // If either t1 or t2 is in the interval [0,1] the line segment intersects the ellipse at least once
         if( ( t1 >= 0.0 && t1 <= 1.0 ) || ( t2 >= 0.0 && t2 <= 1.0 ) )
         {
+            // We clamp t1 and t2 to the interval [0,1] in case the line segment intersects the ellipse only once
+            // (this is the case if one of x1/x2 lies within the ellipse)
             const Vector2 v1_p = x1_prime + std::clamp( t1, 0.0, 1.0 ) * diff;
             const Vector2 v2_p = x1_prime + std::clamp( t2, 0.0, 1.0 ) * diff;
 
@@ -144,7 +148,7 @@ public:
             const Vector2 v1 = { cos * v1_p[0] - sin * v1_p[1], +sin * v1_p[0] + cos * v1_p[1] };
             const Vector2 v2 = { cos * v2_p[0] - sin * v2_p[1], +sin * v2_p[0] + cos * v2_p[1] };
 
-            std::array<Vector2, 2> res = { v1 + center, v2 + center };
+            const std::array<Vector2, 2> res = { v1 + center, v2 + center };
             return res;
         }
 
