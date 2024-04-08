@@ -142,36 +142,61 @@ Topography::get_cells_intersecting_lobe( const Lobe & lobe )
 
 std::vector<std::pair<std::array<int, 2>, double>> Topography::compute_intersection( const Lobe & lobe, int N )
 {
-    const double N2                           = N * N;
-    auto [cells_intersecting, cells_enclosed] = get_cells_intersecting_lobe( lobe );
+    const auto [cells_intersecting, cells_enclosed] = get_cells_intersecting_lobe( lobe );
 
     std::vector<std::pair<std::array<int, 2>, double>> res{};
     res.reserve( cells_intersecting.size() + cells_enclosed.size() );
-
-    const double step = cell_size() / N;
 
     for( const auto & [idx_x, idx_y] : cells_enclosed )
     {
         res.push_back( { { idx_x, idx_y }, 1.0 } );
     }
 
+    const double cell_size = this->cell_size();
+    const double cell_area = cell_size * cell_size;
+    const double step      = cell_size / N;
+
     for( const auto & [idx_x, idx_y] : cells_intersecting )
     {
-        double n_hits = 0.0;
+        const double y_min = y_data[idx_y];
+        const double y_max = y_data[idx_y] + cell_size;
 
+        double area = 0;
         for( int ix = 0; ix < N; ix++ )
         {
             const double x = x_data[idx_x] + step * ix;
-            for( int iy = 0; iy < N; iy++ )
+
+            const bool y_min_in = lobe.is_point_in_lobe( { x, y_min } );
+            const bool y_max_in = lobe.is_point_in_lobe( { x, y_max } );
+
+            // If both endpoints are inside the lobe, the entire column is inside the lobe
+            if( y_min_in && y_max_in )
             {
-                const double y = y_data[idx_y] + step * iy;
-                if( lobe.is_point_in_lobe( { x, y } ) )
-                {
-                    n_hits += 1.0;
-                }
+                area += cell_size;
+                continue;
             }
+
+            // {x,y_lo} should be inside the lobe
+            double y_lo        = y_min_in ? y_min : y_max;
+            const double y_end = y_lo;
+
+            // {x,y_hi} should be outside the lobe
+            double y_hi = !y_min_in ? y_min : y_max;
+            double y_cur{};
+
+            // Four iterations of bisection search
+            for( int it = 0; it < 4; it++ )
+            {
+                y_cur = 0.5 * ( y_lo + y_hi );
+
+                // If y_cur is inside the lobe, we make y_cur y_lo
+                const bool y_cur_in = lobe.is_point_in_lobe( { x, y_cur } );
+                y_lo                = y_cur_in ? y_cur : y_lo;
+                y_hi                = !y_cur_in ? y_cur : y_hi;
+            }
+            area += std::abs( y_cur - y_end );
         }
-        const double fraction = n_hits / N2;
+        const double fraction = area * step / cell_area;
         res.push_back( { { idx_x, idx_y }, fraction } );
     }
 
