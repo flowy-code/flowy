@@ -63,26 +63,53 @@ Topography::BoundingBox Topography::bounding_box( const Vector2 & center, double
 std::pair<std::vector<std::array<int, 2>>, std::vector<std::array<int, 2>>>
 Topography::get_cells_intersecting_lobe( const Lobe & lobe )
 {
-    std::vector<std::array<int, 2>> cells_intersecting{};
-    std::vector<std::array<int, 2>> cells_enclosed{};
+    using cell_vec = std::vector<std::array<int, 2>>;
+    cell_vec cells_intersecting{};
+    cell_vec cells_enclosed{};
 
     auto extent_xy = lobe.extent_xy();
-    int idx_y_min  = ( lobe.center[1] - extent_xy[1] - y_data[0] ) / cell_size();
-    int idx_y_max  = ( lobe.center[1] + extent_xy[1] - y_data[0] ) / cell_size();
 
+    // push_back cells with x index in the interval [idx_start, idx_stop]
+    auto push_back_cells = [&]( cell_vec & cells, int idx_start, int idx_stop, int idx_y )
+    {
+        for( int idx_x = idx_start; idx_x <= idx_stop; idx_x++ )
+        {
+            cells.push_back( { idx_x, idx_y } );
+        }
+    };
+
+    // The minimum and the maximum y index of the bounding box
+    int idx_y_min = ( lobe.center[1] - extent_xy[1] - y_data[0] ) / cell_size();
+    int idx_y_max = ( lobe.center[1] + extent_xy[1] - y_data[0] ) / cell_size();
+
+    // We scan the bounding box of the ellipse in rows
     const int n_rows = idx_y_max - idx_y_min + 1;
-    auto idx_x_left  = std::vector<int>( n_rows + 1, -1 );
+
+    // At each row we record the x index of the cell where the lobe intersects the row
+    // We use -1 to signal no intersection
+    // There is one intersection on the left
+    auto idx_x_left = std::vector<int>( n_rows + 1, -1 );
+
+    // And one on the right
     auto idx_x_right = std::vector<int>( n_rows + 1, -1 );
 
+    // Since coordinates start at the lower left corner, we only iterate from between
+    // idx_y_min + 1 and idx_y_max, since we know that the bottom of the first row
+    // and the top of the last row have no intersections
     for( int idx_y = idx_y_min; idx_y <= idx_y_max + 1; idx_y++ )
     {
         const int idx_row = idx_y - idx_y_min;
 
-        const double y   = y_data[idx_y];
-        const Vector2 x1 = { lobe.center[0] - extent_xy[0], y };
-        const Vector2 x2 = { lobe.center[0] + extent_xy[0], y };
+        // We comupute the y value at which to check for intersections
+        // We do not use y_data[idx_y] since idx_y_max + 1 might be outside the boundaries of the y_data array
+        const double y = y_data[idx_y];
 
-        auto points = lobe.line_segment_intersects( x1, x2 );
+        // These two point define a horizontal line, at the bottom of the current row
+        const Vector2 x1  = { lobe.center[0] - extent_xy[0], y };
+        const Vector2 x2  = { lobe.center[0] + extent_xy[0], y };
+        const auto points = lobe.line_segment_intersects( x1, x2 );
+
+        // only if intersections are found, we can unpack them into x indices
         if( points.has_value() )
         {
             const auto p1        = points.value()[0];
@@ -91,49 +118,36 @@ Topography::get_cells_intersecting_lobe( const Lobe & lobe )
             idx_x_right[idx_row] = ( p2[0] - x_data[0] ) / cell_size();
         }
 
-        const int idx_left_cur  = idx_x_left[idx_row];
-        const int idx_right_cur = idx_x_right[idx_row];
+        const int & idx_left_cur  = idx_x_left[idx_row];
+        const int & idx_right_cur = idx_x_right[idx_row];
 
         // The bottom of the next row, is the top of the previous one
+        // Therefore, we now now the intersections at the bottom *and* at the top of the *previous* row
         if( idx_row > 0 )
         {
-            const double idx_x_left_prev  = idx_x_left[idx_row - 1];
-            const double idx_x_right_prev = idx_x_right[idx_row - 1];
+            const double idx_left_prev  = idx_x_left[idx_row - 1];
+            const double idx_right_prev = idx_x_right[idx_row - 1];
 
+            // We treat the first and the last row separately, since here, there are no intersections
+            // With previous row (in case of the first) or the current row (in case of the last row)
             if( idx_y == idx_y_min + 1 )
             {
-                for( int idx_x = idx_left_cur; idx_x <= idx_right_cur; idx_x++ )
-                {
-                    cells_intersecting.push_back( { idx_x, idx_y - 1 } );
-                }
+                push_back_cells( cells_intersecting, idx_left_cur, idx_right_cur, idx_y_min );
             }
             else if( idx_y == idx_y_max + 1 )
             {
-                for( int idx_x = idx_x_left_prev; idx_x <= idx_x_right_prev; idx_x++ )
-                {
-                    cells_intersecting.push_back( { idx_x, idx_y - 1 } );
-                }
+                push_back_cells( cells_intersecting, idx_left_prev, idx_right_prev, idx_y_max );
             }
             else
             {
-                const int start_left = std::min<int>( idx_x_left_prev, idx_x_left[idx_row] );
-                const int stop_left  = std::max<int>( idx_x_left_prev, idx_x_left[idx_row] );
-                for( int idx_x = start_left; idx_x <= stop_left; idx_x++ )
-                {
-                    cells_intersecting.push_back( { idx_x, idx_y - 1 } );
-                }
+                const int start_left = std::min<int>( idx_left_prev, idx_x_left[idx_row] );
+                const int stop_left  = std::max<int>( idx_left_prev, idx_x_left[idx_row] );
+                push_back_cells( cells_intersecting, start_left, stop_left, idx_y - 1 );
 
-                const int start_right = std::min<int>( idx_x_right_prev, idx_x_right[idx_row] );
-                const int stop_right  = std::max<int>( idx_x_right_prev, idx_x_right[idx_row] );
-                for( int idx_x = start_right; idx_x <= stop_right; idx_x++ )
-                {
-                    cells_intersecting.push_back( { idx_x, idx_y - 1 } );
-                }
-
-                for( int idx_x = stop_left + 1; idx_x < start_right; idx_x++ )
-                {
-                    cells_enclosed.push_back( { idx_x, idx_y - 1 } );
-                }
+                const int start_right = std::min<int>( idx_right_prev, idx_x_right[idx_row] );
+                const int stop_right  = std::max<int>( idx_right_prev, idx_x_right[idx_row] );
+                push_back_cells( cells_intersecting, start_right, stop_right, idx_y - 1 );
+                push_back_cells( cells_intersecting, start_left + 1, start_right - 1, idx_y - 1 );
             }
         }
     }
