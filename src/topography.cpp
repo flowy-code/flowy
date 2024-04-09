@@ -147,6 +147,7 @@ std::vector<std::pair<std::array<int, 2>, double>> Topography::compute_intersect
     std::vector<std::pair<std::array<int, 2>, double>> res{};
     res.reserve( cells_intersecting.size() + cells_enclosed.size() );
 
+    // All enclosed cells are fully covered
     for( const auto & [idx_x, idx_y] : cells_enclosed )
     {
         res.push_back( { { idx_x, idx_y }, 1.0 } );
@@ -156,6 +157,7 @@ std::vector<std::pair<std::array<int, 2>, double>> Topography::compute_intersect
     const double cell_area = cell_size * cell_size;
     const double step      = cell_size / N;
 
+    // The intersecting cells get rasterized into columns
     for( const auto & [idx_x, idx_y] : cells_intersecting )
     {
         const double y_min = y_data[idx_y];
@@ -166,6 +168,7 @@ std::vector<std::pair<std::array<int, 2>, double>> Topography::compute_intersect
         {
             const double x = x_data[idx_x] + step * ix;
 
+            // For each column we check if the endpoints are in our outside of the lobe
             const bool y_min_in = lobe.is_point_in_lobe( { x, y_min } );
             const bool y_max_in = lobe.is_point_in_lobe( { x, y_max } );
 
@@ -176,6 +179,14 @@ std::vector<std::pair<std::array<int, 2>, double>> Topography::compute_intersect
                 continue;
             }
 
+            // If both endpoints are outside the lobe, the entire column is outside the lobe
+            if( !( y_min_in || y_max_in ) )
+            {
+                continue;
+            }
+
+            // Now we know that one endpoint is inside the lobe and one endpoint is outside of it
+
             // {x,y_lo} should be inside the lobe
             double y_lo        = y_min_in ? y_min : y_max;
             const double y_end = y_lo;
@@ -184,7 +195,8 @@ std::vector<std::pair<std::array<int, 2>, double>> Topography::compute_intersect
             double y_hi = !y_min_in ? y_min : y_max;
             double y_cur{};
 
-            // Four iterations of bisection search
+            // Now we try to find the height at wich the ellipse passed the columns
+            // with four iterations of bisection search
             for( int it = 0; it < 4; it++ )
             {
                 y_cur = 0.5 * ( y_lo + y_hi );
