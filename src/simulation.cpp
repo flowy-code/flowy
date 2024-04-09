@@ -133,8 +133,9 @@ void Simulation::compute_lobe_axes( Lobe & lobe, const Vector2 & slope ) const
 }
 
 // Select which lobe amongst the existing lobes will be the parent for the new descendent lobe
-int Simulation::select_parent_lobe( Lobe & lobe_descendent, int idx_descendant )
+int Simulation::select_parent_lobe( int idx_descendant )
 {
+    Lobe & lobe_descendent = lobes[idx_descendant];
 
     int idx_parent{};
 
@@ -165,14 +166,36 @@ int Simulation::select_parent_lobe( Lobe & lobe_descendent, int idx_descendant )
     return idx_parent;
 }
 
-void Simulation::compute_descendent_information( std::vector<Lobe> & lobes )
+// Depth first search to compute cumulative descendents
+int dfs( int lobe_idx, std::vector<Lobe> & lobes, std::vector<std::vector<int>> & child_node_list )
 {
-    for( auto & lobe : lobes )
+    int total_descendants = 0;
+    auto & child_nodes    = child_node_list[lobe_idx];
+    for( int child : child_nodes )
     {
-        if( lobe.idx_parent.has_value() )
+        total_descendants += 1 + dfs( child, lobes, child_node_list );
+    }
+    lobes[lobe_idx].n_descendents = total_descendants;
+    return total_descendants;
+}
+
+void Simulation::compute_cumulative_descendents( std::vector<Lobe> & lobes ) const
+{
+    // First we invert the parent-child relationship by recording a list of child node indices for each lobe
+    std::vector<std::vector<int>> child_node_list( lobes.size() );
+    for( size_t i_lobe = 0; i_lobe < lobes.size(); i_lobe++ )
+    {
+        const Lobe & cur_lobe = lobes[i_lobe];
+        if( cur_lobe.idx_parent.has_value() )
         {
-            lobes[lobe.idx_parent.value()].n_descendents++;
+            child_node_list[cur_lobe.idx_parent.value()].push_back( i_lobe );
         }
+    }
+
+    // Then, we have to start a depth first search separately on each root
+    for( int i_root = 0; i_root < input.n_init; i_root++ )
+    {
+        dfs( i_root, lobes, child_node_list );
     }
 }
 
@@ -269,8 +292,7 @@ void Simulation::run()
 
             // Select which of the previously created lobes is the parent lobe
             // from which the new descendent lobe will bud
-            auto idx_parent = select_parent_lobe( lobe_cur, idx_lobe );
-
+            auto idx_parent    = select_parent_lobe( idx_lobe );
             Lobe & lobe_parent = lobes[idx_parent];
 
             // stopping condition (parent lobe close the domain boundary or at a not defined z value)
@@ -294,10 +316,8 @@ void Simulation::run()
 
             // Compute the final budding point
             // It is defined by the point on the perimeter of the parent lobe closest to the center of the new lobe
-
             auto angle_diff             = lobe_parent.get_azimuthal_angle() - lobe_cur.get_azimuthal_angle();
             Vector2 final_budding_point = lobe_parent.point_at_angle( -angle_diff );
-            // Vector2 final_budding_point = lobe_parent.point_at_angle( lobe_cur.get_azimuthal_angle() );
 
             // final_budding_point = budding_point;
             if( stop_condition( final_budding_point, lobe_parent.semi_axes[0] ) )
@@ -328,7 +348,10 @@ void Simulation::run()
             n_lobes_processed++;
         }
 
-        compute_descendent_information( lobes );
+        if( input.save_hazard_data )
+        {
+            compute_cumulative_descendents( lobes );
+        }
 
         if( input.write_lobes_csv )
         {

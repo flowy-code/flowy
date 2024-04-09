@@ -60,7 +60,11 @@ InputParams parse_config( const std::filesystem::path & path )
         params.vent_coordinates.push_back( { x_vent[i], y_vent[i] } );
     }
 
-    set_if_specified( params.save_hazard_data, tbl["save_hazard_data"] );
+    std::optional<int> hazard_flag = tbl["hazard_flag"].value<int>();
+    if( hazard_flag.has_value() )
+    {
+        params.save_hazard_data = ( hazard_flag.value() == 1 );
+    }
 
     set_if_specified( params.n_flows, tbl["n_flows"] );
     set_if_specified( params.n_lobes, tbl["n_lobes"] );

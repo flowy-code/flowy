@@ -89,9 +89,9 @@ public:
 
     void perturb_lobe_angle( Lobe & lobe, const Vector2 & slope );
 
-    int select_parent_lobe( Lobe & lobe_descendent, int idx_descendant );
+    int select_parent_lobe( int idx_descendant );
 
-    static void compute_descendent_information( std::vector<Lobe> & lobes );
+    void compute_cumulative_descendents( std::vector<Lobe> & lobes ) const;
 
     void add_inertial_contribution( Lobe & lobe, const Lobe & parent, const Vector2 & slope ) const;
 
