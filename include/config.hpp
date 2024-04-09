@@ -16,6 +16,7 @@ public:
     // If set to true one csv file, per flow, is written to the output folder.
     // The files are named 'lobes_{idx_flow}.csv' and contain information about the lobes in that specific flow
     bool write_lobes_csv        = false;
+    bool print_remaining_time   = false;
     std::optional<int> rng_seed = std::nullopt;
 
     // mr lava loba settings from input.py

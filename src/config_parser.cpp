@@ -37,6 +37,7 @@ InputParams parse_config( const std::filesystem::path & path )
 
     // our own
     set_if_specified( params.write_lobes_csv, tbl["write_lobes_csv"] );
+    set_if_specified( params.print_remaining_time, tbl["print_remaining_time"] );
     params.rng_seed = tbl["rng_seed"].value<int>();
 
     // From input.py
