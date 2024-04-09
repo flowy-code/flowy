@@ -74,7 +74,7 @@ def plot_pyvista(
     threshold: float = typer.Option(
         1e-12,
         "--thresh",
-        help="Any elevation smaller than the threshold is not plotted",
+        help="Any flow thickness smaller than the threshold is not plotted",
     ),
     image_outfile: Path = typer.Option(
         None,
@@ -83,6 +83,10 @@ def plot_pyvista(
     ),
     interactive: bool = typer.Option(False, "-i", help="Opens an interactive window"),
 ):
+    # We use this offset to plot the final grid slightly above the initial grid
+    # This gets rid of artifacts due to rounding errors
+    height_offset = 0.1
+
     asc_file_initial = AscFile(path_asc_file_initial)
     asc_file_final = AscFile(path_asc_file_final)
 
@@ -91,43 +95,57 @@ def plot_pyvista(
 
     x_data = asc_file_initial.x_data()
     y_data = asc_file_initial.y_data()
-    min_height = asc_file_initial.min_height()
-    cell = asc_file_initial.cell
 
-    # We define an ImageData mesh
-    grid = pv.ImageData(spacing=[cell, cell, cell])
-    grid.dimensions = [len(x_data), len(y_data), 1]
-
-    # Then we give it the initial and final height, as well as the flow thickness as point data
-    grid.point_data["height_initial"] = asc_file_initial.height_data.flatten(order="F")
-    grid.point_data["height_final"] = asc_file_final.height_data.flatten(order="F")
-    grid.point_data["flow_thickness"] = (
-        grid.point_data["height_final"] - grid.point_data["height_initial"]
+    # ====================================================================
+    # Build mesh for the terrain
+    # ====================================================================
+    thickness_terrain = 500  # gives the terrain a finite thickness [unit is meter]
+    # Warp the heights
+    warped_initial_height_data = (
+        warp_factor * (asc_file_initial.height_data - asc_file_initial.min_height())
+        + asc_file_initial.min_height()
     )
 
-    grid_initial = grid.warp_by_scalar(
-        "height_initial", warp_factor / asc_file_initial.cell
+    # Here we add a second layer, to give the plot a thickness in the z direction
+    x, y, z = np.meshgrid(x_data, y_data, np.ones(2), indexing="ij")
+    z[:, :, 0] = warped_initial_height_data
+    z[:, :, 1] = warped_initial_height_data - thickness_terrain
+    # The shape of x,y,z is [len(x), leny(y), 2]
+
+    # We compute the elevation without the thickness in z,
+    # becaus we want to avoid distorting the colormap.
+    # Elevation needs to have the same shape as x,y,z
+    # therefore, we copy the height data twice.
+    # Also note that we are not using the warped height data here
+    elevation = np.zeros_like(z)
+    elevation[:, :, 0] = asc_file_initial.height_data
+    elevation[:, :, 1] = asc_file_initial.height_data
+
+    grid_initial = pv.StructuredGrid(x, y, z)
+    grid_initial["elevation"] = elevation.flatten(order="F")
+
+    # ====================================================================
+    # Build mesh for the flow
+    # ====================================================================
+    # When computing the flow thickness, we dont use the warped heights
+    flow_thickness = (
+        asc_file_final.height_data - asc_file_initial.height_data
+    ).flatten(order="F")
+
+    warped_final_height_data = (
+        warp_factor * (asc_file_final.height_data - asc_file_final.min_height())
+        + asc_file_final.min_height()
     )
-    # For the lava flow
-    grid_final = grid.warp_by_scalar(
-        "height_final", warp_factor / asc_file_initial.cell
-    ).threshold(threshold, scalars="flow_thickness")
 
-    # For the terrain
-    z_cells = np.linspace(0, 10, 10)
+    # This time we dont need a finite thickness
+    # Therefore, we just use x_data and y_data
+    x, y = np.meshgrid(x_data, y_data, indexing="ij")
+    z = warped_final_height_data + height_offset
+    # The shape of x,y,z is [len(x_data), len(y_data)]
 
-    xx = np.repeat(grid_initial.x, len(z_cells), axis=-1)
-    yy = np.repeat(grid_initial.y, len(z_cells), axis=-1)
-    zz = np.repeat(grid_initial.z, len(z_cells), axis=-1) - np.cumsum(z_cells).reshape(
-        (1, 1, -1)
-    )
-
-    mesh = pv.StructuredGrid(xx, yy, zz)
-    mesh["Elevation"] = zz.ravel(order="F")
-    mesh = mesh.threshold(asc_file_final.nd + 1, scalars="Elevation")
-    # opacity_terrain = [0, 0.2, 0.9, 0.6, 0.3]
-    # opacity_terrain = "sigmoid_r"
-    opacity_terrain = None
+    grid_final = pv.StructuredGrid(x, y, z)
+    grid_final.point_data["flow_thickness"] = flow_thickness
+    grid_final = grid_final.threshold(threshold, scalars="flow_thickness")
 
     if interactive:
         p = pv.Plotter(off_screen=False)
@@ -135,12 +153,11 @@ def plot_pyvista(
         p = pv.Plotter(off_screen=True)
 
     p.add_mesh(
-        mesh,
-        scalars="Elevation",
-        color=True,
-        smooth_shading=True,
-        opacity=opacity_terrain,
+        grid_initial,
+        # scalars="elevation",
         cmap="gray",
+        opacity=1.0,
+        smooth_shading=True,
     )
 
     p.add_mesh(
@@ -162,10 +179,10 @@ def plot_pyvista(
             auto_close=False,
         )
 
-    # if image_outfile is not None:
-    #     p.screenshot(image_outfile)
-    # else:
-    #     p.screenshot("./image.png")
+    if image_outfile is not None:
+        p.screenshot(image_outfile)
+    else:
+        p.screenshot("./image.png")
 
 
 @app.command()
