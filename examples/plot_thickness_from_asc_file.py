@@ -82,6 +82,10 @@ def plot_pyvista(
         help="Path to the output image file. If not set, an image called image.png will be created.",
     ),
     interactive: bool = typer.Option(False, "-i", help="Opens an interactive window"),
+    contour_spacing: int = typer.Option(
+        -1, "-c", help="Contour spacing in meters. Negative to disable contouring"
+    ),
+    contour_color: str = typer.Option("white", "--ccolor", help="Contour color"),
 ):
     # We use this offset to plot the final grid slightly above the initial grid
     # This gets rid of artifacts due to rounding errors
@@ -143,14 +147,27 @@ def plot_pyvista(
     z = warped_final_height_data + height_offset
     # The shape of x,y,z is [len(x_data), len(y_data)]
 
-    grid_final = pv.StructuredGrid(x, y, z)
-    grid_final.point_data["flow_thickness"] = flow_thickness
-    grid_final = grid_final.threshold(threshold, scalars="flow_thickness")
+    grid_surface = pv.StructuredGrid(x, y, z)
+    grid_surface.point_data["flow_thickness"] = flow_thickness
+    grid_surface.point_data["elevation"] = asc_file_initial.height_data.flatten(
+        order="F"
+    )
+
+    grid_final = grid_surface.threshold(threshold, scalars="flow_thickness")
 
     if interactive:
         p = pv.Plotter(off_screen=False)
     else:
         p = pv.Plotter(off_screen=True)
+
+    if contour_spacing > 0:
+        min_height = asc_file_final.min_height()
+        max_height = asc_file_final.max_height()
+        height_contours = grid_surface.contour(
+            np.arange(min_height, max_height, contour_spacing), scalars="elevation"
+        )
+
+        p.add_mesh(height_contours, color=contour_color, line_width=2)
 
     p.add_mesh(
         grid_initial,
@@ -197,6 +214,10 @@ def plot_pyplot(
         help="Path to the output image file. If not set, an image called image.png will be created.",
     ),
     interactive: bool = typer.Option(False, "-i", help="Opens an interactive window"),
+    contour_spacing: int = typer.Option(
+        -1, "-c", help="Contour spacing in meters. Negative to disable contouring"
+    ),
+    contour_color: str = typer.Option("white", "--ccolor", help="Contour color"),
 ):
     asc_file_initial = AscFile(path_asc_file_initial)
     asc_file_final = AscFile(path_asc_file_final)
@@ -211,10 +232,21 @@ def plot_pyplot(
     plt.contourf(
         x_data,
         y_data,
-        (asc_file_initial.height_data - min_height).T,
+        asc_file_initial.height_data.T,
         levels=50,
         cmap="gray",
     )
+
+    if contour_spacing > 0:
+        min_height = asc_file_final.min_height()
+        max_height = asc_file_final.max_height()
+        plt.contour(
+            x_data,
+            y_data,
+            asc_file_initial.height_data.T,
+            levels=np.arange(min_height, max_height, contour_spacing),
+            colors=contour_color,
+        )
 
     plt.xlabel("x [m]")
     plt.ylabel("y [m]")
