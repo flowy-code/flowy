@@ -96,7 +96,7 @@ Topography::get_cells_intersecting_lobe( const Lobe & lobe )
     // Since coordinates start at the lower left corner, we only iterate from between
     // idx_y_min + 1 and idx_y_max, since we know that the bottom of the first row
     // and the top of the last row have no intersections
-    for( int idx_y = idx_y_min; idx_y <= idx_y_max + 1; idx_y++ )
+    for( int idx_y = idx_y_min + 1; idx_y <= idx_y_max + 1; idx_y++ )
     {
         const int idx_row = idx_y - idx_y_min;
 
@@ -122,33 +122,32 @@ Topography::get_cells_intersecting_lobe( const Lobe & lobe )
         const int & idx_right_cur = idx_x_right[idx_row];
 
         // The bottom of the next row, is the top of the previous one
-        // Therefore, we now now the intersections at the bottom *and* at the top of the *previous* row
-        if( idx_row > 0 )
+        // Therefore, we now know the intersections at the bottom and at the top of the *previous* row
+
+        // Since we start from idx_y_min + 1, idx_row starts at 1 too
+        const double idx_left_prev  = idx_x_left[idx_row - 1];
+        const double idx_right_prev = idx_x_right[idx_row - 1];
+
+        // We treat the first and the last row separately, since here, there are no intersections
+        // with the previous row (in case of the first) or the current row (in case of the last row)
+        if( idx_y == idx_y_min + 1 )
         {
-            const double idx_left_prev  = idx_x_left[idx_row - 1];
-            const double idx_right_prev = idx_x_right[idx_row - 1];
+            push_back_cells( cells_intersecting, idx_left_cur, idx_right_cur, idx_y_min );
+        }
+        else if( idx_y == idx_y_max + 1 )
+        {
+            push_back_cells( cells_intersecting, idx_left_prev, idx_right_prev, idx_y_max );
+        }
+        else
+        {
+            const int start_left = std::min<int>( idx_left_prev, idx_left_cur );
+            const int stop_left  = std::max<int>( idx_left_prev, idx_left_cur );
+            push_back_cells( cells_intersecting, start_left, stop_left, idx_y - 1 );
 
-            // We treat the first and the last row separately, since here, there are no intersections
-            // With previous row (in case of the first) or the current row (in case of the last row)
-            if( idx_y == idx_y_min + 1 )
-            {
-                push_back_cells( cells_intersecting, idx_left_cur, idx_right_cur, idx_y_min );
-            }
-            else if( idx_y == idx_y_max + 1 )
-            {
-                push_back_cells( cells_intersecting, idx_left_prev, idx_right_prev, idx_y_max );
-            }
-            else
-            {
-                const int start_left = std::min<int>( idx_left_prev, idx_x_left[idx_row] );
-                const int stop_left  = std::max<int>( idx_left_prev, idx_x_left[idx_row] );
-                push_back_cells( cells_intersecting, start_left, stop_left, idx_y - 1 );
-
-                const int start_right = std::min<int>( idx_right_prev, idx_x_right[idx_row] );
-                const int stop_right  = std::max<int>( idx_right_prev, idx_x_right[idx_row] );
-                push_back_cells( cells_intersecting, start_right, stop_right, idx_y - 1 );
-                push_back_cells( cells_intersecting, start_left + 1, start_right - 1, idx_y - 1 );
-            }
+            const int start_right = std::min<int>( idx_right_prev, idx_right_cur );
+            const int stop_right  = std::max<int>( idx_right_prev, idx_right_cur );
+            push_back_cells( cells_intersecting, start_right, stop_right, idx_y - 1 );
+            push_back_cells( cells_intersecting, start_left + 1, start_right - 1, idx_y - 1 );
         }
     }
     return { cells_intersecting, cells_enclosed };
