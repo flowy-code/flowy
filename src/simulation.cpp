@@ -4,6 +4,7 @@
 #include "math.hpp"
 #include "probability_dist.hpp"
 #include "reservoir_sampling.hpp"
+#include "topography.hpp"
 #include <fmt/chrono.h>
 #include <fmt/format.h>
 #include <algorithm>
@@ -47,6 +48,49 @@ CommonLobeDimensions::CommonLobeDimensions( const Config::InputParams & input, c
     max_cells         = std::ceil( 2.0 * max_semiaxis / asc_file.cell_size ) + 2;
     thickness_min     = 2.0 * input.thickness_ratio / ( input.thickness_ratio + 1.0 ) * avg_lobe_thickness;
 }
+
+Simulation::Simulation( const Config::InputParams & input, std::optional<int> rng_seed ) : input( input )
+{
+    this->rng_seed = rng_seed.value_or( std::random_device()() );
+    gen            = std::mt19937( this->rng_seed );
+
+    // Create output directory
+    std::filesystem::create_directories( input.output_folder ); // Create the output directory
+
+    // Crop if all of these have a value
+    if( input.east_to_vent.has_value() && input.west_to_vent.has_value() && input.south_to_vent.has_value()
+        && input.north_to_vent.has_value() )
+    {
+        auto crop = AscCrop{};
+
+        auto min_x_it = std::min_element(
+            input.vent_coordinates.begin(), input.vent_coordinates.end(),
+            [&]( const Vector2 & p1, const Vector2 & p2 ) { return p1[0] < p2[0]; } );
+        auto min_y_it = std::min_element(
+            input.vent_coordinates.begin(), input.vent_coordinates.end(),
+            [&]( const Vector2 & p1, const Vector2 & p2 ) { return p1[1] < p2[1]; } );
+        auto max_x_it = std::max_element(
+            input.vent_coordinates.begin(), input.vent_coordinates.end(),
+            [&]( const Vector2 & p1, const Vector2 & p2 ) { return p1[0] < p2[0]; } );
+        auto max_y_it = std::max_element(
+            input.vent_coordinates.begin(), input.vent_coordinates.end(),
+            [&]( const Vector2 & p1, const Vector2 & p2 ) { return p1[1] < p2[1]; } );
+
+        crop.x_min = ( *min_x_it )[0] - input.west_to_vent.value();
+        crop.x_max = ( *max_x_it )[0] + input.east_to_vent.value();
+        crop.y_min = ( *min_y_it )[1] - input.south_to_vent.value();
+        crop.y_max = ( *max_y_it )[1] + input.north_to_vent.value();
+
+        asc_file = AscFile( input.source, crop );
+    }
+    else
+    {
+        asc_file = AscFile( input.source );
+    }
+
+    topography      = Topography( asc_file );
+    lobe_dimensions = CommonLobeDimensions( input, asc_file );
+};
 
 void Simulation::compute_initial_lobe_position( int idx_flow, Lobe & lobe )
 {
@@ -167,6 +211,8 @@ int Simulation::select_parent_lobe( int idx_descendant )
 }
 
 // Depth first search to compute cumulative descendents
+// TODO for flows with a very large number of lobes, the recursion might become a problem
+// It would be better to write a recrusion free version of this function.
 int dfs( int lobe_idx, std::vector<Lobe> & lobes, std::vector<std::vector<int>> & child_node_list )
 {
     int total_descendants = 0;
@@ -240,9 +286,8 @@ void Simulation::run()
     int n_lobes_total     = 0; // This is the total number of lobes, accumulated over all flows
     int n_lobes_processed = 0;
 
-    // Save initial topography to asc file
-    auto asc_file = topography.to_asc_file();
-    asc_file.save( input.output_folder / "initial.asc" );
+    // Make a copy of the initial topography
+    Topography initial_topography = topography;
 
     auto t_run_start = std::chrono::high_resolution_clock::now();
     for( int idx_flow = 0; idx_flow < input.n_flows; idx_flow++ )
@@ -381,9 +426,18 @@ void Simulation::run()
 
     fmt::print( "Used RNG seed: {}\n", rng_seed );
 
+    // Save initial topography to asc file
+    auto asc_file = initial_topography.to_asc_file();
+    asc_file.save( input.output_folder / fmt::format( "{}_DEM.asc", input.run_name ) );
+
     // Save final topography to asc file
     asc_file = topography.to_asc_file();
-    asc_file.save( input.output_folder / "output.asc" );
+    asc_file.save( input.output_folder / fmt::format( "{}_DEM_final.asc", input.run_name ) );
+
+    // Save full thickness to asc file
+    topography.height_data -= initial_topography.height_data;
+    asc_file = topography.to_asc_file();
+    asc_file.save( input.output_folder / fmt::format( "{}_thickness_full.asc", input.run_name ) );
 }
 
 } // namespace Flowy
