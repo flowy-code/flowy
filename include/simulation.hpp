@@ -32,7 +32,9 @@ public:
 
     Config::InputParams input;
     AscFile asc_file;
-    Topography topography;
+    Topography topography_initial;   // Stores the initial topography, before any simulations are run
+    Topography topography_thickness; // Stores the height_difference between initial and final topography
+    Topography topography;           // The topography, which is modified during the simulation
     CommonLobeDimensions lobe_dimensions;
 
     std::vector<Lobe> lobes; // Lobes per flows
@@ -56,6 +58,8 @@ public:
     void write_lobe_data_to_file( const std::vector<Lobe> & lobes, const std::filesystem::path & output_path );
 
     bool stop_condition( const Vector2 & point, double radius );
+
+    void write_avg_thickness_file();
 
     void run();
 

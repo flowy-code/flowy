@@ -5,6 +5,7 @@
 #include "probability_dist.hpp"
 #include "reservoir_sampling.hpp"
 #include "topography.hpp"
+#include "xtensor/xmath.hpp"
 #include <fmt/chrono.h>
 #include <fmt/format.h>
 #include <algorithm>
@@ -90,6 +91,9 @@ Simulation::Simulation( const Config::InputParams & input, std::optional<int> rn
 
     topography      = Topography( asc_file );
     lobe_dimensions = CommonLobeDimensions( input, asc_file );
+
+    // Make a copy of the initial topography
+    topography_initial = topography;
 };
 
 void Simulation::compute_initial_lobe_position( int idx_flow, Lobe & lobe )
@@ -281,14 +285,35 @@ bool Simulation::stop_condition( const Vector2 & point, double radius )
            || topography.get_height( point ) < asc_file.no_data_value + 1;
 }
 
+void Simulation::write_avg_thickness_file()
+{
+    const auto path = input.output_folder / fmt::format( "{}_avg_thick.txt", input.run_name );
+
+    std::fstream file;
+    file.open( path, std::fstream::in | std::fstream::out | std::fstream::trunc );
+
+    if( !file.is_open() )
+    {
+        throw std::runtime_error( fmt::format( "Unable to create file: '{}'", path.string() ) );
+    }
+
+    double total_flow   = xt::sum<double>( topography_thickness.height_data )();
+    int n_flow_non_zero = xt::count_nonzero( topography_thickness.height_data )();
+
+    file << fmt::format( "Average lobe thickness = {} m\n", lobe_dimensions.avg_lobe_thickness );
+    file << fmt::format( "Total volume = {} m3\n", topography.cell_size() * topography.cell_size() * total_flow );
+    file << fmt::format( "Total area = {} m2\n", topography.cell_size() * topography.cell_size() * n_flow_non_zero );
+    file << fmt::format( "Average thickness full = {} m\n", total_flow / n_flow_non_zero );
+
+    file.close();
+}
+
 void Simulation::run()
 {
     int n_lobes_total     = 0; // This is the total number of lobes, accumulated over all flows
     int n_lobes_processed = 0;
 
     // Make a copy of the initial topography
-    Topography initial_topography = topography;
-
     auto t_run_start = std::chrono::high_resolution_clock::now();
     for( int idx_flow = 0; idx_flow < input.n_flows; idx_flow++ )
     {
@@ -427,7 +452,7 @@ void Simulation::run()
     fmt::print( "Used RNG seed: {}\n", rng_seed );
 
     // Save initial topography to asc file
-    auto asc_file = initial_topography.to_asc_file();
+    auto asc_file = topography_initial.to_asc_file();
     asc_file.save( input.output_folder / fmt::format( "{}_DEM.asc", input.run_name ) );
 
     // Save final topography to asc file
@@ -435,9 +460,12 @@ void Simulation::run()
     asc_file.save( input.output_folder / fmt::format( "{}_DEM_final.asc", input.run_name ) );
 
     // Save full thickness to asc file
-    topography.height_data -= initial_topography.height_data;
-    asc_file = topography.to_asc_file();
+    topography_thickness = topography;
+    topography_thickness.height_data -= topography_initial.height_data;
+    asc_file = topography_thickness.to_asc_file();
     asc_file.save( input.output_folder / fmt::format( "{}_thickness_full.asc", input.run_name ) );
+
+    write_avg_thickness_file();
 }
 
 } // namespace Flowy
