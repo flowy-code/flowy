@@ -64,6 +64,24 @@ InputParams parse_config( const std::filesystem::path & path )
         params.save_hazard_data = ( hazard_flag.value() == 1 );
     }
 
+    // Masking threshold can be given as a single float like
+    //      masking_threshold = 0.97
+    // or as an array like
+    //      masking_threshold = [0.97, 0.95, 0.92]
+    // therefore, we need special logic to parse it
+    if( tbl["masking_threshold"].is_array() )
+    {
+        params.masking_threshold = parse_vector<double>( tbl["masking_threshold"] );
+    }
+    else
+    {
+        std::optional<double> val = tbl["masking_threshold"].value<double>();
+        if( val.has_value() )
+        {
+            params.masking_threshold.push_back( val.value() );
+        }
+    }
+
     set_if_specified( params.n_flows, tbl["n_flows"] );
     set_if_specified( params.n_lobes, tbl["n_lobes"] );
     set_if_specified( params.thickening_parameter, tbl["thickening_parameter"] );

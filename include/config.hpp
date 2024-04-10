@@ -40,7 +40,7 @@ public:
     std::optional<double> prescribed_avg_lobe_thickness{}; // User defined average lobe thickness
 
     // Variables we don't understand
-    // masking_threshold: double = 0
+    std::vector<double> masking_threshold{};
     int min_n_lobes{};
     int max_n_lobes{};
 
