@@ -83,8 +83,17 @@ int main( int argc, char * argv[] )
     }
 
     // Back up input file
+    // First we need to make sure that the output directory exists
     std::filesystem::create_directories( input_params.output_folder );
-    std::filesystem::copy_file( config_file_path, input_params.output_folder / get_input_backup_name() );
+    auto path_to_inp_bak = input_params.output_folder / get_input_backup_name();
+
+    // If the input backup already exists, we delete it
+    if( std::filesystem::exists( path_to_inp_bak ) )
+    {
+        std::filesystem::remove( path_to_inp_bak );
+    }
+    // Then, we copy
+    std::filesystem::copy_file( config_file_path, path_to_inp_bak );
 
     fmt::print( "=================================================================\n" );
     fmt::print( "Using input file: {}\n", config_file_path.string() );
