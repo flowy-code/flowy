@@ -6,8 +6,10 @@
 #include "reservoir_sampling.hpp"
 #include "topography.hpp"
 #include "xtensor/xmath.hpp"
+#include "xtensor/xsort.hpp"
 #include <fmt/chrono.h>
 #include <fmt/format.h>
+#include <fmt/ranges.h>
 #include <algorithm>
 #include <chrono>
 #include <cmath>
@@ -300,10 +302,83 @@ void Simulation::write_avg_thickness_file()
     double total_flow   = xt::sum<double>( topography_thickness.height_data )();
     int n_flow_non_zero = xt::count_nonzero( topography_thickness.height_data )();
 
+    double volume        = topography.cell_size() * topography.cell_size() * total_flow;
+    double area          = topography.cell_size() * topography.cell_size() * n_flow_non_zero;
+    double avg_thickness = volume / area;
+
     file << fmt::format( "Average lobe thickness = {} m\n", lobe_dimensions.avg_lobe_thickness );
-    file << fmt::format( "Total volume = {} m3\n", topography.cell_size() * topography.cell_size() * total_flow );
-    file << fmt::format( "Total area = {} m2\n", topography.cell_size() * topography.cell_size() * n_flow_non_zero );
-    file << fmt::format( "Average thickness full = {} m\n", total_flow / n_flow_non_zero );
+    file << fmt::format( "Total volume = {} m3\n", volume );
+    file << fmt::format( "Total area = {} m2\n", area );
+    file << fmt::format( "Average thickness full = {} m\n", avg_thickness );
+
+    // Create a flattened, sorted view of the thickness, which will be used in the bisection search later
+    auto thickness_non_zero = xt::filter( topography_thickness.height_data, topography_thickness.height_data > 0 );
+
+    auto flatten          = xt::flatten( thickness_non_zero );
+    auto thickness_sorted = xt::eval( xt::sort( flatten ) );
+    const int n_cells     = thickness_sorted.size();
+
+    // This lambda performs bisection search to find the threshold thickness at which a
+    // relative volume proportion of `thresh` is contained within cells with greater thickness than the threshold thickness
+    auto bisection_search = [&]( double thresh, double tol = 1e-3, int max_iter = 20 )
+    {
+        int idx_lo = 0;
+        int idx_hi = n_cells - 1;
+
+        // If the relation between masked volume and threshold thickness would be linear,
+        // this would be the solution for the index. Therefore, we use it as an initial guess.
+        int idx_cur = std::max<int>( ( n_cells - 1 ) * ( 1.0 - thresh ), 1 );
+
+        double total_flow_cur{};
+        double ratio{};
+        for( int iter = 0; iter < max_iter; iter++ )
+        {
+            total_flow_cur = xt::sum( xt::view( thickness_sorted, xt::range( idx_cur, -1 ) ) )();
+
+            // The ratio between the sum of the flow values is the same as the volume ratio,
+            // since the cell_size cancels out
+            ratio = total_flow_cur / total_flow;
+
+            // Stop if we are within tol
+            if( std::abs( total_flow_cur / total_flow - thresh ) < tol )
+            {
+                break;
+            }
+
+            if( ratio > thresh )
+            {
+                idx_lo = idx_cur;
+            }
+            else
+            {
+                idx_hi = idx_cur;
+            }
+
+            idx_cur = 0.5 * ( idx_lo + idx_hi );
+
+            // fmt::print( "iter {} idx {} ratio {}\n", iter, idx_cur, ratio );
+        }
+
+        double threshold_thickness = thickness_sorted[idx_cur];
+        int n_flow_non_zero        = xt::count_nonzero( xt::view( thickness_sorted, xt::range( idx_cur, -1 ) ) )();
+
+        return std::tuple<double, double, int, double>{ threshold_thickness, total_flow_cur, n_flow_non_zero, ratio };
+    };
+
+    for( auto & threshold : input.masking_threshold )
+    {
+
+        auto const [threshold_thickness, total_flow_cur, n_flow_non_zero, ratio] = bisection_search( threshold );
+
+        double volume        = topography.cell_size() * topography.cell_size() * total_flow_cur;
+        double area          = topography.cell_size() * topography.cell_size() * n_flow_non_zero;
+        double avg_thickness = volume / area;
+
+        file << fmt::format( "Masking threshold = {}\n", threshold );
+        file << fmt::format( "Masked volume = {} m3\n", volume );
+        file << fmt::format( "Masked area = {} m2\n", area );
+        file << fmt::format( "Average thickness mask = {} m\n", avg_thickness );
+    }
 
     file.close();
 }
