@@ -20,7 +20,7 @@ public:
     std::optional<int> rng_seed = std::nullopt;
 
     // mr lava loba settings from input.py
-    std::filesystem::path run_name{};        // Name of the run (used to save the parameters and the output)
+    std::string run_name{};                  // Name of the run (used to save the parameters and the output)
     std::filesystem::path source{};          // File name of ASCII digital elevation model (.asc file)
     std::vector<Vector2> vent_coordinates{}; // of shape [n_vents, 2]
 

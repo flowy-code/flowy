@@ -41,9 +41,7 @@ InputParams parse_config( const std::filesystem::path & path )
     params.rng_seed = tbl["rng_seed"].value<int>();
 
     // From input.py
-    std::string run_name_string;
-    set_if_specified( run_name_string, tbl["run_name"] );
-    params.run_name = std::filesystem::path( run_name_string );
+    set_if_specified( params.run_name, tbl["run_name"] );
 
     std::string source_string;
     set_if_specified( source_string, tbl["source"] );
