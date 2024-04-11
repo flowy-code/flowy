@@ -1,4 +1,4 @@
-name: CI
+name: CI_Windows
 
 on: [push, pull_request]
 
@@ -10,7 +10,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-latest, macos-latest]
+        os: [windows-latest]
         build-type: [Release]
 
     steps:
@@ -21,17 +21,19 @@ jobs:
       with:
         micromamba-version: '1.5.7-0'
         environment-file: environment.yml
-        init-shell: bash
+        init-shell: powershell
         cache-environment: true
         post-cleanup: 'all'
   
     - name: Compile with meson
-      shell: micromamba-shell {0}
+      shell: pwsh
       run: |
-        meson setup build --buildtype release
+        micromamba activate flowyenv
+        meson setup build --buildtype release --vsenv
         meson compile -C build
 
     - name: Test with meson
-      shell: micromamba-shell {0}
+      shell: pwsh
       run: |
+        micromamba activate flowyenv
         meson test -C build --verbose

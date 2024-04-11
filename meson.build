@@ -2,7 +2,18 @@ project('flowy', 'cpp',
   version : '0.1',
   default_options : ['warning_level=3', 'cpp_std=c++20', 'optimization=3'])
 
-cpp_args = ['-Wno-unused-local-typedefs', '-Wno-array-bounds', '-ffast-math']
+cpp_args = []
+
+cpp = meson.get_compiler('cpp')
+
+# clang and gcc specific flags
+if cpp.get_id() == 'gcc' or cpp.get_id() == 'clang'
+  cpp_args += ['-Wno-unused-local-typedefs', '-Wno-array-bounds', '-ffast-math']
+endif
+
+if cpp_args.length() > 0
+  message('Adding compiler flags', cpp_args)
+endif
 
 incdir = include_directories('include')
 
