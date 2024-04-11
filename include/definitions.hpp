@@ -7,16 +7,8 @@
 #include <xtensor/xfixed.hpp>
 #include <xtensor/xtensor.hpp>
 #include <xtensor/xview.hpp>
-
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wparentheses"
 #include "xtensor-blas/xlinalg.hpp"
-#pragma GCC diagnostic pop
-
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wmaybe-uninitialized"
 #include "xtensor/xmanipulation.hpp"
-#pragma GCC diagnostic pop
 
 namespace Flowy
 {
