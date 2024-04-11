@@ -65,7 +65,7 @@ int main( int argc, char * argv[] )
     {
         // Else, the name comes from the input.toml file and we take it as a "base_name"
         // Then we check if the input backup file already exists for run_names with three appended digits:
-        // That mean we check for
+        // That means we check for
         // {base_run_name}_000_inp.bak, {base_run_name}_001_inp.bak, ... etc.
         // As our final run name we take the first {base_run_name}_XXX that does not already have an
         // existing input backup file
