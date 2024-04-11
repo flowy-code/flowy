@@ -1,0 +1,3 @@
+option('build_shared_lib', type : 'boolean', value : false, description : 'Enable building of the shared library')
+option('build_tests', type : 'boolean', value : true, description : 'Enable building of the tests')
+option('build_exe', type : 'boolean', value : true, description : 'Enable building of the executable')
