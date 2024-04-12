@@ -63,7 +63,6 @@ Topography::BoundingBox Topography::bounding_box( const Vector2 & center, double
 LobeCells Topography::get_cells_intersecting_lobe( const Lobe & lobe )
 {
     LobeCells res{};
-
     LobeCells::cellvecT cells_intersecting{};
     LobeCells::cellvecT cells_enclosed{};
 
@@ -153,12 +152,39 @@ LobeCells Topography::get_cells_intersecting_lobe( const Lobe & lobe )
 
     res.cells_intersecting = std::move( cells_intersecting );
     res.cells_enclosed     = std::move( cells_enclosed );
+
     return res;
 }
 
-std::vector<std::pair<std::array<int, 2>, double>> Topography::compute_intersection( const Lobe & lobe, int N )
+std::vector<std::pair<std::array<int, 2>, double>>
+Topography::compute_intersection( const Lobe & lobe, std::optional<int> idx_cache, int N )
 {
-    auto lobe_cells = get_cells_intersecting_lobe( lobe );
+    // Can we use the cache?
+    bool use_cache = idx_cache.has_value() && ( intersection_cache != nullptr )
+                     && ( intersection_cache->size() > idx_cache.value() );
+
+    LobeCells lobe_cells{};
+
+    if( use_cache )
+    {
+        // Check if the cache already contains the intersection
+        std::optional<LobeCells> cached_lobe_cells = ( *intersection_cache )[idx_cache.value()];
+
+        // Does the cache already contain a value?
+        if( cached_lobe_cells.has_value() ) // If yes, we use it
+        {
+            lobe_cells = cached_lobe_cells.value();
+        }
+        else
+        { // If no, we compute it and put it in the cache
+            lobe_cells                                 = get_cells_intersecting_lobe( lobe );
+            ( *intersection_cache )[idx_cache.value()] = lobe_cells;
+        }
+    }
+    else
+    {
+        lobe_cells = get_cells_intersecting_lobe( lobe );
+    }
 
     std::vector<std::pair<std::array<int, 2>, double>> res{};
     res.reserve( lobe_cells.cells_intersecting.size() + lobe_cells.cells_enclosed.size() );
@@ -281,11 +307,11 @@ std::pair<double, Vector2> Topography::height_and_slope( const Vector2 & coordin
     return { height, -slope / cell_size() };
 }
 
-void Topography::add_lobe( const Lobe & lobe )
+void Topography::add_lobe( const Lobe & lobe, std::optional<int> idx_cache )
 {
     // In this function we simply add the thickness of the lobe to the topography
     // First, we find the intersected cells and the covered fractions
-    std::vector<std::pair<std::array<int, 2>, double>> intersection_data = compute_intersection( lobe );
+    std::vector<std::pair<std::array<int, 2>, double>> intersection_data = compute_intersection( lobe, idx_cache );
 
     // Then we add the tickness according to the fractions
     for( auto const & [indices, fraction] : intersection_data )

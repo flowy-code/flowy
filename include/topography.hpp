@@ -3,7 +3,10 @@
 #include "asc_file.hpp"
 #include "definitions.hpp"
 #include "lobe.hpp"
+#include <memory>
+#include <optional>
 #include <utility>
+#include <vector>
 
 namespace Flowy
 {
@@ -29,6 +32,8 @@ public:
         int idx_y_lower{};
         int idx_y_higher{};
     };
+
+    std::vector<LobeCells> * intersection_cache{};
 
     Topography( const AscFile & asc_file )
             : height_data( asc_file.height_data ), x_data( asc_file.x_data ), y_data( asc_file.y_data ){};
@@ -89,10 +94,11 @@ public:
     // This returns a vector of pairs
     // - the first entry of each pair contains an array<int, 2> with the idx_i, idx_j of the intersected cell
     // - the second entry contains the fraction of the cell that is covered by the ellips
-    std::vector<std::pair<std::array<int, 2>, double>> compute_intersection( const Lobe & lobe, int N = 15 );
+    std::vector<std::pair<std::array<int, 2>, double>>
+    compute_intersection( const Lobe & lobe, std::optional<int> idx_cache = std::nullopt, int N = 15 );
 
     // Adds the lobe thickness to the topography, according to its fractional intersection with the cells
-    void add_lobe( const Lobe & lobe );
+    void add_lobe( const Lobe & lobe, std::optional<int> idx_cache = std::nullopt );
 
     // Check if a point is near the boundary
     bool is_point_near_boundary( const Vector2 & coordinates, double radius );

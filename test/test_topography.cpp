@@ -12,6 +12,7 @@
 #include <catch2/catch_test_macros.hpp>
 #include <catch2/matchers/catch_matchers_floating_point.hpp>
 #include <catch2/matchers/catch_matchers_range_equals.hpp>
+#include <optional>
 #include <vector>
 
 TEST_CASE( "bounding_box", "[bounding_box]" )
@@ -105,7 +106,7 @@ TEST_CASE( "test_compute_intersection", "[intersection]" )
     // clang-format on
     double expected_area_fraction = Flowy::Math::pi / 4.0;
 
-    auto intersection_data = topography.compute_intersection( my_lobe, 30 );
+    auto intersection_data = topography.compute_intersection( my_lobe, std::nullopt, 30 );
 
     std::vector<std::array<int, 2>> cell_indices{};
     for( size_t i = 0; i < cell_indices_expected.size(); i++ )
