@@ -1,3 +1,4 @@
+
 #pragma once
 #include "asc_file.hpp"
 #include "definitions.hpp"
@@ -7,8 +8,16 @@
 namespace Flowy
 {
 
+struct LobeCells
+{
+    using cellvecT = std::vector<std::array<int, 2>>;
+    cellvecT cells_intersecting{};
+    cellvecT cells_enclosed{};
+};
+
 class Topography
 {
+
 public:
     // The indices are all inclusive, i.e.
     // x limits = [idx_x_lower, idx_x_higher]
@@ -73,8 +82,7 @@ public:
     BoundingBox bounding_box( const Vector2 & center, double extent_x, double extent_y );
 
     // Find all the cells that intersect the lobe and all the cells that are fully enclosed by the lobe
-    std::pair<std::vector<std::array<int, 2>>, std::vector<std::array<int, 2>>>
-    get_cells_intersecting_lobe( const Lobe & lobe );
+    LobeCells get_cells_intersecting_lobe( const Lobe & lobe );
 
     // Find the fraction of the cells covered by the lobe by rasterizing each cell
     // into a grid of N*N points

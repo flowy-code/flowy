@@ -1,14 +1,14 @@
 #pragma once
 
+#include "xtensor-blas/xlinalg.hpp"
 #include "xtensor/xbuilder.hpp"
+#include "xtensor/xmanipulation.hpp"
 #include "xtensor/xmath.hpp"
 #include "xtensor/xtensor_forward.hpp"
 #include <xtensor/xcsv.hpp>
 #include <xtensor/xfixed.hpp>
 #include <xtensor/xtensor.hpp>
 #include <xtensor/xview.hpp>
-#include "xtensor-blas/xlinalg.hpp"
-#include "xtensor/xmanipulation.hpp"
 
 namespace Flowy
 {

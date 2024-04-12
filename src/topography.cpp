@@ -60,17 +60,17 @@ Topography::BoundingBox Topography::bounding_box( const Vector2 & center, double
     return res;
 }
 
-std::pair<std::vector<std::array<int, 2>>, std::vector<std::array<int, 2>>>
-Topography::get_cells_intersecting_lobe( const Lobe & lobe )
+LobeCells Topography::get_cells_intersecting_lobe( const Lobe & lobe )
 {
-    using cell_vec = std::vector<std::array<int, 2>>;
-    cell_vec cells_intersecting{};
-    cell_vec cells_enclosed{};
+    LobeCells res{};
+
+    LobeCells::cellvecT cells_intersecting{};
+    LobeCells::cellvecT cells_enclosed{};
 
     auto extent_xy = lobe.extent_xy();
 
     // push_back cells with x index in the interval [idx_start, idx_stop]
-    auto push_back_cells = [&]( cell_vec & cells, int idx_start, int idx_stop, int idx_y )
+    auto push_back_cells = [&]( LobeCells::cellvecT & cells, int idx_start, int idx_stop, int idx_y )
     {
         for( int idx_x = idx_start; idx_x <= idx_stop; idx_x++ )
         {
@@ -150,18 +150,21 @@ Topography::get_cells_intersecting_lobe( const Lobe & lobe )
             push_back_cells( cells_intersecting, start_left + 1, start_right - 1, idx_y - 1 );
         }
     }
-    return { cells_intersecting, cells_enclosed };
+
+    res.cells_intersecting = std::move( cells_intersecting );
+    res.cells_enclosed     = std::move( cells_enclosed );
+    return res;
 }
 
 std::vector<std::pair<std::array<int, 2>, double>> Topography::compute_intersection( const Lobe & lobe, int N )
 {
-    const auto [cells_intersecting, cells_enclosed] = get_cells_intersecting_lobe( lobe );
+    auto lobe_cells = get_cells_intersecting_lobe( lobe );
 
     std::vector<std::pair<std::array<int, 2>, double>> res{};
-    res.reserve( cells_intersecting.size() + cells_enclosed.size() );
+    res.reserve( lobe_cells.cells_intersecting.size() + lobe_cells.cells_enclosed.size() );
 
     // All enclosed cells are fully covered
-    for( const auto & [idx_x, idx_y] : cells_enclosed )
+    for( const auto & [idx_x, idx_y] : lobe_cells.cells_enclosed )
     {
         res.push_back( { { idx_x, idx_y }, 1.0 } );
     }
@@ -171,7 +174,7 @@ std::vector<std::pair<std::array<int, 2>, double>> Topography::compute_intersect
     const double step      = cell_size / N;
 
     // The intersecting cells get rasterized into columns
-    for( const auto & [idx_x, idx_y] : cells_intersecting )
+    for( const auto & [idx_x, idx_y] : lobe_cells.cells_intersecting )
     {
         const double y_min = y_data[idx_y];
         const double y_max = y_data[idx_y] + cell_size;
