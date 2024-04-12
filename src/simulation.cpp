@@ -400,6 +400,10 @@ void Simulation::run()
         lobes = std::vector<Lobe>{};
         lobes.reserve( n_lobes );
 
+        // hook up the intersection cache
+        auto intersection_cache       = std::vector<std::optional<LobeCells>>( n_lobes, std::nullopt );
+        topography.intersection_cache = &intersection_cache;
+
         // Calculated for each flow with n_lobes number of lobes
         double delta_lobe_thickness
             = 2.0 * ( lobe_dimensions.avg_lobe_thickness - lobe_dimensions.thickness_min ) / ( n_lobes - 1.0 );
@@ -424,7 +428,7 @@ void Simulation::run()
             compute_lobe_axes( lobe_cur, slope );
 
             // Add rasterized lobe
-            topography.add_lobe( lobe_cur );
+            topography.add_lobe( lobe_cur, idx_lobe );
             n_lobes_processed++;
         }
 
@@ -489,13 +493,14 @@ void Simulation::run()
             lobe_cur.thickness = lobe_dimensions.thickness_min + idx_lobe * delta_lobe_thickness;
 
             // Add rasterized lobe
-            topography.add_lobe( lobe_cur );
+            topography.add_lobe( lobe_cur, idx_lobe );
             n_lobes_processed++;
         }
 
         if( input.save_hazard_data )
         {
             compute_cumulative_descendents( lobes );
+            topography.compute_hazard( lobes );
         }
 
         if( input.write_lobes_csv )
@@ -539,6 +544,12 @@ void Simulation::run()
     topography_thickness.height_data -= topography_initial.height_data;
     asc_file = topography_thickness.to_asc_file();
     asc_file.save( input.output_folder / fmt::format( "{}_thickness_full.asc", input.run_name ) );
+
+    if( input.save_hazard_data )
+    {
+        asc_file = topography.to_asc_file( Topography::Output::Hazard );
+        asc_file.save( input.output_folder / fmt::format( "{}_hazard_full.asc", input.run_name ) );
+    }
 
     write_avg_thickness_file();
 }

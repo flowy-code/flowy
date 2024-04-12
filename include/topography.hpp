@@ -3,6 +3,8 @@
 #include "asc_file.hpp"
 #include "definitions.hpp"
 #include "lobe.hpp"
+#include "xtensor/xbuilder.hpp"
+#include <iterator>
 #include <memory>
 #include <optional>
 #include <utility>
@@ -25,6 +27,13 @@ public:
     // The indices are all inclusive, i.e.
     // x limits = [idx_x_lower, idx_x_higher]
     // y limits = [idx_y_lower, idx_y_higher]
+
+    enum class Output
+    {
+        Hazard,
+        Height
+    };
+
     struct BoundingBox
     {
         int idx_x_lower{};
@@ -33,20 +42,26 @@ public:
         int idx_y_higher{};
     };
 
-    std::vector<LobeCells> * intersection_cache{};
+    std::vector<std::optional<LobeCells>> * intersection_cache{};
 
     Topography( const AscFile & asc_file )
-            : height_data( asc_file.height_data ), x_data( asc_file.x_data ), y_data( asc_file.y_data ){};
+            : height_data( asc_file.height_data ),
+              hazard( xt::zeros_like( asc_file.height_data ) ),
+              x_data( asc_file.x_data ),
+              y_data( asc_file.y_data )
+    {
+    }
 
     Topography( const MatrixX & height_data, const VectorX & x_data, const VectorX & y_data )
-            : height_data( height_data ), x_data( x_data ), y_data( y_data ){};
+            : height_data( height_data ), hazard( xt::zeros_like( height_data ) ), x_data( x_data ), y_data( y_data ){};
 
     Topography() = default;
 
     // Creates an AscFile object that represents the topography
-    AscFile to_asc_file();
+    AscFile to_asc_file( Output output = Output::Height );
 
     MatrixX height_data{}; // The heights of the cells
+    MatrixX hazard{};      // Contains data on the cumulative descendents
     VectorX x_data{};
     VectorX y_data{};
 
@@ -99,6 +114,8 @@ public:
 
     // Adds the lobe thickness to the topography, according to its fractional intersection with the cells
     void add_lobe( const Lobe & lobe, std::optional<int> idx_cache = std::nullopt );
+
+    void compute_hazard( const std::vector<Lobe> & lobes );
 
     // Check if a point is near the boundary
     bool is_point_near_boundary( const Vector2 & coordinates, double radius );

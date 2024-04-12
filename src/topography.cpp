@@ -10,12 +10,20 @@
 namespace Flowy
 {
 
-AscFile Topography::to_asc_file()
+AscFile Topography::to_asc_file( Topography::Output output )
 {
     AscFile asc_file{};
     asc_file.lower_left_corner = { x_data[0], y_data[0] };
     asc_file.cell_size         = cell_size();
-    asc_file.height_data       = height_data;
+
+    if( output == Topography::Output::Height )
+    {
+        asc_file.height_data = height_data;
+    }
+    else
+    {
+        asc_file.height_data = hazard;
+    }
     return asc_file;
 }
 
@@ -252,6 +260,25 @@ Topography::compute_intersection( const Lobe & lobe, std::optional<int> idx_cach
     }
 
     return res;
+}
+
+void Topography::compute_hazard( const std::vector<Lobe> & lobes )
+{
+    for( int idx = 0; idx < lobes.size(); idx++ )
+    {
+        const auto & lobe = lobes[idx];
+        auto lobe_cells   = get_cells_intersecting_lobe( lobe, idx );
+
+        for( const auto & [idx_x, idx_y] : lobe_cells.cells_enclosed )
+        {
+            hazard( idx_x, idx_y ) = std::max<int>( lobe.n_descendents, hazard( idx_x, idx_y ) );
+        }
+
+        for( const auto & [idx_x, idx_y] : lobe_cells.cells_intersecting )
+        {
+            hazard( idx_x, idx_y ) = std::max<int>( lobe.n_descendents, hazard( idx_x, idx_y ) );
+        }
+    }
 }
 
 std::pair<double, Vector2> Topography::height_and_slope( const Vector2 & coordinates )
