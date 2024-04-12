@@ -13,6 +13,7 @@
 #include <algorithm>
 #include <chrono>
 #include <cmath>
+#include <cstddef>
 #include <random>
 #include <stdexcept>
 #include <vector>
@@ -98,11 +99,81 @@ Simulation::Simulation( const Config::InputParams & input, std::optional<int> rn
     topography_initial = topography;
 };
 
+std::optional<std::vector<double>> Simulation::compute_cumulative_fissure_length()
+{
+
+    auto lengths = std::vector<double>{};
+    lengths.reserve( input.n_vents() );
+    lengths.push_back( 0.0 );
+    int n_vents = input.n_vents();
+
+    for( int ivent = 1; ivent < n_vents; ivent++ )
+    {
+        Vector2 delta_vent = input.vent_coordinates[ivent] - input.vent_coordinates[ivent - 1];
+        lengths.push_back(
+            lengths[ivent - 1] + std::sqrt( delta_vent[0] * delta_vent[0] + delta_vent[1] * delta_vent[1] ) );
+    }
+
+    if( lengths.size() > 1 )
+    {
+        for( int ivent = 0; ivent < n_vents; ivent++ )
+        {
+            lengths[ivent] /= lengths[n_vents - 1];
+        }
+        return lengths;
+    }
+    else
+    {
+        return std::nullopt;
+    }
+}
+
 void Simulation::compute_initial_lobe_position( int idx_flow, Lobe & lobe )
 {
-    // For now, we've just implemented vent_flag = 0
-    int idx_vent = std::floor( idx_flow * input.n_vents() / input.n_flows );
-    lobe.center  = input.vent_coordinates[idx_vent];
+    // Initial lobes are on the vent and flow starts from the first vent, second vent and so on
+    if( input.vent_flag == 0 )
+    {
+        int idx_vent = std::floor( idx_flow * input.n_vents() / input.n_flows );
+        lobe.center  = input.vent_coordinates[idx_vent];
+    }
+    else if( input.vent_flag == 2 )
+    {
+        auto cumulative_fissure_lens = compute_cumulative_fissure_length();
+
+        // You must have at least two vents.
+        if( !cumulative_fissure_lens.has_value() )
+        {
+            throw std::runtime_error(
+                fmt::format( "You must have more than one vent to use vent_flag={}", input.vent_flag ) );
+        }
+
+        // Find a random point on the polyline.
+        std::uniform_real_distribution<double> dist( 0.0, 1.0 );
+        double cum_dist = dist( gen );
+        // cumulative_fissure_len is sorted.
+        auto it = std::lower_bound(
+            cumulative_fissure_lens.value().begin(), cumulative_fissure_lens.value().end(), cum_dist );
+        // if (it == cumulative_fissure_lens.value().begin()){
+        //     lobe.center  = input.vent_coordinates[0];
+        //     return;
+        // }
+        size_t x_vent_index = it - cumulative_fissure_lens.value().begin();
+
+        auto diff_from_prev_vent = cum_dist - cumulative_fissure_lens.value()[x_vent_index - 1];
+
+        double diff_between_vents
+            = cumulative_fissure_lens.value()[x_vent_index] - cumulative_fissure_lens.value()[x_vent_index - 1];
+        double alpha_segment = diff_from_prev_vent / diff_between_vents;
+        double x             = alpha_segment * input.vent_coordinates[x_vent_index][0]
+                   + ( 1.0 - alpha_segment ) * input.vent_coordinates[x_vent_index - 1][0];
+        double y = alpha_segment * input.vent_coordinates[x_vent_index][1]
+                   + ( 1.0 - alpha_segment ) * input.vent_coordinates[x_vent_index - 1][1];
+        lobe.center = {x, y};
+    }
+    else
+    {
+        throw std::runtime_error( fmt::format( "Not implemented vent_flag={}", input.vent_flag ) );
+    }
 }
 
 void Simulation::write_lobe_data_to_file( const std::vector<Lobe> & lobes, const std::filesystem::path & path )
