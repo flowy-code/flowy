@@ -61,6 +61,8 @@ public:
 
     void write_avg_thickness_file();
 
+    std::optional<std::vector<double>> compute_cumulative_fissure_length();
+
     void run();
 
 private:
