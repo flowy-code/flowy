@@ -367,7 +367,6 @@ void Simulation::write_avg_thickness_file()
 
     for( auto & threshold : input.masking_threshold )
     {
-
         auto const [threshold_thickness, total_flow_cur, n_flow_non_zero, ratio] = bisection_search( threshold );
 
         double volume        = topography.cell_size() * topography.cell_size() * total_flow_cur;
@@ -378,8 +377,22 @@ void Simulation::write_avg_thickness_file()
         file << fmt::format( "Masked volume = {} m3\n", volume );
         file << fmt::format( "Masked area = {} m2\n", area );
         file << fmt::format( "Average thickness mask = {} m\n", avg_thickness );
-    }
 
+        // Write the masked thickness and the masked hazard maps
+        auto asc_file_thick = topography_thickness.to_asc_file();
+        // apply the filter mask
+        xt::filter( asc_file_thick.height_data, asc_file_thick.height_data < threshold_thickness ) = 0.0;
+        asc_file_thick.save(
+            input.output_folder / fmt::format( "{}_thickness_masked_{:.2f}.asc", input.run_name, threshold ) );
+
+        if( input.save_hazard_data )
+        {
+            auto asc_file_hazard = topography.to_asc_file( Topography::Output::Hazard );
+            xt::filter( asc_file_hazard.height_data, asc_file_thick.height_data < threshold_thickness ) = 0.0;
+            asc_file_hazard.save(
+                input.output_folder / fmt::format( "{}_hazard_masked_{:.2f}.asc", input.run_name, threshold ) );
+        }
+    }
     file.close();
 }
 
@@ -545,6 +558,7 @@ void Simulation::run()
     asc_file = topography_thickness.to_asc_file();
     asc_file.save( input.output_folder / fmt::format( "{}_thickness_full.asc", input.run_name ) );
 
+    // Save the full hazard map
     if( input.save_hazard_data )
     {
         asc_file = topography.to_asc_file( Topography::Output::Hazard );
