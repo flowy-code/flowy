@@ -71,13 +71,11 @@ Topography::BoundingBox Topography::bounding_box( const Vector2 & center, double
 LobeCells Topography::get_cells_intersecting_lobe( const Lobe & lobe, std::optional<int> idx_cache )
 {
     // Can we use the cache?
-    bool use_cache = idx_cache.has_value() && ( intersection_cache != nullptr )
-                     && ( intersection_cache->size() > idx_cache.value() );
+    bool use_cache = idx_cache.has_value() && ( intersection_cache.size() > idx_cache.value() );
 
     if( use_cache )
     {
-        // Check if the cache already contains the intersection
-        std::optional<LobeCells> cached_lobe_cells = ( *intersection_cache )[idx_cache.value()];
+        std::optional<LobeCells> cached_lobe_cells = intersection_cache[idx_cache.value()];
 
         // Does the cache already contain a value?
         if( cached_lobe_cells.has_value() ) // If yes, we return it
@@ -180,7 +178,7 @@ LobeCells Topography::get_cells_intersecting_lobe( const Lobe & lobe, std::optio
     // If the cache is used, we copy the intersection data there
     if( use_cache )
     {
-        ( *intersection_cache )[idx_cache.value()] = res;
+        intersection_cache[idx_cache.value()] = res;
     }
 
     return res;
@@ -359,6 +357,11 @@ Vector2 Topography::find_preliminary_budding_point( const Lobe & lobe, int npoin
         { return height_and_slope( p1 ).first < height_and_slope( p2 ).first; } );
 
     return *min_elevation_point_it;
+}
+
+void Topography::reset_intersection_cache( int N )
+{
+    intersection_cache = std::vector<std::optional<LobeCells>>( N, std::nullopt );
 }
 
 } // namespace Flowy

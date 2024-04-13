@@ -42,8 +42,6 @@ public:
         int idx_y_higher{};
     };
 
-    std::vector<std::optional<LobeCells>> * intersection_cache{};
-
     Topography( const AscFile & asc_file )
             : height_data( asc_file.height_data ),
               hazard( xt::zeros_like( asc_file.height_data ) ),
@@ -125,6 +123,11 @@ public:
     std::array<int, 2> locate_point( const Vector2 & coordinates );
 
     Vector2 find_preliminary_budding_point( const Lobe & lobe, int npoints );
+
+    void reset_intersection_cache( int N );
+
+private:
+    std::vector<std::optional<LobeCells>> intersection_cache{};
 };
 
 } // namespace Flowy

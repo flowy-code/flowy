@@ -489,9 +489,8 @@ void Simulation::run()
         lobes = std::vector<Lobe>{};
         lobes.reserve( n_lobes );
 
-        // hook up the intersection cache
-        auto intersection_cache       = std::vector<std::optional<LobeCells>>( n_lobes, std::nullopt );
-        topography.intersection_cache = &intersection_cache;
+        // set the intersection cache
+        topography.reset_intersection_cache( n_lobes );
 
         // Calculated for each flow with n_lobes number of lobes
         double delta_lobe_thickness
