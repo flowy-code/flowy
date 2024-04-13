@@ -8,7 +8,7 @@ dataframe = pd.read_csv(
     header=None
 )
 
-dataframe.replace(float("nan"), -9999)
+dataframe.replace(float("nan"), -9999, inplace=True)
 data = dataframe.to_numpy()
 
 np.savetxt("tinit_33_n.asc", data)
