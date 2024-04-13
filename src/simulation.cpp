@@ -5,6 +5,7 @@
 #include "probability_dist.hpp"
 #include "reservoir_sampling.hpp"
 #include "topography.hpp"
+#include "xtensor/xbuilder.hpp"
 #include "xtensor/xmath.hpp"
 #include "xtensor/xsort.hpp"
 #include <fmt/chrono.h>
@@ -168,7 +169,7 @@ void Simulation::compute_initial_lobe_position( int idx_flow, Lobe & lobe )
                    + ( 1.0 - alpha_segment ) * input.vent_coordinates[x_vent_index - 1][0];
         double y = alpha_segment * input.vent_coordinates[x_vent_index][1]
                    + ( 1.0 - alpha_segment ) * input.vent_coordinates[x_vent_index - 1][1];
-        lobe.center = {x, y};
+        lobe.center = { x, y };
     }
     else
     {
@@ -474,6 +475,10 @@ void Simulation::run()
 
     // Make a copy of the initial topography
     auto t_run_start = std::chrono::high_resolution_clock::now();
+
+    // We use this matrix to comute the hazard of the local flow, which has to be done by max_reducing
+    MatrixX flow_hazard = xt::zeros_like( topography.hazard );
+
     for( int idx_flow = 0; idx_flow < input.n_flows; idx_flow++ )
     {
         // Determine n_lobes
@@ -584,7 +589,8 @@ void Simulation::run()
         if( input.save_hazard_data )
         {
             compute_cumulative_descendents( lobes );
-            topography.compute_hazard( lobes );
+            topography.compute_hazard_flow( lobes, flow_hazard );
+            topography.hazard += flow_hazard;
         }
 
         if( input.write_lobes_csv )

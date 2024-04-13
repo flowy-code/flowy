@@ -262,8 +262,12 @@ Topography::compute_intersection( const Lobe & lobe, std::optional<int> idx_cach
     return res;
 }
 
-void Topography::compute_hazard( const std::vector<Lobe> & lobes )
+void Topography::compute_hazard_flow( const std::vector<Lobe> & lobes, MatrixX & flow_hazard )
 {
+    std::fill( flow_hazard.begin(), flow_hazard.end(), 0 );
+
+    // This computes the hazard for *one* flow
+    // For one flow, the hazard of a cell is the maximum of lobe.n_descendant over all lobes touching it
     for( int idx = 0; idx < lobes.size(); idx++ )
     {
         const auto & lobe = lobes[idx];
@@ -271,12 +275,12 @@ void Topography::compute_hazard( const std::vector<Lobe> & lobes )
 
         for( const auto & [idx_x, idx_y] : lobe_cells.cells_enclosed )
         {
-            hazard( idx_x, idx_y ) = std::max<int>( lobe.n_descendents, hazard( idx_x, idx_y ) );
+            flow_hazard( idx_x, idx_y ) = std::max<int>( lobe.n_descendents, flow_hazard( idx_x, idx_y ) );
         }
 
         for( const auto & [idx_x, idx_y] : lobe_cells.cells_intersecting )
         {
-            hazard( idx_x, idx_y ) = std::max<int>( lobe.n_descendents, hazard( idx_x, idx_y ) );
+            flow_hazard( idx_x, idx_y ) = std::max<int>( lobe.n_descendents, flow_hazard( idx_x, idx_y ) );
         }
     }
 }
