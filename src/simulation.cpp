@@ -636,8 +636,11 @@ void Simulation::run()
     asc_file.save( input.output_folder / fmt::format( "{}_DEM.asc", input.run_name ) );
 
     // Save final topography to asc file
-    asc_file = topography.to_asc_file();
-    asc_file.save( input.output_folder / fmt::format( "{}_DEM_final.asc", input.run_name ) );
+    if( input.save_final_dem )
+    {
+        asc_file = topography.to_asc_file();
+        asc_file.save( input.output_folder / fmt::format( "{}_DEM_final.asc", input.run_name ) );
+    }
 
     // Save full thickness to asc file
     topography_thickness = topography;

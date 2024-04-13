@@ -10,6 +10,10 @@ namespace Flowy::Config
 class InputParams
 {
 public:
+    // ===================================================================================
+    // mr lava loba settings from input.py
+    // ===================================================================================
+
     // The folder output is written to
     std::filesystem::path output_folder = "./output";
 
@@ -17,9 +21,13 @@ public:
     // The files are named 'lobes_{idx_flow}.csv' and contain information about the lobes in that specific flow
     bool write_lobes_csv        = false;
     bool print_remaining_time   = false;
+    bool save_final_dem         = false;
     std::optional<int> rng_seed = std::nullopt;
 
+    // ===================================================================================
     // mr lava loba settings from input.py
+    // ===================================================================================
+
     std::string run_name{};                  // Name of the run (used to save the parameters and the output)
     std::filesystem::path source{};          // File name of ASCII digital elevation model (.asc file)
     std::vector<Vector2> vent_coordinates{}; // of shape [n_vents, 2]
@@ -132,7 +140,10 @@ public:
     std::optional<double> eps{};
     std::optional<std::string> union_diff_file{};
 
-    // from input_advanced
+    // ===================================================================================
+    // mr lava loba settings from input_advanced.py
+    // ===================================================================================
+
     int npoints{ 30 }; // Number of points for rasterizing the ellipse
     int n_init{ 0 };   // Number of repetitions of the first lobe (useful for initial spreading)
 

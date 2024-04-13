@@ -266,7 +266,7 @@ void Topography::compute_hazard_flow( const std::vector<Lobe> & lobes, MatrixX &
 
     // This computes the hazard for *one* flow
     // For one flow, the hazard of a cell is the maximum of lobe.n_descendant over all lobes touching it
-    for( int idx = 0; idx < lobes.size(); idx++ )
+    for( size_t idx = 0; idx < lobes.size(); idx++ )
     {
         const auto & lobe = lobes[idx];
         auto lobe_cells   = get_cells_intersecting_lobe( lobe, idx );
