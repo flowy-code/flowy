@@ -349,7 +349,7 @@ void Simulation::compute_descendent_lobe_position( Lobe & lobe, const Lobe & par
 {
     Vector2 direction_to_new_lobe
         = ( final_budding_point - parent.center ) / xt::linalg::norm( final_budding_point - parent.center );
-    Vector2 new_lobe_center = final_budding_point + direction_to_new_lobe * lobe.semi_axes[0];
+    Vector2 new_lobe_center = final_budding_point + input.dist_fact * direction_to_new_lobe * lobe.semi_axes[0];
     lobe.center             = new_lobe_center;
 }
 

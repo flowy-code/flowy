@@ -45,7 +45,7 @@ public:
     // perturbes the initial azimuthal angle of the lobe, which is
     void compute_lobe_axes( Lobe & lobe, const Vector2 & slope ) const; // computed from the terrain slope
 
-    static void compute_descendent_lobe_position( Lobe & lobe, const Lobe & parent, Vector2 final_budding_point );
+    void compute_descendent_lobe_position( Lobe & lobe, const Lobe & parent, Vector2 final_budding_point );
 
     void perturb_lobe_angle( Lobe & lobe, const Vector2 & slope );
 

@@ -8,6 +8,7 @@
 #include <catch2/catch_test_macros.hpp>
 #include <catch2/matchers/catch_matchers_floating_point.hpp>
 #include <catch2/matchers/catch_matchers_range_equals.hpp>
+#include <cstddef>
 #include <filesystem>
 
 TEST_CASE( "perturb_angle", "[perturb_angle]" )
@@ -62,6 +63,7 @@ TEST_CASE( "perturb_angle", "[perturb_angle]" )
 TEST_CASE( "budding_point", "[budding_point]" )
 {
     using namespace Flowy;
+    namespace fs = std::filesystem;
 
     Lobe lobe_parent;
     lobe_parent.center    = { -0.5, 0.5 };
@@ -71,9 +73,18 @@ TEST_CASE( "budding_point", "[budding_point]" )
     Lobe lobe_cur;
     lobe_cur.semi_axes = lobe_parent.semi_axes;
 
+    auto proj_root_path = fs::current_path();
+    auto asc_file_path  = proj_root_path / fs::path( "test/res/asc/file.asc" );
+    Config::InputParams input_params;
+    input_params.dist_fact                     = 1.0;
+    input_params.source                        = asc_file_path;
+    input_params.total_volume                  = 1;
+    input_params.prescribed_avg_lobe_thickness = 1;
+
     Vector2 final_budding_point = lobe_parent.point_at_angle( 0 );
 
-    Simulation::compute_descendent_lobe_position( lobe_cur, lobe_parent, final_budding_point );
+    auto simulation = Simulation( input_params, std::nullopt );
+    simulation.compute_descendent_lobe_position( lobe_cur, lobe_parent, final_budding_point );
 
     fmt::print( "budding_point = {}\n", fmt::streamed( final_budding_point ) );
     fmt::print( "lobe_cur.center = {}\n", fmt::streamed( lobe_cur.center ) );
