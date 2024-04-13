@@ -132,13 +132,10 @@ def plot_pyvista(
     # Build mesh for the flow
     # ====================================================================
     # When computing the flow thickness, we dont use the warped heights
-    flow_thickness = (
-        asc_file_final.height_data - asc_file_initial.height_data
-    ).flatten(order="F")
+    flow_thickness = (asc_file_final.height_data).flatten(order="F")
 
     warped_final_height_data = (
-        warp_factor * (asc_file_final.height_data - asc_file_final.min_height())
-        + asc_file_final.min_height()
+        warp_factor * asc_file_final.height_data + asc_file_initial.height_data
     )
 
     # This time we dont need a finite thickness
@@ -161,8 +158,8 @@ def plot_pyvista(
         p = pv.Plotter(off_screen=True)
 
     if contour_spacing > 0:
-        min_height = asc_file_final.min_height()
-        max_height = asc_file_final.max_height()
+        min_height = asc_file_initial.min_height()
+        max_height = asc_file_initial.max_height()
         height_contours = grid_surface.contour(
             np.arange(min_height, max_height, contour_spacing), scalars="elevation"
         )
@@ -251,7 +248,7 @@ def plot_pyplot(
     plt.xlabel("x [m]")
     plt.ylabel("y [m]")
 
-    lava_thickness = asc_file_final.height_data - asc_file_initial.height_data
+    lava_thickness = asc_file_final.height_data
     lava_thickness[lava_thickness < 1e-10] = float("nan")
     plt.contourf(x_data, y_data, lava_thickness.T, cmap="magma")
 
