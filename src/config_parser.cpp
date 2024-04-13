@@ -1,5 +1,6 @@
 #include "config_parser.hpp"
 #include "config.hpp"
+#include <fmt/format.h>
 #include <toml++/toml.h>
 #include <stdexcept>
 
@@ -142,4 +143,46 @@ InputParams parse_config( const std::filesystem::path & path )
 
     return params;
 }
+
+// This macro expands the variable x to: "x", x and is used together with the check function
+#define name_and_var( x ) #x, x
+
+// Helper function to check variables, depending on a condition function with an optional explanation
+void check(
+    const std::string & variable_name, auto variable, auto condition,
+    const std::optional<std::string> & explanation = std::nullopt )
+{
+    if( !condition( variable ) )
+    {
+        std::string msg = fmt::format( "The value {} is not valid for {}", variable, variable_name );
+        if( explanation.has_value() )
+        {
+            msg += "\n";
+            msg += explanation.value();
+        }
+        throw std::runtime_error( msg );
+    }
+}
+
+void validate_settings( const InputParams & options )
+{
+    auto g_zero           = []( auto x ) { return x > 0; };
+    auto geq_zero         = []( auto x ) { return x >= 0; };
+    auto geq_zero_leq_one = []( auto x ) { return x >= 0 && x <= 1; };
+
+    check( name_and_var( options.n_flows ), geq_zero );
+    check( name_and_var( options.min_n_lobes ), geq_zero );
+    check( name_and_var( options.max_n_lobes ), geq_zero );
+    check( name_and_var( options.lobe_exponent ), geq_zero_leq_one );
+    check( name_and_var( options.max_slope_prob ), geq_zero_leq_one );
+    check( name_and_var( options.inertial_exponent ), geq_zero );
+    check( name_and_var( options.a_beta ), geq_zero );
+    check( name_and_var( options.b_beta ), geq_zero );
+    check( name_and_var( options.n_init ), []( auto x ) { return x >= 1; } );
+    check( name_and_var( options.dist_fact ), geq_zero_leq_one );
+    check( name_and_var( options.npoints ), []( auto x ) { return x >= 1; } );
+    check( name_and_var( options.aspect_ratio_coeff ), geq_zero );
+    check( name_and_var( options.max_aspect_ratio ), g_zero );
+}
+
 } // namespace Flowy::Config

@@ -40,6 +40,7 @@ int main( int argc, char * argv[] )
     std::optional<std::string> run_name            = program.present<std::string>( "-n" );
 
     auto input_params = Config::parse_config( config_file_path );
+    validate_settings( input_params );
 
     if( asc_file_path.has_value() )
     {
