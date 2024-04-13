@@ -55,7 +55,7 @@ class AscFile:
         return np.min(self.height_data[self.height_data > self.nd + 1])
 
     def filter_height_data(self, replace=float("nan")):
-        mask = self.height_data > self.nd + 1
+        mask = self.height_data > self.nd
         self.height_data[~mask] = replace
 
 
