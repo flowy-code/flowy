@@ -11,7 +11,7 @@ class InputParams
 {
 public:
     // ===================================================================================
-    // mr lava loba settings from input.py
+    // new settings
     // ===================================================================================
 
     // The folder output is written to
