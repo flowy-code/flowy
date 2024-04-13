@@ -470,7 +470,6 @@ void Simulation::write_avg_thickness_file()
 
 void Simulation::run()
 {
-    int n_lobes_total     = 0; // This is the total number of lobes, accumulated over all flows
     int n_lobes_processed = 0;
 
     // Make a copy of the initial topography
@@ -482,9 +481,21 @@ void Simulation::run()
     for( int idx_flow = 0; idx_flow < input.n_flows; idx_flow++ )
     {
         // Determine n_lobes
-        // @TODO: Calculate this later, using a beta distribution etc.
-        int n_lobes = 0.5 * ( input.min_n_lobes + input.max_n_lobes );
-        n_lobes_total += n_lobes;
+        int n_lobes{};
+        // Number of lobes in the flow is a random number between the min and max values
+        if( input.a_beta == 0 && input.b_beta == 0 )
+        {
+            std::uniform_int_distribution<> dist_num_lobes( input.min_n_lobes, input.max_n_lobes );
+            n_lobes = dist_num_lobes( gen );
+        }
+        // Deterministic number of lobes according to a beta law
+        else
+        {
+            double x_beta        = ( 1.0 * idx_flow ) / ( input.n_flows - 1.0 );
+            double random_number = Math::beta_pdf( x_beta, input.a_beta, input.b_beta );
+            n_lobes              = int(
+                std::round( input.min_n_lobes + 0.5 * ( input.max_n_lobes - input.min_n_lobes ) * random_number ) );
+        }
 
         lobes = std::vector<Lobe>{};
         lobes.reserve( n_lobes );
