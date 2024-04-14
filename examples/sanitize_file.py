@@ -41,7 +41,7 @@ def sanitize(path_to_file, path_to_sanitized_file):
         f.write(f"yllcorner {ly}\n")
         f.write(f"cellsize {cell}\n")
         f.write(f"NODATA_value {nd}\n")
-        np.savetxt(f, data, fmt="%1.5e")
+        np.savetxt(f, data, fmt="%0.4f")
 
 
 if __name__ == "__main__":
