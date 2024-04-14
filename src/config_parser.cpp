@@ -2,6 +2,8 @@
 #include "config.hpp"
 #include <fmt/format.h>
 #include <toml++/toml.h>
+#include <filesystem>
+#include <optional>
 #include <stdexcept>
 
 namespace Flowy::Config
@@ -40,6 +42,13 @@ InputParams parse_config( const std::filesystem::path & path )
     set_if_specified( params.write_lobes_csv, tbl["write_lobes_csv"] );
     set_if_specified( params.print_remaining_time, tbl["print_remaining_time"] );
     set_if_specified( params.save_final_dem, tbl["save_final_dem"] );
+
+    std::optional<std::string> output_folder_string{};
+    output_folder_string = tbl["output_folder"].value<std::string>();
+    if( output_folder_string.has_value() )
+    {
+        params.output_folder = output_folder_string.value();
+    }
 
     params.rng_seed = tbl["rng_seed"].value<int>();
 
