@@ -44,11 +44,11 @@ flowylib = both_libraries('flowy',
   include_directories : incdir,
   cpp_args : cpp_args,
 )
-# Declare the static library (needed for the executable and the tests)
-if get_option('build_exe') or get_option('build_tests')
-  flowylib_static_dep = declare_dependency(include_directories : incdir,
-    link_with : flowylib.get_static_lib(), dependencies: _deps)
-endif
+# Generating both dependencies here is not a heavy ask
+flowylib_static_dep = declare_dependency(include_directories : incdir,
+  link_with : flowylib.get_static_lib(), dependencies: _deps)
+flowylib_shared_dep = declare_dependency(include_directories : incdir,
+  link_with : flowylib.get_shared_lib(), dependencies: _deps)
 
 # Declare the flowy executable
 if get_option('build_exe')
@@ -58,12 +58,6 @@ if get_option('build_exe')
     dependencies : [flowylib_static_dep],
     cpp_args : cpp_args
   )
-endif
-
-# Declare shared library (used for python bindings)
-if get_option('build_shared_lib')
-  flowylib_shared_dep = declare_dependency(include_directories : incdir,
-    link_with : flowylib.get_shared_lib(), dependencies: _deps)
 endif
 
 if get_option('build_tests')
