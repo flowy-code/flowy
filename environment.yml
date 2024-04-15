@@ -13,3 +13,5 @@ dependencies:
   - catch2
   - xtensor
   - xtensor-blas
+  - cppcheck
+  - cpplint
