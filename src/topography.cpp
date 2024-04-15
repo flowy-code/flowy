@@ -73,7 +73,8 @@ Topography::BoundingBox Topography::bounding_box( const Vector2 & center, double
 LobeCells Topography::get_cells_intersecting_lobe( const Lobe & lobe, std::optional<int> idx_cache )
 {
     // Can we use the cache?
-    bool use_cache = idx_cache.has_value() && ( intersection_cache.size() > idx_cache.value() );
+    bool use_cache
+        = idx_cache.has_value() && ( intersection_cache.size() > static_cast<std::size_t>( idx_cache.value() ) );
 
     if( use_cache )
     {
