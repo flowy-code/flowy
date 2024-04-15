@@ -35,17 +35,17 @@ class AscFile:
         self.height_data = np.transpose(np.flipud(self.height_data))
 
     def x_data(self):
-        return np.arange(
+        return np.linspace(
             self.lx,
             self.lx + self.height_data.shape[0] * self.cell,
-            self.cell,
+            self.height_data.shape[0],
         )
 
     def y_data(self):
-        return np.arange(
+        return np.linspace(
             self.ly,
             self.ly + self.height_data.shape[1] * self.cell,
-            self.cell,
+            self.height_data.shape[1],
         )
 
     def max_height(self):
