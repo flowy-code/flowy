@@ -35,18 +35,19 @@ _deps = [
   dependency('tomlplusplus')
 ]
 
+# Static libraries for the executable and tests, shared for the bindings
+# Generates (linux) libflowy.so && libflowy.a
+flowylib = both_libraries('flowy',
+  _sources,
+  install:true,
+  dependencies : _deps,
+  include_directories : incdir,
+  cpp_args : cpp_args,
+)
 # Declare the static library (needed for the executable and the tests)
 if get_option('build_exe') or get_option('build_tests')
-  flowylib_static = static_library('flowystatic',
-    _sources,
-    install:true,
-    dependencies : _deps,
-    include_directories : incdir,
-    cpp_args : cpp_args,
-  )
-
   flowylib_static_dep = declare_dependency(include_directories : incdir,
-    link_with : flowylib_static, dependencies: _deps)
+    link_with : flowylib.get_static_lib(), dependencies: _deps)
 endif
 
 # Declare the flowy executable
@@ -61,15 +62,8 @@ endif
 
 # Declare shared library (used for python bindings)
 if get_option('build_shared_lib')
-  flowylib_shared = shared_library('flowyshared',
-    _sources,
-    install:true,
-    dependencies : _deps,
-    include_directories : incdir,
-    cpp_args : cpp_args,
-  )
   flowylib_shared_dep = declare_dependency(include_directories : incdir,
-    link_with : flowylib, dependencies: _deps)
+    link_with : flowylib.get_shared_lib(), dependencies: _deps)
 endif
 
 if get_option('build_tests')
