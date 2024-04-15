@@ -1,0 +1,21 @@
+repos:
+- repo: https://github.com/pre-commit/pre-commit-hooks
+  rev: v4.4.0
+  hooks:
+  - id: trailing-whitespace
+    exclude: ^(src)
+  - id: end-of-file-fixer
+  - id: check-added-large-files
+- repo: https://github.com/pre-commit/mirrors-clang-format
+  rev: v16.0.6
+  hooks:
+      - id: clang-format
+        types_or: [c, c++, cuda]
+        args: ["-fallback-style=none", "-style=file", "-i"]
+- repo: https://github.com/pocc/pre-commit-hooks
+  rev: v1.3.5
+  hooks:
+    - id: cppcheck
+      args: ["--error-exitcode=0"]
+    - id: cpplint
+      args: ["--filter=-whitespace/comments,-runtime/references,-whitespace/indent,-whitespace/parens,-whitespace/braces,-whitespace/line_length,-whitespace/newline,-build/include_order,-readability/todo,-build/namespaces"]
