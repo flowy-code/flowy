@@ -356,7 +356,7 @@ void Simulation::compute_descendent_lobe_position( Lobe & lobe, const Lobe & par
 bool Simulation::stop_condition( const Vector2 & point, double radius )
 {
     return topography.is_point_near_boundary( point, radius )
-           || topography.get_height( point ) < asc_file.no_data_value + 1;
+           || topography.get_height( point ) <= asc_file.no_data_value;
 }
 
 void Simulation::write_avg_thickness_file()
@@ -454,12 +454,14 @@ void Simulation::write_avg_thickness_file()
         auto asc_file_thick = topography_thickness.to_asc_file();
         // apply the filter mask
         xt::filter( asc_file_thick.height_data, asc_file_thick.height_data < threshold_thickness ) = 0.0;
+        asc_file_thick.no_data_value                                                               = 0;
         asc_file_thick.save(
             input.output_folder / fmt::format( "{}_thickness_masked_{:.2f}.asc", input.run_name, threshold ) );
 
         if( input.save_hazard_data )
         {
-            auto asc_file_hazard = topography.to_asc_file( Topography::Output::Hazard );
+            auto asc_file_hazard          = topography.to_asc_file( Topography::Output::Hazard );
+            asc_file_hazard.no_data_value = 0;
             xt::filter( asc_file_hazard.height_data, asc_file_thick.height_data < threshold_thickness ) = 0.0;
             asc_file_hazard.save(
                 input.output_folder / fmt::format( "{}_hazard_masked_{:.2f}.asc", input.run_name, threshold ) );
@@ -645,13 +647,15 @@ void Simulation::run()
     // Save full thickness to asc file
     topography_thickness = topography;
     topography_thickness.height_data -= topography_initial.height_data;
-    asc_file = topography_thickness.to_asc_file();
+    asc_file               = topography_thickness.to_asc_file();
+    asc_file.no_data_value = 0;
     asc_file.save( input.output_folder / fmt::format( "{}_thickness_full.asc", input.run_name ) );
 
     // Save the full hazard map
     if( input.save_hazard_data )
     {
-        asc_file = topography.to_asc_file( Topography::Output::Hazard );
+        asc_file               = topography.to_asc_file( Topography::Output::Hazard );
+        asc_file.no_data_value = 0;
         asc_file.save( input.output_folder / fmt::format( "{}_hazard_full.asc", input.run_name ) );
     }
 
