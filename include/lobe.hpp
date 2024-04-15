@@ -1,6 +1,8 @@
 #pragma once
-#include "definitions.hpp"
-#include "math.hpp"
+// GPL v3 License
+// Copyright 2023--present Flowy developers
+#include "include/definitions.hpp"
+#include "include/math.hpp"
 #include <fmt/format.h>
 #include <optional>
 #include <vector>

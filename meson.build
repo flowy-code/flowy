@@ -29,18 +29,18 @@ pdflib_dep = dependency('pdf_cpplib', fallback : ['pdf_cpplib', 'pdflib_dep'])
 
 _deps = [
   pdflib_dep,
-  dependency('xtensor'), 
-  dependency('xtensor-blas'), 
-  dependency('fmt'), 
+  dependency('xtensor'),
+  dependency('xtensor-blas'),
+  dependency('fmt'),
   dependency('tomlplusplus')
 ]
 
 # Declare the static library (needed for the executable and the tests)
 if get_option('build_exe') or get_option('build_tests')
-  flowylib_static = static_library('flowystatic', 
-    _sources, 
-    install:true, 
-    dependencies : _deps, 
+  flowylib_static = static_library('flowystatic',
+    _sources,
+    install:true,
+    dependencies : _deps,
     include_directories : incdir,
     cpp_args : cpp_args,
   )
@@ -51,7 +51,7 @@ endif
 
 # Declare the flowy executable
 if get_option('build_exe')
-  flowyexe = executable('flowy', 
+  flowyexe = executable('flowy',
     'src/main.cpp',
     install : true,
     dependencies : [flowylib_static_dep],
@@ -61,10 +61,10 @@ endif
 
 # Declare shared library (used for python bindings)
 if get_option('build_shared_lib')
-  flowylib_shared = shared_library('flowyshared', 
-    _sources, 
-    install:true, 
-    dependencies : _deps, 
+  flowylib_shared = shared_library('flowyshared',
+    _sources,
+    install:true,
+    dependencies : _deps,
     include_directories : incdir,
     cpp_args : cpp_args,
   )

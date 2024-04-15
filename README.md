@@ -1,7 +1,7 @@
 # Flowy - A code to simulate lava emplacement.
 <img src="res/logo.png" width="200"/>
 
-## About 
+## About
 
 Flowy is a probabilistic code to simulate the emplacement of lava. It is a re-implementation of the Mr. Lava Loba method [1,2] in C++20.
 
@@ -13,7 +13,7 @@ To install micromamba, execute
 For details, refer to the micromamba docs [here](https://mamba.readthedocs.io/en/latest/installation/micromamba-installation.html).
 
 
-Then, create and activate the environment. 
+Then, create and activate the environment.
 
 ```bash
 micromamba create -f environment.yml
@@ -22,7 +22,7 @@ micromamba activate flowyenv
 
 ## Compilation and Installation
 
-We use `meson` to compile and build `flowy`. 
+We use `meson` to compile and build `flowy`.
 
 ```bash
 meson setup build
@@ -42,7 +42,7 @@ Both codes were run on the examples and the runtime was averaged over 10 runs. F
 <img src="res/barplot.png" width="800"/>
 
 
-### Runtime in seconds  
+### Runtime in seconds
 |               | Etna                | Kilauea             |
 |---            |---                  |  ---                |
 | Flowy         |   $13.343 \pm 0.1$ s| $0.779 \pm 0.1$ s  |

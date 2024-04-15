@@ -24,7 +24,7 @@ jobs:
         init-shell: powershell
         cache-environment: true
         post-cleanup: 'all'
-  
+
     - name: Compile with meson
       shell: pwsh
       run: |

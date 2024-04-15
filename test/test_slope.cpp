@@ -1,6 +1,8 @@
+// GPL v3 License
+// Copyright 2023--present Flowy developers
 #include "catch2/matchers/catch_matchers.hpp"
-#include "definitions.hpp"
-#include "topography.hpp"
+#include "include/definitions.hpp"
+#include "include/topography.hpp"
 #include <fmt/format.h>
 #include <fmt/ostream.h>
 #include <catch2/catch_test_macros.hpp>

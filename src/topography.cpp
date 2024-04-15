@@ -1,6 +1,8 @@
-#include "topography.hpp"
-#include "asc_file.hpp"
-#include "definitions.hpp"
+// GPL v3 License
+// Copyright 2023--present Flowy developers
+#include "include/topography.hpp"
+#include "include/asc_file.hpp"
+#include "include/definitions.hpp"
 #include "xtensor/xbuilder.hpp"
 #include <fmt/ranges.h>
 #include <algorithm>
@@ -48,8 +50,8 @@ std::array<int, 2> Topography::locate_point( const Vector2 & coordinates )
         throw std::runtime_error( "Cannot locate point, because coordinates are outside of grid!" );
     }
 
-    const int idx_x = int( ( coordinates[0] - x_data[0] ) / cell_size() );
-    const int idx_y = int( ( coordinates[1] - y_data[0] ) / cell_size() );
+    const int idx_x = static_cast<int>( ( coordinates[0] - x_data[0] ) / cell_size() );
+    const int idx_y = static_cast<int>( ( coordinates[1] - y_data[0] ) / cell_size() );
     return { idx_x, idx_y };
 }
 
@@ -352,7 +354,8 @@ Vector2 Topography::find_preliminary_budding_point( const Lobe & lobe, int npoin
 
     // Then, we find the point of minimal elevation amongst the rasterized points on the perimeter
     auto min_elevation_point_it = std::min_element(
-        perimeter.begin(), perimeter.end(), [&]( const Vector2 & p1, const Vector2 & p2 )
+        perimeter.begin(), perimeter.end(),
+        [&]( const Vector2 & p1, const Vector2 & p2 )
         { return height_and_slope( p1 ).first < height_and_slope( p2 ).first; } );
 
     return *min_elevation_point_it;

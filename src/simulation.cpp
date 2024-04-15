@@ -1,10 +1,13 @@
-#include "simulation.hpp"
-#include "definitions.hpp"
-#include "lobe.hpp"
-#include "math.hpp"
-#include "probability_dist.hpp"
-#include "reservoir_sampling.hpp"
-#include "topography.hpp"
+// GPL v3 License
+// Copyright 2023--present Flowy developers
+#include "include/simulation.hpp"
+#include "include/definitions.hpp"
+#include "include/lobe.hpp"
+#include "include/math.hpp"
+#include "include/topography.hpp"
+// TODO(rg): Maybe handle subprojects better... users might have system builds..
+#include "subprojects/pdf_cpplib/include/probability_dist.hpp"
+#include "subprojects/pdf_cpplib/include/reservoir_sampling.hpp"
 #include "xtensor/xbuilder.hpp"
 #include "xtensor/xmath.hpp"
 #include "xtensor/xsort.hpp"
@@ -12,7 +15,6 @@
 #include <fmt/format.h>
 #include <fmt/ranges.h>
 #include <algorithm>
-#include <chrono>
 #include <cmath>
 #include <cstddef>
 #include <random>
@@ -102,7 +104,6 @@ Simulation::Simulation( const Config::InputParams & input, std::optional<int> rn
 
 std::optional<std::vector<double>> Simulation::compute_cumulative_fissure_length()
 {
-
     auto lengths = std::vector<double>{};
     lengths.reserve( input.n_vents() );
     lengths.push_back( 0.0 );
