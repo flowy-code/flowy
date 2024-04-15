@@ -108,10 +108,8 @@ LobeCells Topography::get_cells_intersecting_lobe( const Lobe & lobe, std::optio
 
     // At each row we record the x index of the cell where the lobe intersects the row
     // We use -1 to signal no intersection
-    // There is one intersection on the left
-    auto idx_x_left = std::vector<int>( n_rows + 1, -1 );
-
-    // And one on the right
+    // For each row, there is one intersection on the left and one on the right
+    auto idx_x_left  = std::vector<int>( n_rows + 1, -1 );
     auto idx_x_right = std::vector<int>( n_rows + 1, -1 );
 
     // Since coordinates start at the lower left corner, we only iterate from between
@@ -168,7 +166,8 @@ LobeCells Topography::get_cells_intersecting_lobe( const Lobe & lobe, std::optio
             const int start_right = std::min<int>( idx_right_prev, idx_right_cur );
             const int stop_right  = std::max<int>( idx_right_prev, idx_right_cur );
             push_back_cells( cells_intersecting, start_right, stop_right, idx_y - 1 );
-            push_back_cells( cells_intersecting, start_left + 1, start_right - 1, idx_y - 1 );
+
+            push_back_cells( cells_enclosed, stop_left + 1, start_right - 1, idx_y - 1 );
         }
     }
 
