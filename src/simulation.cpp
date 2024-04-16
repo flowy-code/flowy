@@ -217,15 +217,15 @@ void Simulation::perturb_lobe_angle( Lobe & lobe, const Vector2 & slope )
 {
     lobe.set_azimuthal_angle( std::atan2( slope[1], slope[0] ) ); // Sets the angle prior to perturbation
     const double slope_norm = xt::linalg::norm( slope, 2 );       // Similar to np.linalg.norm
-    const double slope_deg  = std::atan( slope_norm );
+    const double slope_deg  = 180.0 / Math::pi * std::atan( slope_norm );
 
     if( input.max_slope_prob < 1 )
     {
         if( slope_deg > 0.0 && input.max_slope_prob > 0 )
         {
             // Since we use radians instead of degrees, max_slope_prob has to be rescaled accordingly
-            const double sigma = ( 1.0 - input.max_slope_prob ) / input.max_slope_prob * Math::pi / 180
-                                 * ( Math::pi / 2.0 - slope_deg ) / slope_deg;
+            const double sigma = ( 1.0 - input.max_slope_prob ) / input.max_slope_prob * ( 90.0 - slope_deg )
+                                 / slope_deg * Math::pi / 180.0;
 
             ProbabilityDist::truncated_normal_distribution<double> dist_truncated( 0, sigma, -Math::pi, Math::pi );
             const double angle_perturbation = dist_truncated( gen );
@@ -518,7 +518,8 @@ void Simulation::run()
             compute_initial_lobe_position( idx_flow, lobe_cur );
 
             // Compute the thickness of the lobe
-            lobe_cur.thickness = lobe_dimensions.thickness_min + idx_lobe * delta_lobe_thickness;
+            lobe_cur.thickness = ( 1.0 - input.thickening_parameter )
+                                 * ( lobe_dimensions.thickness_min + idx_lobe * delta_lobe_thickness );
 
             auto [height_lobe_center, slope] = topography.height_and_slope( lobe_cur.center );
 
@@ -591,7 +592,8 @@ void Simulation::run()
             }
 
             // Compute the thickness of the lobe
-            lobe_cur.thickness = lobe_dimensions.thickness_min + idx_lobe * delta_lobe_thickness;
+            lobe_cur.thickness = ( 1.0 - input.thickening_parameter )
+                                 * ( lobe_dimensions.thickness_min + idx_lobe * delta_lobe_thickness );
 
             // Add rasterized lobe
             topography.add_lobe( lobe_cur, idx_lobe );
@@ -647,6 +649,7 @@ void Simulation::run()
     // Save full thickness to asc file
     topography_thickness = topography;
     topography_thickness.height_data -= topography_initial.height_data;
+    topography_thickness.height_data /= ( 1.0 - input.thickening_parameter );
     asc_file               = topography_thickness.to_asc_file();
     asc_file.no_data_value = 0;
     asc_file.save( input.output_folder / fmt::format( "{}_thickness_full.asc", input.run_name ) );
