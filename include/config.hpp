@@ -1,8 +1,11 @@
 #pragma once
-#include "definitions.hpp"
+// GPL v3 License
+// Copyright 2023--present Flowy developers
+#include "include/definitions.hpp"
 #include <filesystem>
 #include <optional>
 #include <string>
+#include <vector>
 
 namespace Flowy::Config
 {

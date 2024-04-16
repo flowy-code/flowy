@@ -1,8 +1,9 @@
-
 #pragma once
-#include "asc_file.hpp"
-#include "definitions.hpp"
-#include "lobe.hpp"
+// GPL v3 License
+// Copyright 2023--present Flowy developers
+#include "include/asc_file.hpp"
+#include "include/definitions.hpp"
+#include "include/lobe.hpp"
 #include "xtensor/xbuilder.hpp"
 #include <iterator>
 #include <memory>
@@ -22,7 +23,6 @@ struct LobeCells
 
 class Topography
 {
-
 public:
     // The indices are all inclusive, i.e.
     // x limits = [idx_x_lower, idx_x_higher]
@@ -42,7 +42,7 @@ public:
         int idx_y_higher{};
     };
 
-    Topography( const AscFile & asc_file )
+    explicit Topography( const AscFile & asc_file )
             : height_data( asc_file.height_data ),
               hazard( xt::zeros_like( asc_file.height_data ) ),
               x_data( asc_file.x_data ),
@@ -51,7 +51,9 @@ public:
     }
 
     Topography( const MatrixX & height_data, const VectorX & x_data, const VectorX & y_data )
-            : height_data( height_data ), hazard( xt::zeros_like( height_data ) ), x_data( x_data ), y_data( y_data ){};
+            : height_data( height_data ), hazard( xt::zeros_like( height_data ) ), x_data( x_data ), y_data( y_data )
+    {
+    }
 
     Topography() = default;
 

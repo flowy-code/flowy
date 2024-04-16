@@ -27,7 +27,7 @@ Some things that will increase the chance that your pull request is accepted:
 
 A sample **good commit** is:
 
-```
+```diff
 fileName: Thing I did
 Some subHeading things
 
@@ -56,8 +56,23 @@ A good commit should have:
 ### Commit template
 If you are not already using a commit template, consider doing so. The Seldon repository includes a template under `.gitmessage`.
 
-```
+```sh
 git config --global commit.template .gitmessage
 ```
 
 You can omit the `--global` to only use the template when committing to Seldon.
+
+# Automated Styles
+
+<!-- Kanged from readcon: https://github.com/HaoZeke/readCon -->
+
+A `pre-commit` job is setup on CI to enforce consistent styles, so it is best to
+set it up locally as well (using [pipx](https://pypa.github.io/pipx) for
+isolation):
+
+```sh
+# Run before commiting
+pipx run pre-commit run --all-files
+# Or install the git hook to enforce this
+pipx run pre-commit install
+```

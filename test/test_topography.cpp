@@ -1,9 +1,11 @@
+// GPL v3 License
+// Copyright 2023--present Flowy developers
 #include "catch2/matchers/internal/catch_matchers_impl.hpp"
-#include "definitions.hpp"
 #include "fmt/core.h"
-#include "lobe.hpp"
-#include "math.hpp"
-#include "topography.hpp"
+#include "include/definitions.hpp"
+#include "include/lobe.hpp"
+#include "include/math.hpp"
+#include "include/topography.hpp"
 #include "xtensor/xbuilder.hpp"
 #include "xtensor/xio.hpp"
 #include <fmt/format.h>
@@ -68,14 +70,14 @@ TEST_CASE( "get_cells_intersecting_lobe", "[intersecting_lobe_cells]" )
     my_lobe.set_azimuthal_angle( Flowy::Math::pi / 2.0 );
 
     // clang-format off
-    std::vector<std::array<int, 2>> cell_indices_expected = { 
-        { 1, 0 }, 
-        { 1, 1 }, 
+    std::vector<std::array<int, 2>> cell_indices_expected = {
+        { 1, 0 },
+        { 1, 1 },
         { 1, 2 },
         { 1, 3 },
-        { 2, 0 }, 
-        { 2, 1 }, 
-        { 2, 2 }, 
+        { 2, 0 },
+        { 2, 1 },
+        { 2, 2 },
         { 2, 3 } };
     // clang-format on
 
@@ -98,9 +100,9 @@ TEST_CASE( "test_compute_intersection", "[intersection]" )
     my_lobe.set_azimuthal_angle( 0 );
 
     // clang-format off
-    std::vector<std::array<int, 2>> cell_indices_expected = { 
-        { 2, 2 }, 
-        { 2, 3 }, 
+    std::vector<std::array<int, 2>> cell_indices_expected = {
+        { 2, 2 },
+        { 2, 3 },
         { 3, 2 },
         { 3, 3 } };
     // clang-format on
