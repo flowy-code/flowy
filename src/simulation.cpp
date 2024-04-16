@@ -6,8 +6,8 @@
 #include "include/math.hpp"
 #include "include/topography.hpp"
 // TODO(rg): Maybe handle subprojects better... users might have system builds..
-#include "subprojects/pdf_cpplib/include/probability_dist.hpp"
-#include "subprojects/pdf_cpplib/include/reservoir_sampling.hpp"
+#include "probability_dist.hpp"
+#include "reservoir_sampling.hpp"
 #include "xtensor/xbuilder.hpp"
 #include "xtensor/xmath.hpp"
 #include "xtensor/xsort.hpp"
