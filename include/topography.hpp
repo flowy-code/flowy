@@ -114,6 +114,8 @@ public:
     // Find all the cells that intersect the lobe and all the cells that are fully enclosed by the lobe
     LobeCells get_cells_intersecting_lobe( const Lobe & lobe, std::optional<int> idx_cache = std::nullopt );
 
+    double rasterize_cell( int idx_x, int idx_y, const Lobe & lobe );
+
     // Find the fraction of the cells covered by the lobe by rasterizing each cell
     // into a grid of N*N points
     // This returns a vector of pairs

@@ -182,6 +182,50 @@ LobeCells Topography::get_cells_intersecting_lobe( const Lobe & lobe, std::optio
     return res;
 }
 
+double Topography::rasterize_cell( int idx_x, int idx_y, const Lobe & lobe )
+{
+    constexpr int N = 5;
+
+    const double cell_size = this->cell_size();
+    const double cell_area = cell_size * cell_size;
+    const double step      = cell_size / ( N - 1 );
+
+    const double y_min = y_data[idx_y];
+    const double y_max = y_data[idx_y] + cell_size;
+
+    std::array<double, N> trapz{};
+
+    for( int ix = 0; ix < N; ix++ )
+    {
+        const double x = x_data[idx_x] + step * ix;
+
+        const auto y_intersection = lobe.line_segment_intersects( { x, y_min }, { x, y_max } );
+
+        // If there is no intersection, we just proceed
+        if( !y_intersection.has_value() )
+        {
+            trapz[ix] = 0;
+            continue;
+        }
+
+        auto [p1, p2]   = y_intersection.value();
+        const double y1 = p1[1];
+        const double y2 = p2[1];
+
+        trapz[ix] = std::abs( y2 - y1 );
+    }
+
+    // Evaluate trapezoidal rule
+    double area = 0;
+    for( int ix = 0; ix < N - 1; ix++ )
+    {
+        area += 0.5 * ( trapz[ix] + trapz[ix + 1] );
+    }
+
+    const double fraction = area * step / cell_area;
+    return fraction;
+}
+
 std::vector<std::pair<std::array<int, 2>, double>>
 Topography::compute_intersection( const Lobe & lobe, std::optional<int> idx_cache )
 {
@@ -198,46 +242,10 @@ Topography::compute_intersection( const Lobe & lobe, std::optional<int> idx_cach
         res.push_back( { { idx_x, idx_y }, 1.0 } );
     }
 
-    const double cell_size = this->cell_size();
-    const double cell_area = cell_size * cell_size;
-    const double step      = cell_size / ( N - 1 );
-
-    // The intersecting cells get rasterized into columns
+    // The intersecting cells get rasterized
     for( const auto & [idx_x, idx_y] : lobe_cells.cells_intersecting )
     {
-        const double y_min = y_data[idx_y];
-        const double y_max = y_data[idx_y] + cell_size;
-
-        std::array<double, N> trapz{};
-
-        for( int ix = 0; ix < N; ix++ )
-        {
-            const double x = x_data[idx_x] + step * ix;
-
-            const auto y_intersection = lobe.line_segment_intersects( { x, y_min }, { x, y_max } );
-
-            // If there is no intersection, we just proceed
-            if( !y_intersection.has_value() )
-            {
-                trapz[ix] = 0;
-                continue;
-            }
-
-            auto [p1, p2]   = y_intersection.value();
-            const double y1 = p1[1];
-            const double y2 = p2[1];
-
-            trapz[ix] = std::abs( y2 - y1 );
-        }
-
-        // Evaluate trapezoidal rule
-        double area = 0;
-        for( int ix = 0; ix < N - 1; ix++ )
-        {
-            area += 0.5 * ( trapz[ix] + trapz[ix + 1] );
-        }
-
-        const double fraction = area * step / cell_area;
+        const double fraction = rasterize_cell( idx_x, idx_y, lobe );
         res.push_back( { { idx_x, idx_y }, fraction } );
     }
 
