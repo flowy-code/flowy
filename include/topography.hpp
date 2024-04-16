@@ -4,6 +4,8 @@
 #include "definitions.hpp"
 #include "lobe.hpp"
 #include "xtensor/xbuilder.hpp"
+#include "xtensor/xmath.hpp"
+#include "xtensor/xsort.hpp"
 #include <iterator>
 #include <memory>
 #include <optional>
@@ -90,6 +92,16 @@ public:
         return x_data[1] - x_data[0];
     };
 
+    inline double volume()
+    {
+        return xt::sum( height_data )() * cell_size() * cell_size();
+    }
+
+    inline double area( double thresh = 0 )
+    {
+        return xt::sum( xt::filter( height_data, height_data > thresh ) )() * cell_size() * cell_size();
+    }
+
     // Calculate the height and the slope at coordinates
     // via linear interpolation from the square grid
     std::pair<double, Vector2> height_and_slope( const Vector2 & coordinates );
@@ -108,7 +120,7 @@ public:
     // - the first entry of each pair contains an array<int, 2> with the idx_i, idx_j of the intersected cell
     // - the second entry contains the fraction of the cell that is covered by the ellips
     std::vector<std::pair<std::array<int, 2>, double>>
-    compute_intersection( const Lobe & lobe, std::optional<int> idx_cache = std::nullopt, int N = 15 );
+    compute_intersection( const Lobe & lobe, std::optional<int> idx_cache = std::nullopt );
 
     // Adds the lobe thickness to the topography, according to its fractional intersection with the cells
     void add_lobe( const Lobe & lobe, std::optional<int> idx_cache = std::nullopt );

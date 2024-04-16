@@ -120,7 +120,6 @@ LobeCells Topography::get_cells_intersecting_lobe( const Lobe & lobe, std::optio
         const int idx_row = idx_y - idx_y_min;
 
         // We comupute the y value at which to check for intersections
-        // We do not use y_data[idx_y] since idx_y_max + 1 might be outside the boundaries of the y_data array
         const double y = y_data[idx_y];
 
         // These two point define a horizontal line, at the bottom of the current row
@@ -144,8 +143,8 @@ LobeCells Topography::get_cells_intersecting_lobe( const Lobe & lobe, std::optio
         // Therefore, we now know the intersections at the bottom and at the top of the *previous* row
 
         // Since we start from idx_y_min + 1, idx_row starts at 1 too
-        const double idx_left_prev  = idx_x_left[idx_row - 1];
-        const double idx_right_prev = idx_x_right[idx_row - 1];
+        const int & idx_left_prev  = idx_x_left[idx_row - 1];
+        const int & idx_right_prev = idx_x_right[idx_row - 1];
 
         // We treat the first and the last row separately, since here, there are no intersections
         // with the previous row (in case of the first) or the current row (in case of the last row)
@@ -184,8 +183,10 @@ LobeCells Topography::get_cells_intersecting_lobe( const Lobe & lobe, std::optio
 }
 
 std::vector<std::pair<std::array<int, 2>, double>>
-Topography::compute_intersection( const Lobe & lobe, std::optional<int> idx_cache, int N )
+Topography::compute_intersection( const Lobe & lobe, std::optional<int> idx_cache )
 {
+    constexpr int N = 5;
+
     auto lobe_cells = get_cells_intersecting_lobe( lobe, idx_cache );
 
     std::vector<std::pair<std::array<int, 2>, double>> res{};
@@ -199,7 +200,7 @@ Topography::compute_intersection( const Lobe & lobe, std::optional<int> idx_cach
 
     const double cell_size = this->cell_size();
     const double cell_area = cell_size * cell_size;
-    const double step      = cell_size / N;
+    const double step      = cell_size / ( N - 1 );
 
     // The intersecting cells get rasterized into columns
     for( const auto & [idx_x, idx_y] : lobe_cells.cells_intersecting )
@@ -207,51 +208,35 @@ Topography::compute_intersection( const Lobe & lobe, std::optional<int> idx_cach
         const double y_min = y_data[idx_y];
         const double y_max = y_data[idx_y] + cell_size;
 
-        double area = 0;
+        std::array<double, N> trapz{};
+
         for( int ix = 0; ix < N; ix++ )
         {
             const double x = x_data[idx_x] + step * ix;
 
-            // For each column we check if the endpoints are in our outside of the lobe
-            const bool y_min_in = lobe.is_point_in_lobe( { x, y_min } );
-            const bool y_max_in = lobe.is_point_in_lobe( { x, y_max } );
+            const auto y_intersection = lobe.line_segment_intersects( { x, y_min }, { x, y_max } );
 
-            // If both endpoints are inside the lobe, the entire column is inside the lobe
-            if( y_min_in && y_max_in )
+            // If there is no intersection, we just proceed
+            if( !y_intersection.has_value() )
             {
-                area += cell_size;
+                trapz[ix] = 0;
                 continue;
             }
 
-            // If both endpoints are outside the lobe, the entire column is outside the lobe
-            if( !( y_min_in || y_max_in ) )
-            {
-                continue;
-            }
+            auto [p1, p2]   = y_intersection.value();
+            const double y1 = p1[1];
+            const double y2 = p2[1];
 
-            // Now we know that one endpoint is inside the lobe and one endpoint is outside of it
-
-            // {x,y_lo} should be inside the lobe
-            double y_lo        = y_min_in ? y_min : y_max;
-            const double y_end = y_lo;
-
-            // {x,y_hi} should be outside the lobe
-            double y_hi = !y_min_in ? y_min : y_max;
-            double y_cur{};
-
-            // Now we try to find the height at wich the ellipse passed the columns
-            // with four iterations of bisection search
-            for( int it = 0; it < 4; it++ )
-            {
-                y_cur = 0.5 * ( y_lo + y_hi );
-
-                // If y_cur is inside the lobe, we make y_cur y_lo
-                const bool y_cur_in = lobe.is_point_in_lobe( { x, y_cur } );
-                y_lo                = y_cur_in ? y_cur : y_lo;
-                y_hi                = !y_cur_in ? y_cur : y_hi;
-            }
-            area += std::abs( y_cur - y_end );
+            trapz[ix] = std::abs( y2 - y1 );
         }
+
+        // Evaluate trapezoidal rule
+        double area = 0;
+        for( int ix = 0; ix < N - 1; ix++ )
+        {
+            area += 0.5 * ( trapz[ix] + trapz[ix + 1] );
+        }
+
         const double fraction = area * step / cell_area;
         res.push_back( { { idx_x, idx_y }, fraction } );
     }
