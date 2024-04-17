@@ -1,8 +1,10 @@
+// GPL v3 License
+// Copyright 2023--present Flowy developers
 #include <catch2/catch_test_macros.hpp>
 #include <catch2/matchers/catch_matchers_floating_point.hpp>
 #include <catch2/matchers/catch_matchers_range_equals.hpp>
 
-#include "math.hpp"
+#include "flowy/include/math.hpp"
 #include "pdf_cpplib/include/probability_dist.hpp"
 #include <fmt/ostream.h>
 #include <algorithm>

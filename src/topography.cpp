@@ -232,8 +232,6 @@ double Topography::rasterize_cell( int idx_x, int idx_y, const Lobe & lobe )
 std::vector<std::pair<std::array<int, 2>, double>>
 Topography::compute_intersection( const Lobe & lobe, std::optional<int> idx_cache )
 {
-    constexpr int N = 5;
-
     auto lobe_cells = get_cells_intersecting_lobe( lobe, idx_cache );
 
     std::vector<std::pair<std::array<int, 2>, double>> res{};
