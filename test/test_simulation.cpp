@@ -1,8 +1,10 @@
-#include "config.hpp"
-#include "definitions.hpp"
-#include "lobe.hpp"
-#include "math.hpp"
-#include "simulation.hpp"
+// GPL v3 License
+// Copyright 2023--present Flowy developers
+#include "flowy/include/config.hpp"
+#include "flowy/include/definitions.hpp"
+#include "flowy/include/lobe.hpp"
+#include "flowy/include/math.hpp"
+#include "flowy/include/simulation.hpp"
 #include <fmt/format.h>
 #include <fmt/ostream.h>
 #include <catch2/catch_test_macros.hpp>

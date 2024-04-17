@@ -6,10 +6,12 @@ dependencies:
   - fmt
   - pkg-config
   - cmake
-  - ninja 
+  - ninja
   - cpp-argparse
   - clang-format=18.1.1
   - tomlplusplus
   - catch2
-  - xtensor 
+  - xtensor
   - xtensor-blas
+  - cppcheck
+  - cpplint

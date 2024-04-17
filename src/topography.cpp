@@ -1,6 +1,8 @@
-#include "topography.hpp"
-#include "asc_file.hpp"
-#include "definitions.hpp"
+// GPL v3 License
+// Copyright 2023--present Flowy developers
+#include "flowy/include/topography.hpp"
+#include "flowy/include/asc_file.hpp"
+#include "flowy/include/definitions.hpp"
 #include "xtensor/xbuilder.hpp"
 #include <fmt/ranges.h>
 #include <algorithm>
@@ -48,8 +50,8 @@ std::array<int, 2> Topography::locate_point( const Vector2 & coordinates )
         throw std::runtime_error( "Cannot locate point, because coordinates are outside of grid!" );
     }
 
-    const int idx_x = int( ( coordinates[0] - x_data[0] ) / cell_size() );
-    const int idx_y = int( ( coordinates[1] - y_data[0] ) / cell_size() );
+    const int idx_x = static_cast<int>( ( coordinates[0] - x_data[0] ) / cell_size() );
+    const int idx_y = static_cast<int>( ( coordinates[1] - y_data[0] ) / cell_size() );
     return { idx_x, idx_y };
 }
 
@@ -71,7 +73,8 @@ Topography::BoundingBox Topography::bounding_box( const Vector2 & center, double
 LobeCells Topography::get_cells_intersecting_lobe( const Lobe & lobe, std::optional<int> idx_cache )
 {
     // Can we use the cache?
-    bool use_cache = idx_cache.has_value() && ( intersection_cache.size() > idx_cache.value() );
+    bool use_cache
+        = idx_cache.has_value() && ( intersection_cache.size() > static_cast<std::size_t>( idx_cache.value() ) );
 
     if( use_cache )
     {

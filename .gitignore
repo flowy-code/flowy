@@ -34,3 +34,4 @@ compile_commands.json
 *.exe
 *.out
 *.app
+/subprojects/pdf_cpplib/

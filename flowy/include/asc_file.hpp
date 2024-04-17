@@ -1,5 +1,7 @@
 #pragma once
-#include "definitions.hpp"
+// GPL v3 License
+// Copyright 2023--present Flowy developers
+#include "flowy/include/definitions.hpp"
 #include <filesystem>
 #include <optional>
 
@@ -18,7 +20,7 @@ class AscFile
 {
 public:
     AscFile() = default;
-    AscFile( const std::filesystem::path & path, std::optional<AscCrop> crop = std::nullopt );
+    explicit AscFile( const std::filesystem::path & path, std::optional<AscCrop> crop = std::nullopt );
     void save( const std::filesystem::path & path );
 
     Vector2 lower_left_corner = { 0, 0 }; // Coordinates of lower left corner

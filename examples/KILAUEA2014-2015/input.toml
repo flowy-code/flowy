@@ -223,8 +223,8 @@ aspect_ratio_coeff = 2.0# This parameter affect the shape of the lobes. The larg
 # aspect_ratio_coeff > 0  => the lobe is an ellipse, with the aspect ratio
 # 			     increasing with the slope
 
-# 
+#
 max_aspect_ratio = 2.5
 
 # Shapefile name (use '' if no shapefile is present)
-shape_name = "" 
+shape_name = ""

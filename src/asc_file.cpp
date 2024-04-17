@@ -1,9 +1,9 @@
-#include "asc_file.hpp"
-#include "dump_csv.hpp"
+// GPL v3 License
+// Copyright 2023--present Flowy developers
+#include "flowy/include/asc_file.hpp"
+#include "flowy/include/dump_csv.hpp"
 #include <fmt/format.h>
-#include <algorithm>
 #include <fstream>
-#include <stdexcept>
 
 namespace Flowy
 {
@@ -76,10 +76,12 @@ AscFile::AscFile( const std::filesystem::path & path, std::optional<AscCrop> cro
     }
 
     this->x_data = xt::arange(
-        lower_left_corner[0], lower_left_corner[0] + ( double( height_data.shape()[0] ) ) * cell_size, cell_size );
+        lower_left_corner[0], lower_left_corner[0] + ( static_cast<double>( height_data.shape()[0] ) ) * cell_size,
+        cell_size );
 
     this->y_data = xt::arange(
-        lower_left_corner[1], lower_left_corner[1] + ( double( height_data.shape()[1] ) ) * cell_size, cell_size );
+        lower_left_corner[1], lower_left_corner[1] + ( static_cast<double>( height_data.shape()[1] ) ) * cell_size,
+        cell_size );
 }
 
 void AscFile::save( const std::filesystem::path & path )

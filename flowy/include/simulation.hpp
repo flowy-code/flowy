@@ -1,9 +1,11 @@
 #pragma once
-#include "asc_file.hpp"
-#include "config.hpp"
-#include "definitions.hpp"
-#include "lobe.hpp"
-#include "topography.hpp"
+// GPL v3 License
+// Copyright 2023--present Flowy developers
+#include "flowy/include/asc_file.hpp"
+#include "flowy/include/config.hpp"
+#include "flowy/include/definitions.hpp"
+#include "flowy/include/lobe.hpp"
+#include "flowy/include/topography.hpp"
 #include <filesystem>
 #include <random>
 #include <vector>

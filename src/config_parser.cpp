@@ -1,5 +1,8 @@
-#include "config_parser.hpp"
-#include "config.hpp"
+// GPL v3 License
+// Copyright 2023--present Flowy developers
+
+#include "flowy/include/config_parser.hpp"
+#include "flowy/include/config.hpp"
 #include <fmt/format.h>
 #include <toml++/toml.h>
 #include <filesystem>
