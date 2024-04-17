@@ -5,6 +5,8 @@
 #include "flowy/include/definitions.hpp"
 #include "flowy/include/lobe.hpp"
 #include "xtensor/xbuilder.hpp"
+#include "xtensor/xmath.hpp"
+#include "xtensor/xsort.hpp"
 #include <iterator>
 #include <memory>
 #include <optional>
@@ -92,6 +94,16 @@ public:
         return x_data[1] - x_data[0];
     };
 
+    inline double volume()
+    {
+        return xt::sum( height_data )() * cell_size() * cell_size();
+    }
+
+    inline double area( double thresh = 0 )
+    {
+        return xt::sum( xt::filter( height_data, height_data > thresh ) )() * cell_size() * cell_size();
+    }
+
     // Calculate the height and the slope at coordinates
     // via linear interpolation from the square grid
     std::pair<double, Vector2> height_and_slope( const Vector2 & coordinates );
@@ -104,13 +116,15 @@ public:
     // Find all the cells that intersect the lobe and all the cells that are fully enclosed by the lobe
     LobeCells get_cells_intersecting_lobe( const Lobe & lobe, std::optional<int> idx_cache = std::nullopt );
 
+    double rasterize_cell( int idx_x, int idx_y, const Lobe & lobe );
+
     // Find the fraction of the cells covered by the lobe by rasterizing each cell
     // into a grid of N*N points
     // This returns a vector of pairs
     // - the first entry of each pair contains an array<int, 2> with the idx_i, idx_j of the intersected cell
     // - the second entry contains the fraction of the cell that is covered by the ellips
     std::vector<std::pair<std::array<int, 2>, double>>
-    compute_intersection( const Lobe & lobe, std::optional<int> idx_cache = std::nullopt, int N = 15 );
+    compute_intersection( const Lobe & lobe, std::optional<int> idx_cache = std::nullopt );
 
     // Adds the lobe thickness to the topography, according to its fractional intersection with the cells
     void add_lobe( const Lobe & lobe, std::optional<int> idx_cache = std::nullopt );

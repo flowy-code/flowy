@@ -108,7 +108,7 @@ TEST_CASE( "test_compute_intersection", "[intersection]" )
     // clang-format on
     double expected_area_fraction = Flowy::Math::pi / 4.0;
 
-    auto intersection_data = topography.compute_intersection( my_lobe, std::nullopt, 30 );
+    auto intersection_data = topography.compute_intersection( my_lobe, std::nullopt );
 
     std::vector<std::array<int, 2>> cell_indices{};
     for( size_t i = 0; i < cell_indices_expected.size(); i++ )

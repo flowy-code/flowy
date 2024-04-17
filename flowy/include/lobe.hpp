@@ -109,12 +109,11 @@ public:
 
         const double a = semi_axes[0];
         const double b = semi_axes[1];
+
         // In the ellipse coordinates the equation for the perimeter is
         // (x/a)^2 + (y/b)^2 = 1
-
         // The line segment can be described by the vector equation
         // v(t) = x1 + diff*t for t in [0,1]
-
         // Plugging this into the ellipse equation, yields an equation for t
         // alpha * t^2 + beta * t + gamma = 0
         const double a2 = a * a;
@@ -138,8 +137,9 @@ public:
         const double t1 = ( -beta - sqrt_r ) / ( 2.0 * alpha );
         const double t2 = ( -beta + sqrt_r ) / ( 2.0 * alpha );
 
-        // If either t1 or t2 is in the interval [0,1] the line segment intersects the ellipse at least once
-        if( ( t1 >= 0.0 && t1 <= 1.0 ) || ( t2 >= 0.0 && t2 <= 1.0 ) )
+        // This condition determines if any of the points of the line segment lie within the lobe
+        const bool condition = !( ( t1 < 0 && t2 < 0 ) || ( t1 > 1 && t2 > 1 ) );
+        if( condition )
         {
             // We clamp t1 and t2 to the interval [0,1] in case the line segment intersects the ellipse only once
             // (this is the case if one of x1/x2 lies within the ellipse)
