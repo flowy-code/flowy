@@ -558,9 +558,12 @@ void Simulation::run()
             Flowy::Vector2 budding_point = topography.find_preliminary_budding_point( lobe_parent, input.npoints );
 
             auto [height_lobe_center, slope_parent] = topography.height_and_slope( lobe_parent.center );
-            // auto [height_bp, slope_bp] = topography.height_and_slope( budding_point );
-            // slope_parent = -std::min(0.0, height_bp - height_lobe_center) * (budding_point - lobe_parent.center) /
-            // xt::norm(budding_point - lobe_parent.center);
+            auto [height_bp, slope_bp]              = topography.height_and_slope( budding_point );
+
+            Vector2 diff = ( budding_point - lobe_parent.center );
+            double norm  = std::sqrt( diff[0] * diff[0] + diff[1] * diff[1] );
+
+            slope_parent = -std::min( 0.0, height_bp - height_lobe_center ) * diff / norm;
 
             // Perturb the angle and set it (not on the parent anymore)
             perturb_lobe_angle( lobe_cur, slope_parent );
@@ -581,6 +584,11 @@ void Simulation::run()
             }
             // Get the slope at the final budding point
             auto [height_budding_point, slope_budding_point] = topography.height_and_slope( final_budding_point );
+
+            Vector2 diff_bp = ( final_budding_point - lobe_parent.center );
+            double norm_bp  = std::sqrt( diff[0] * diff[0] + diff[1] * diff[1] );
+
+            slope_budding_point = -std::min( 0.0, height_budding_point - height_lobe_center ) * diff_bp / norm_bp;
 
             // compute the new lobe axes
             compute_lobe_axes( lobe_cur, slope_budding_point );
