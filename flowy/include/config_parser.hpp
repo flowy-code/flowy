@@ -1,7 +1,7 @@
 #pragma once
 // GPL v3 License
 // Copyright 2023--present Flowy developers
-#include "include/config.hpp"
+#include "flowy/include/config.hpp"
 #include <filesystem>
 
 namespace Flowy::Config

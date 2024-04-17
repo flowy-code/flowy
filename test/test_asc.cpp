@@ -1,7 +1,7 @@
 // GPL v3 License
 // Copyright 2023--present Flowy developers
-#include "include/asc_file.hpp"
-#include "include/definitions.hpp"
+#include "flowy/include/asc_file.hpp"
+#include "flowy/include/definitions.hpp"
 #include <fmt/format.h>
 #include <fmt/ostream.h>
 #include <catch2/catch_test_macros.hpp>

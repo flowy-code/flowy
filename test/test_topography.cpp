@@ -2,10 +2,10 @@
 // Copyright 2023--present Flowy developers
 #include "catch2/matchers/internal/catch_matchers_impl.hpp"
 #include "fmt/core.h"
-#include "include/definitions.hpp"
-#include "include/lobe.hpp"
-#include "include/math.hpp"
-#include "include/topography.hpp"
+#include "flowy/include/definitions.hpp"
+#include "flowy/include/lobe.hpp"
+#include "flowy/include/math.hpp"
+#include "flowy/include/topography.hpp"
 #include "xtensor/xbuilder.hpp"
 #include "xtensor/xio.hpp"
 #include <fmt/format.h>

@@ -1,7 +1,7 @@
 #pragma once
 // GPL v3 License
 // Copyright 2023--present Flowy developers
-#include "include/definitions.hpp"
+#include "flowy/include/definitions.hpp"
 #include <filesystem>
 #include <optional>
 
