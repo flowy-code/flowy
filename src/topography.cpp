@@ -185,7 +185,32 @@ LobeCells Topography::get_cells_intersecting_lobe( const Lobe & lobe, std::optio
     return res;
 }
 
-double Topography::rasterize_cell( int idx_x, int idx_y, const Lobe & lobe )
+double Topography::rasterize_cell_grid( int idx_x, int idx_y, const Lobe & lobe )
+{
+    constexpr int N = 15;
+
+    const double cell_size = this->cell_size();
+    const double step      = cell_size / ( N - 1 );
+
+    int n_hits = 0;
+    for( int ix = 0; ix < N; ix++ )
+    {
+        const double x = x_data[idx_x] + step * ix;
+        for( int iy = 0; iy < N; iy++ )
+        {
+            const double y = y_data[idx_y] + step * iy;
+            if( lobe.is_point_in_lobe( { x, y } ) )
+            {
+                n_hits++;
+            }
+        }
+    }
+
+    const double fraction = double( n_hits ) / double( N * N );
+    return fraction;
+}
+
+double Topography::rasterize_cell_trapz( int idx_x, int idx_y, const Lobe & lobe )
 {
     constexpr int N = 5;
 
@@ -246,7 +271,7 @@ Topography::compute_intersection( const Lobe & lobe, std::optional<int> idx_cach
     // The intersecting cells get rasterized
     for( const auto & [idx_x, idx_y] : lobe_cells.cells_intersecting )
     {
-        const double fraction = rasterize_cell( idx_x, idx_y, lobe );
+        const double fraction = rasterize_cell_trapz( idx_x, idx_y, lobe );
         res.push_back( { { idx_x, idx_y }, fraction } );
     }
 
