@@ -206,7 +206,7 @@ double Topography::rasterize_cell_grid( int idx_x, int idx_y, const Lobe & lobe 
         }
     }
 
-    const double fraction = double( n_hits ) / double( N * N );
+    const double fraction = static_cast<double>( n_hits ) / static_cast<double>( N * N );
     return fraction;
 }
 
