@@ -1,8 +1,8 @@
 // GPL v3 License
 // Copyright 2023--present Flowy developers
-#include "fmt/core.h"
 #include "flowy/include/config_parser.hpp"
 #include "flowy/include/simulation.hpp"
+#include "fmt/core.h"
 
 #include <fmt/format.h>
 #include <fmt/ostream.h>

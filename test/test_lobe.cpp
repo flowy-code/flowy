@@ -1,11 +1,11 @@
 // GPL v3 License
 // Copyright 2023--present Flowy developers
 #include "catch2/matchers/catch_matchers.hpp"
-#include "fmt/core.h"
 #include "flowy/include/definitions.hpp"
 #include "flowy/include/lobe.hpp"
 #include "flowy/include/math.hpp"
 #include "flowy/include/simulation.hpp"
+#include "fmt/core.h"
 #include "xtensor-blas/xlinalg.hpp"
 #include "xtensor/xbuilder.hpp"
 #include "xtensor/xmath.hpp"
