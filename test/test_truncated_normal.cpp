@@ -2,8 +2,8 @@
 #include <catch2/matchers/catch_matchers_floating_point.hpp>
 #include <catch2/matchers/catch_matchers_range_equals.hpp>
 
-#include "probability_dist.hpp"
 #include "math.hpp"
+#include "pdf_cpplib/include/probability_dist.hpp"
 #include <fmt/ostream.h>
 #include <algorithm>
 #include <filesystem>
@@ -42,5 +42,7 @@ void write_results_to_file( int N_Samples, distT dist, const std::string & filen
 
 TEST_CASE( "Test the probability distributions", "[prob]" )
 {
-    write_results_to_file( 10000, ProbabilityDist::truncated_normal_distribution<double>( 0.0, 2, -Flowy::Math::pi, Flowy::Math::pi ), "truncated_normal.txt" );
+    write_results_to_file(
+        10000, ProbabilityDist::truncated_normal_distribution<double>( 0.0, 2, -Flowy::Math::pi, Flowy::Math::pi ),
+        "truncated_normal.txt" );
 }
