@@ -15,7 +15,7 @@ if cpp_args.length() > 0
   message('Adding compiler flags', cpp_args)
 endif
 
-incdir = include_directories('include')
+incdir = include_directories('.')
 
 _sources = [
   'src/asc_file.cpp',
