@@ -558,6 +558,8 @@ void Simulation::run()
             Flowy::Vector2 budding_point = topography.find_preliminary_budding_point( lobe_parent, input.npoints );
 
             auto [height_lobe_center, slope_parent] = topography.height_and_slope( lobe_parent.center );
+            // auto [height_bp, slope_bp] = topography.height_and_slope( budding_point );
+            // slope_parent = -std::min(0.0, height_bp - height_lobe_center) * (budding_point - lobe_parent.center) / xt::norm(budding_point - lobe_parent.center);
 
             // Perturb the angle and set it (not on the parent anymore)
             perturb_lobe_angle( lobe_cur, slope_parent );
