@@ -563,7 +563,7 @@ void Simulation::run()
             Vector2 diff = ( budding_point - lobe_parent.center );
             double norm  = std::sqrt( diff[0] * diff[0] + diff[1] * diff[1] );
 
-            slope_parent = -std::min( 0.0, height_bp - height_lobe_center ) * diff / norm;
+            slope_parent = -std::min( 0.0, height_bp - height_lobe_center ) * diff / ( norm * norm );
 
             // Perturb the angle and set it (not on the parent anymore)
             perturb_lobe_angle( lobe_cur, slope_parent );
@@ -588,7 +588,8 @@ void Simulation::run()
             Vector2 diff_bp = ( final_budding_point - lobe_parent.center );
             double norm_bp  = std::sqrt( diff[0] * diff[0] + diff[1] * diff[1] );
 
-            slope_budding_point = -std::min( 0.0, height_budding_point - height_lobe_center ) * diff_bp / norm_bp;
+            slope_budding_point
+                = -std::min( 0.0, height_budding_point - height_lobe_center ) * diff_bp / ( norm_bp * norm_bp );
 
             // compute the new lobe axes
             compute_lobe_axes( lobe_cur, slope_budding_point );
