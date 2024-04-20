@@ -7,11 +7,13 @@
 #include "flowy/include/simulation.hpp"
 #include <fmt/format.h>
 #include <fmt/ostream.h>
+#include <fmt/std.h>
 #include <catch2/catch_test_macros.hpp>
 #include <catch2/matchers/catch_matchers_floating_point.hpp>
 #include <catch2/matchers/catch_matchers_range_equals.hpp>
 #include <cstddef>
 #include <filesystem>
+#include <vector>
 
 TEST_CASE( "perturb_angle", "[perturb_angle]" )
 {
@@ -94,4 +96,43 @@ TEST_CASE( "budding_point", "[budding_point]" )
     Vector2 lobe_center_expected = { 0.5, -0.5 };
 
     REQUIRE( xt::isclose( lobe_cur.center, lobe_center_expected )() );
+}
+
+TEST_CASE( "hazard map", "[simulation]" )
+{
+    using namespace Flowy;
+    namespace fs = std::filesystem;
+
+    auto proj_root_path = fs::current_path();
+    auto asc_file_path  = proj_root_path / fs::path( "test/res/asc/file.asc" );
+    Config::InputParams input_params;
+    input_params.dist_fact                     = 1.0;
+    input_params.source                        = asc_file_path;
+    input_params.total_volume                  = 1;
+    input_params.prescribed_avg_lobe_thickness = 1;
+    input_params.n_init                        = 1;
+
+    auto lobes = std::vector<Lobe>( 10 );
+
+    // Every lobe descends from the previous one
+    for( size_t i = 1; i < lobes.size(); i++ )
+    {
+        lobes[i].idx_parent = i - 1;
+    }
+
+    // Except lobe 5 and 6
+    lobes[5].idx_parent = 3;
+    lobes[6].idx_parent = 4;
+
+    auto simulation = Simulation( input_params, std::nullopt );
+    simulation.compute_cumulative_descendents( lobes );
+
+    std::vector<int> n_descendents_expected = { 9, 8, 7, 6, 4, 0, 3, 2, 1, 0 };
+
+    for( size_t i = 0; i < lobes.size(); i++ )
+    {
+        INFO( fmt::format(
+            "lobe[{}].n_descendents = {}, idx_parent = {}\n", i, lobes[i].n_descendents, lobes[i].idx_parent ) );
+        REQUIRE( lobes[i].n_descendents == n_descendents_expected[i] );
+    }
 }
