@@ -68,6 +68,8 @@ if get_option('build_tests')
     ['Test_Simulation', 'test/test_simulation.cpp'],
     ['Test_Topography', 'test/test_topography.cpp'],
     ['Test_Lobe', 'test/test_lobe.cpp'],
+    ['Test_Trunc_Normal', 'test/test_truncated_normal.cpp'],
+    ['Test_Raster', 'test/test_rasterization.cpp']
   ]
 
   Catch2 = dependency('Catch2', method : 'cmake', modules : ['Catch2::Catch2WithMain', 'Catch2::Catch2'])

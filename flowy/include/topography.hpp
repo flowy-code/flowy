@@ -99,9 +99,9 @@ public:
         return xt::sum( height_data )() * cell_size() * cell_size();
     }
 
-    inline double area( double thresh = 0 )
+    inline double area( double thresh = 0.0 )
     {
-        return xt::sum( xt::filter( height_data, height_data > thresh ) )() * cell_size() * cell_size();
+        return xt::count_nonzero( xt::filter( height_data, height_data > thresh ) )() * cell_size() * cell_size();
     }
 
     // Calculate the height and the slope at coordinates

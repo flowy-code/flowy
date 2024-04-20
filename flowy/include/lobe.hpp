@@ -18,6 +18,16 @@ private:
     double cos_azimuthal_angle = 1.0;
 
 public:
+    double area()
+    {
+        return Math::pi * semi_axes[0] * semi_axes[1];
+    }
+
+    double volume()
+    {
+        return area() * thickness;
+    }
+
     void set_azimuthal_angle( double azimuthal_angle )
     {
         this->azimuthal_angle = azimuthal_angle;

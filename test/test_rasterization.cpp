@@ -43,3 +43,37 @@ TEST_CASE( "test_rasterization", "[topography]" )
     REQUIRE_THAT( cells_enclosed_expected, Catch::Matchers::UnorderedRangeEquals( lobe_cells.cells_enclosed ) );
     REQUIRE_THAT( cells_intersected_expected, Catch::Matchers::UnorderedRangeEquals( lobe_cells.cells_intersecting ) );
 }
+
+TEST_CASE( "test_add_lobe", "[topography]" )
+{
+    Flowy::VectorX x_data      = xt::linspace( 0.0, 40.0, 40 );
+    Flowy::VectorX y_data      = xt::linspace( 0.0, 20.0, 20 );
+    Flowy::MatrixX height_data = xt::zeros<double>( { x_data.size(), y_data.size() } );
+
+    auto lobe      = Flowy::Lobe();
+    lobe.semi_axes = { 8.0, 2.0 };
+    lobe.thickness = 20.0;
+    lobe.set_azimuthal_angle( Flowy::Math::pi / 4 );
+    lobe.center = { 20.0, 10.0 };
+
+    auto topography = Flowy::Topography( height_data, x_data, y_data );
+    auto lobe_cells = topography.get_cells_intersecting_lobe( lobe );
+
+    auto volume_before = topography.volume();
+    auto area_before   = topography.area( 0.0 );
+
+    topography.add_lobe( lobe );
+
+    auto volume_after = topography.volume();
+    auto area_after   = topography.area( 0.0 );
+
+    INFO( fmt::format(
+        "volume_before = {}, volume_after = {}, diff = {}\n", volume_before, volume_after,
+        volume_after - volume_before ) );
+    INFO( fmt::format(
+        "area_before = {}, area_after = {}, diff = {}\n", area_before, area_after, area_after - area_before ) );
+    INFO( fmt::format( "True lobe area = {}\n", lobe.area() ) );
+    INFO( fmt::format( "True lobe volume = {}\n", lobe.volume() ) );
+
+    REQUIRE_THAT( volume_after - volume_before, Catch::Matchers::WithinRel( lobe.volume(), 0.05 ) );
+}
