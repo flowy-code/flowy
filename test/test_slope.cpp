@@ -33,8 +33,8 @@ TEST_CASE( "height_and_slope_test", "[topography]" )
 
     auto [height, slope] = topography.height_and_slope( coord );
 
-    fmt::print( " height = {}\n", height );
-    fmt::print( " slope = {}\n", fmt::streamed( slope ) );
+    INFO( fmt::format( " height = {}\n", height ) );
+    INFO( fmt::format( " slope = {}\n", fmt::streamed( slope ) ) );
 
     REQUIRE( height == height_expected );
     REQUIRE( slope == slope_expected );

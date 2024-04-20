@@ -10,6 +10,7 @@
 #include "xtensor/xbuilder.hpp"
 #include "xtensor/xmath.hpp"
 #include <fmt/ostream.h>
+#include <cstddef>
 #include <filesystem>
 #include <fstream>
 #include <iomanip>
@@ -21,13 +22,13 @@ auto write_results_to_file( const Flowy::VectorX & samples, const std::string & 
 {
     auto proj_root_path = fs::current_path();
     auto file           = proj_root_path / fs::path( "test/output_probability_distributions/" + filename );
-    fmt::print( "file = {}\n", fmt::streamed( file ) );
+    INFO( fmt::format( "file = {}\n", fmt::streamed( file ) ) );
     fs::create_directories( file.parent_path() );
 
     std::ofstream filestream( file );
     filestream << std::setprecision( 16 );
 
-    for( int i = 0; i < samples.size(); i++ )
+    for( size_t i = 0; i < samples.size(); i++ )
     {
         filestream << samples[i] << "\n";
     }
@@ -42,7 +43,7 @@ TEST_CASE( "Test the probability distributions", "[prob]" )
     auto dist = ProbabilityDist::truncated_normal_distribution<double>( 0.0, 2.0, -Flowy::Math::pi, Flowy::Math::pi );
     Flowy::VectorX samples = xt::empty<double>( { N_Samples } );
 
-    for( int i = 0; i < samples.size(); i++ )
+    for( size_t i = 0; i < samples.size(); i++ )
     {
         samples[i] = dist( gen );
     }

@@ -27,7 +27,7 @@ TEST_CASE( "perturb_angle", "[perturb_angle]" )
     input.total_volume                  = 1.0;
     input.prescribed_avg_lobe_thickness = 1.0;
 
-    fmt::print( "{}", fmt::streamed( input.source ) );
+    INFO( fmt::format( "{}", fmt::streamed( input.source ) ) );
     auto simulation = Simulation( input, 0 );
 
     Lobe my_lobe;
@@ -55,8 +55,8 @@ TEST_CASE( "perturb_angle", "[perturb_angle]" )
 
     double mean  = xt::mean( angle_samples )();
     double sigma = xt::stddev( angle_samples )();
-    fmt::print( "\nmean = {},  mean_exp = {}\n", mean, mean_expected );
-    fmt::print( "\nsigma = {},  sigma_gaussian = {}\n", sigma, sigma_gaussian );
+    INFO( fmt::format( "\nmean = {},  mean_exp = {}\n", mean, mean_expected ) );
+    INFO( fmt::format( "\nsigma = {},  sigma_gaussian = {}\n", sigma, sigma_gaussian ) );
 
     REQUIRE_THAT( mean, Catch::Matchers::WithinAbs( 0, 0.01 ) );
     REQUIRE( sigma < sigma_gaussian );
@@ -88,8 +88,8 @@ TEST_CASE( "budding_point", "[budding_point]" )
     auto simulation = Simulation( input_params, std::nullopt );
     simulation.compute_descendent_lobe_position( lobe_cur, lobe_parent, final_budding_point );
 
-    fmt::print( "budding_point = {}\n", fmt::streamed( final_budding_point ) );
-    fmt::print( "lobe_cur.center = {}\n", fmt::streamed( lobe_cur.center ) );
+    INFO( fmt::format( "budding_point = {}\n", fmt::streamed( final_budding_point ) ) );
+    INFO( fmt::format( "lobe_cur.center = {}\n", fmt::streamed( lobe_cur.center ) ) );
 
     Vector2 lobe_center_expected = { 0.5, -0.5 };
 

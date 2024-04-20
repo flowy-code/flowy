@@ -19,7 +19,7 @@ TEST_CASE( "asc_file_test", "[asc]" )
 
     auto asc_file = Flowy::AscFile( asc_file_path );
 
-    fmt::print( "data = {}\n", fmt::streamed( asc_file.height_data ) );
+    INFO( fmt::format( "data = {}\n", fmt::streamed( asc_file.height_data ) ) );
 
     // NOTE: that the order of rows in the asc file is opposite to the order of rows in the height_data
     Flowy::MatrixX height_data_expected = { { 2.0, 0.5512 }, { 1.2, -9999 }, { 3, 2 } };
@@ -59,7 +59,7 @@ TEST_CASE( "asc_file_test_with_crop", "[asc_crop]" )
 
     auto asc_file = Flowy::AscFile( asc_file_path, crop );
 
-    fmt::print( "data = {}\n", fmt::streamed( asc_file.height_data ) );
-    fmt::print( "x_data = {}\n", fmt::streamed( asc_file.x_data ) );
-    fmt::print( "y_data = {}\n", fmt::streamed( asc_file.y_data ) );
+    INFO( fmt::format( "data = {}\n", fmt::streamed( asc_file.height_data ) ) );
+    INFO( fmt::format( "x_data = {}\n", fmt::streamed( asc_file.x_data ) ) );
+    INFO( fmt::format( "y_data = {}\n", fmt::streamed( asc_file.y_data ) ) );
 }

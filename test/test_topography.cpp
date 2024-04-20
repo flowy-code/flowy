@@ -36,14 +36,14 @@ TEST_CASE( "bounding_box", "[bounding_box]" )
     REQUIRE( idx_point_y_expected == point_indices[1] );
     REQUIRE_THAT( topography.cell_size(), Catch::Matchers::WithinRel( cell_size_expected ) );
 
-    fmt::print( "point.idx_x = {}, point.idx_y = {}\n", point_indices[0], point_indices[1] );
+    INFO( fmt::format( "point.idx_x = {}, point.idx_y = {}\n", point_indices[0], point_indices[1] ) );
 
     // Note: this bounding box is chosen such that no clamping will occur
     auto bbox = topography.bounding_box( point, 2, 2 );
-    fmt::print( "bbox.idx_x_higher = {}\n", bbox.idx_x_higher );
-    fmt::print( "bbox.idx_x_lower = {}\n", bbox.idx_x_lower );
-    fmt::print( "bbox.idx_y_lower = {}\n", bbox.idx_y_lower );
-    fmt::print( "bbox.idx_y_higher = {}\n", bbox.idx_y_higher );
+    INFO( fmt::format( "bbox.idx_x_higher = {}\n", bbox.idx_x_higher ) );
+    INFO( fmt::format( "bbox.idx_x_lower = {}\n", bbox.idx_x_lower ) );
+    INFO( fmt::format( "bbox.idx_y_lower = {}\n", bbox.idx_y_lower ) );
+    INFO( fmt::format( "bbox.idx_y_higher = {}\n", bbox.idx_y_higher ) );
 
     int idx_x_lower_expected  = idx_point_x_expected - 2;
     int idx_x_higher_expected = idx_point_x_expected + 2;
@@ -116,7 +116,8 @@ TEST_CASE( "test_compute_intersection", "[intersection]" )
         auto indices  = intersection_data[i].first;
         auto fraction = intersection_data[i].second;
         cell_indices.push_back( indices );
-        fmt::print( " indices = {}, fraction = {}, fraction_expected {}\n", indices, fraction, expected_area_fraction );
+        INFO( fmt::format(
+            " indices = {}, fraction = {}, fraction_expected {}\n", indices, fraction, expected_area_fraction ) );
         REQUIRE_THAT( fraction, Catch::Matchers::WithinRel( expected_area_fraction, 5e-2 ) );
     }
 
@@ -141,13 +142,13 @@ TEST_CASE( "find_preliminary_budding_point", "[budding_point]" )
     auto perimeter = my_lobe.rasterize_perimeter( 32 );
     for( auto & p : perimeter )
     {
-        fmt::print( "p = {}\n", fmt::streamed( p ) );
-        fmt::print( "height = {}\n\n", topography.height_and_slope( p ).first );
+        INFO( fmt::format( "p = {}\n", fmt::streamed( p ) ) );
+        INFO( fmt::format( "height = {}\n\n", topography.height_and_slope( p ).first ) );
     }
 
     Flowy::Vector2 budding_point = topography.find_preliminary_budding_point( my_lobe, 32 );
 
-    fmt::print( "budding_point  = {}", budding_point );
+    INFO( fmt::format( "budding_point  = {}", budding_point ) );
 
     // The budding point should be on the diagonal
     REQUIRE_THAT( budding_point[0], Catch::Matchers::WithinRel( budding_point[1] ) );
