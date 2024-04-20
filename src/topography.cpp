@@ -165,8 +165,14 @@ LobeCells Topography::get_cells_intersecting_lobe( const Lobe & lobe, std::optio
             const int stop_left  = std::max<int>( idx_left_prev, idx_left_cur );
             push_back_cells( cells_intersecting, start_left, stop_left, idx_y - 1 );
 
-            const int start_right = std::min<int>( idx_right_prev, idx_right_cur );
-            const int stop_right  = std::max<int>( idx_right_prev, idx_right_cur );
+            int start_right      = std::min<int>( idx_right_prev, idx_right_cur );
+            const int stop_right = std::max<int>( idx_right_prev, idx_right_cur );
+
+            // If stop_left and start right co-incide, which can happen when the tip of an ellipse barely touches a row
+            // We need to make sure not to double count an intersected cell
+            if( stop_left == start_right )
+                start_right++;
+
             push_back_cells( cells_intersecting, start_right, stop_right, idx_y - 1 );
 
             push_back_cells( cells_enclosed, stop_left + 1, start_right - 1, idx_y - 1 );
