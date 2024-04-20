@@ -22,9 +22,15 @@ public:
 
     // If set to true one csv file, per flow, is written to the output folder.
     // The files are named 'lobes_{idx_flow}.csv' and contain information about the lobes in that specific flow
-    bool write_lobes_csv        = false;
-    bool print_remaining_time   = false;
-    bool save_final_dem         = false;
+    bool write_lobes_csv      = false;
+    bool print_remaining_time = false;
+    bool save_final_dem       = false;
+
+    // The tolerance in the volume ratio when finding the threshold thickness for masking
+    double masking_tolerance = 1e-5;
+    // The maximum number of bisection search iterations when finding the threshold thickness for masking
+    int masking_max_iter = 20;
+
     std::optional<int> rng_seed = std::nullopt;
 
     // ===================================================================================

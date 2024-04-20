@@ -392,7 +392,7 @@ void Simulation::write_avg_thickness_file()
 
     // This lambda performs bisection search to find the threshold thickness at which a
     // relative volume proportion of `thresh` is contained within cells with greater thickness than the threshold thickness
-    auto bisection_search = [&]( double thresh, double tol = 1e-3, int max_iter = 20 )
+    auto bisection_search = [&]( double thresh, double tol, int max_iter )
     {
         int idx_lo = 0;
         int idx_hi = n_cells - 1;
@@ -439,7 +439,8 @@ void Simulation::write_avg_thickness_file()
 
     for( auto & threshold : input.masking_threshold )
     {
-        auto const [threshold_thickness, total_flow_cur, n_flow_non_zero, ratio] = bisection_search( threshold );
+        auto const [threshold_thickness, total_flow_cur, n_flow_non_zero, ratio]
+            = bisection_search( threshold, input.masking_tolerance, input.masking_max_iter );
 
         double volume        = topography.cell_size() * topography.cell_size() * total_flow_cur;
         double area          = topography.cell_size() * topography.cell_size() * n_flow_non_zero;

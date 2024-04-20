@@ -41,7 +41,10 @@ InputParams parse_config( const std::filesystem::path & path )
     toml::table tbl;
     tbl = toml::parse_file( path.string() );
 
-    // our own
+    // ===================================================================================
+    // new settings
+    // ===================================================================================
+
     set_if_specified( params.write_lobes_csv, tbl["write_lobes_csv"] );
     set_if_specified( params.print_remaining_time, tbl["print_remaining_time"] );
     set_if_specified( params.save_final_dem, tbl["save_final_dem"] );
@@ -55,7 +58,12 @@ InputParams parse_config( const std::filesystem::path & path )
 
     params.rng_seed = tbl["rng_seed"].value<int>();
 
-    // From input.py
+    set_if_specified( params.masking_tolerance, tbl["masking_tolerance"] );
+    set_if_specified( params.masking_max_iter, tbl["masking_max_iter"] );
+
+    // ===================================================================================
+    // mr lava loba settings from input.py
+    // ===================================================================================
     set_if_specified( params.run_name, tbl["run_name"] );
 
     std::string source_string;
@@ -126,7 +134,9 @@ InputParams parse_config( const std::filesystem::path & path )
     params.eps                   = tbl["eps"].value<double>();
     params.union_diff_file       = tbl["union_diff_file"].value<std::string>();
 
-    // from input_advanced.py
+    // ===================================================================================
+    // mr lava loba settings from input_advanced.py
+    // ===================================================================================
     set_if_specified( params.npoints, tbl["Advanced"]["npoints"] );
     set_if_specified( params.n_init, tbl["Advanced"]["n_init"] );
     set_if_specified( params.dist_fact, tbl["Advanced"]["dist_fact"] );
