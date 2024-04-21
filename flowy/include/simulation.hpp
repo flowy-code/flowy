@@ -49,7 +49,7 @@ public:
 
     void compute_descendent_lobe_position( Lobe & lobe, const Lobe & parent, Vector2 final_budding_point );
 
-    void perturb_lobe_angle( Lobe & lobe, const Vector2 & slope );
+    void perturb_lobe_angle( Lobe & lobe, double slope );
 
     int select_parent_lobe( int idx_descendant );
 

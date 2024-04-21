@@ -213,10 +213,9 @@ void Simulation::write_lobe_data_to_file( const std::vector<Lobe> & lobes, const
     file.close();
 }
 
-void Simulation::perturb_lobe_angle( Lobe & lobe, const Vector2 & slope )
+void Simulation::perturb_lobe_angle( Lobe & lobe, double slope )
 {
-    const double slope_norm = xt::linalg::norm( slope, 2 ); // Similar to np.linalg.norm
-    const double slope_deg  = 180.0 / Math::pi * std::atan( slope_norm );
+    const double slope_deg = 180.0 / Math::pi * std::atan( slope );
 
     if( input.max_slope_prob < 1 )
     {
@@ -519,7 +518,8 @@ void Simulation::run()
 
             // Perturb the angle (and set it)
             lobe_cur.set_azimuthal_angle( std::atan2( slope[1], slope[0] ) ); // Sets the angle prior to perturbation
-            perturb_lobe_angle( lobe_cur, slope );
+            const double slope_norm = xt::linalg::norm( slope, 2 );           // Similar to np.linalg.norm
+            perturb_lobe_angle( lobe_cur, slope_norm );
 
             // compute lobe axes
             compute_lobe_axes( lobe_cur, slope );
@@ -563,10 +563,10 @@ void Simulation::run()
             // Perturb the angle and set it (not on the parent anymore)
             lobe_cur.set_azimuthal_angle(
                 std::atan2( slope_parent[1], slope_parent[0] ) ); // Sets the angle prior to perturbation
-            perturb_lobe_angle( lobe_cur, slope_parent );
+            const double slope_parent_norm = xt::linalg::norm( slope_parent, 2 ); // Similar to np.linalg.norm
+            perturb_lobe_angle( lobe_cur, slope_parent_norm );
 
             // Add the inertial contribution
-            const double slope_parent_norm = xt::linalg::norm( slope_parent, 2 );
             add_inertial_contribution( lobe_cur, lobe_parent, slope_parent_norm );
 
             // Compute the final budding point

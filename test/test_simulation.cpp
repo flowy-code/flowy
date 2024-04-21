@@ -50,7 +50,8 @@ TEST_CASE( "perturb_angle", "[perturb_angle]" )
     for( int i = 0; i < n_samples; i++ )
     {
         my_lobe.set_azimuthal_angle( std::atan2( slope[1], slope[0] ) ); // Sets the angle prior to perturbation
-        simulation.perturb_lobe_angle( my_lobe, slope );
+        const double slope_norm = xt::linalg::norm( slope, 2 );          // Similar to np.linalg.norm
+        simulation.perturb_lobe_angle( my_lobe, slope_norm );
         angle_samples[i] = my_lobe.get_azimuthal_angle();
 
         REQUIRE( ( ( my_lobe.get_azimuthal_angle() > -Math::pi ) && ( my_lobe.get_azimuthal_angle() < Math::pi ) ) );
