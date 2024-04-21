@@ -238,12 +238,10 @@ void Simulation::perturb_lobe_angle( Lobe & lobe, double slope )
     }
 }
 
-void Simulation::compute_lobe_axes( Lobe & lobe, const Vector2 & slope ) const
+void Simulation::compute_lobe_axes( Lobe & lobe, double slope ) const
 {
-    const double slope_norm = xt::linalg::norm( slope, 2 );
-
     // Factor for the lobe eccentricity
-    double aspect_ratio = std::min( input.max_aspect_ratio, 1.0 + input.aspect_ratio_coeff * slope_norm );
+    double aspect_ratio = std::min( input.max_aspect_ratio, 1.0 + input.aspect_ratio_coeff * slope );
 
     // Compute the semi-axes of the lobe
     double semi_major_axis = std::sqrt( lobe_dimensions.lobe_area / Math::pi ) * std::sqrt( aspect_ratio );
@@ -522,7 +520,7 @@ void Simulation::run()
             perturb_lobe_angle( lobe_cur, slope_norm );
 
             // compute lobe axes
-            compute_lobe_axes( lobe_cur, slope );
+            compute_lobe_axes( lobe_cur, slope_norm );
 
             // Add rasterized lobe
             topography.add_lobe( lobe_cur, idx_lobe );
@@ -556,14 +554,10 @@ void Simulation::run()
             auto [height_bp, slope_bp]              = topography.height_and_slope( budding_point );
 
             Vector2 diff = ( budding_point - lobe_parent.center );
-            double norm  = std::sqrt( diff[0] * diff[0] + diff[1] * diff[1] );
-
-            slope_parent = -std::min( 0.0, height_bp - height_lobe_center ) * diff / ( norm * norm );
 
             // Perturb the angle and set it (not on the parent anymore)
-            lobe_cur.set_azimuthal_angle(
-                std::atan2( slope_parent[1], slope_parent[0] ) ); // Sets the angle prior to perturbation
-            const double slope_parent_norm = xt::linalg::norm( slope_parent, 2 ); // Similar to np.linalg.norm
+            lobe_cur.set_azimuthal_angle( std::atan2( diff[1], diff[0] ) ); // Sets the angle prior to perturbation
+            const double slope_parent_norm = topography.slope_between_points( lobe_parent.center, budding_point );
             perturb_lobe_angle( lobe_cur, slope_parent_norm );
 
             // Add the inertial contribution
@@ -581,13 +575,7 @@ void Simulation::run()
                 break;
             }
             // Get the slope at the final budding point
-            auto [height_budding_point, slope_budding_point] = topography.height_and_slope( final_budding_point );
-
-            Vector2 diff_bp = ( final_budding_point - lobe_parent.center );
-            double norm_bp  = std::sqrt( diff_bp[0] * diff_bp[0] + diff_bp[1] * diff_bp[1] );
-
-            slope_budding_point
-                = -std::min( 0.0, height_budding_point - height_lobe_center ) * diff_bp / ( norm_bp * norm_bp );
+            double slope_budding_point = topography.slope_between_points( lobe_parent.center, final_budding_point );
 
             // compute the new lobe axes
             compute_lobe_axes( lobe_cur, slope_budding_point );
