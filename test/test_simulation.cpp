@@ -49,6 +49,7 @@ TEST_CASE( "perturb_angle", "[perturb_angle]" )
 
     for( int i = 0; i < n_samples; i++ )
     {
+        my_lobe.set_azimuthal_angle( std::atan2( slope[1], slope[0] ) ); // Sets the angle prior to perturbation
         simulation.perturb_lobe_angle( my_lobe, slope );
         angle_samples[i] = my_lobe.get_azimuthal_angle();
 

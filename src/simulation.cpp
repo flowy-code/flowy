@@ -215,8 +215,7 @@ void Simulation::write_lobe_data_to_file( const std::vector<Lobe> & lobes, const
 
 void Simulation::perturb_lobe_angle( Lobe & lobe, const Vector2 & slope )
 {
-    lobe.set_azimuthal_angle( std::atan2( slope[1], slope[0] ) ); // Sets the angle prior to perturbation
-    const double slope_norm = xt::linalg::norm( slope, 2 );       // Similar to np.linalg.norm
+    const double slope_norm = xt::linalg::norm( slope, 2 ); // Similar to np.linalg.norm
     const double slope_deg  = 180.0 / Math::pi * std::atan( slope_norm );
 
     if( input.max_slope_prob < 1 )
@@ -520,6 +519,7 @@ void Simulation::run()
             auto [height_lobe_center, slope] = topography.height_and_slope( lobe_cur.center );
 
             // Perturb the angle (and set it)
+            lobe_cur.set_azimuthal_angle( std::atan2( slope[1], slope[0] ) ); // Sets the angle prior to perturbation
             perturb_lobe_angle( lobe_cur, slope );
 
             // compute lobe axes
@@ -562,6 +562,8 @@ void Simulation::run()
             slope_parent = -std::min( 0.0, height_bp - height_lobe_center ) * diff / ( norm * norm );
 
             // Perturb the angle and set it (not on the parent anymore)
+            lobe_cur.set_azimuthal_angle(
+                std::atan2( slope_parent[1], slope_parent[0] ) ); // Sets the angle prior to perturbation
             perturb_lobe_angle( lobe_cur, slope_parent );
 
             // Add the inertial contribution
