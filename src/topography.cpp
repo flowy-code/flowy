@@ -360,7 +360,6 @@ std::pair<double, Vector2> Topography::height_and_slope( const Vector2 & coordin
 double Topography::slope_between_points(
     const Vector2 & point1, const Vector2 & point2, std::optional<double> min_height_drop )
 {
-
     const double height1 = height_and_slope( point1 ).first;
     const double height2 = height_and_slope( point2 ).first;
 

@@ -14,6 +14,7 @@
 #include <catch2/catch_test_macros.hpp>
 #include <catch2/matchers/catch_matchers_floating_point.hpp>
 #include <catch2/matchers/catch_matchers_range_equals.hpp>
+#include <cstddef>
 #include <optional>
 #include <vector>
 
@@ -152,4 +153,41 @@ TEST_CASE( "find_preliminary_budding_point", "[budding_point]" )
 
     // The budding point should be on the diagonal
     REQUIRE_THAT( budding_point[0], Catch::Matchers::WithinRel( budding_point[1] ) );
+}
+
+TEST_CASE( "test_finite_difference_slope", "[finite_difference_slope]" )
+{
+    Flowy::VectorX x_data      = xt::linspace<double>( 0, 10, 10, true );
+    Flowy::VectorX y_data      = xt::linspace<double>( 0, 1.0, 2, true );
+    Flowy::MatrixX height_data = xt::zeros<double>( { x_data.size(), y_data.size() } );
+
+    for( size_t i = 0; i < x_data.size(); i++ )
+    {
+        for( size_t j = 0; j < y_data.size(); j++ )
+        {
+            height_data( i, j ) = x_data[i];
+        }
+    }
+
+    auto topography = Flowy::Topography( height_data, x_data, y_data );
+
+    const Flowy::Vector2 point1 = { 1.0, 0.5 };
+    const Flowy::Vector2 point2 = { 3.0, 0.5 };
+    double slope                = topography.slope_between_points( point1, point2 );
+    double expected_slope       = 0.0;
+
+    INFO( fmt::format( "slope={}\n", slope ) );
+    // This would just be zero because of the default min_slope_drop=0.0
+    REQUIRE_THAT( slope, Catch::Matchers::WithinRel( expected_slope ) );
+
+    slope          = topography.slope_between_points( point2, point1 );
+    expected_slope = 1.0;
+    INFO( fmt::format( "slope={}\n", slope ) );
+    REQUIRE_THAT( slope, Catch::Matchers::WithinRel( expected_slope ) );
+
+    // Test that if you give it a minimum slope_drop it is set to that
+    slope          = topography.slope_between_points( point1, point2, std::nullopt );
+    expected_slope = -1.0;
+    INFO( fmt::format( "slope={}\n", slope ) );
+    REQUIRE_THAT( slope, Catch::Matchers::WithinRel( expected_slope ) );
 }
