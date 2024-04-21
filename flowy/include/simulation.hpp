@@ -55,7 +55,7 @@ public:
 
     void compute_cumulative_descendents( std::vector<Lobe> & lobes ) const;
 
-    void add_inertial_contribution( Lobe & lobe, const Lobe & parent, const Vector2 & slope ) const;
+    void add_inertial_contribution( Lobe & lobe, const Lobe & parent, double slope ) const;
 
     void write_lobe_data_to_file( const std::vector<Lobe> & lobes, const std::filesystem::path & output_path );
 

@@ -322,9 +322,8 @@ void Simulation::compute_cumulative_descendents( std::vector<Lobe> & lobes ) con
     }
 }
 
-void Simulation::add_inertial_contribution( Lobe & lobe, const Lobe & parent, const Vector2 & slope ) const
+void Simulation::add_inertial_contribution( Lobe & lobe, const Lobe & parent, double slope ) const
 {
-    const double slope_norm = xt::linalg::norm( slope, 2 );
     double cos_angle_parent = parent.get_cos_azimuthal_angle();
     double sin_angle_parent = parent.get_sin_azimuthal_angle();
     double cos_angle_lobe   = lobe.get_cos_azimuthal_angle();
@@ -335,7 +334,7 @@ void Simulation::add_inertial_contribution( Lobe & lobe, const Lobe & parent, co
     const double eta = input.inertial_exponent;
     if( eta > 0 )
     {
-        alpha_inertial = std::pow( ( 1.0 - std::pow( 2.0 * std::atan( slope_norm ) / Math::pi, eta ) ), ( 1.0 / eta ) );
+        alpha_inertial = std::pow( ( 1.0 - std::pow( 2.0 * std::atan( slope ) / Math::pi, eta ) ), ( 1.0 / eta ) );
     }
 
     const double x_avg = ( 1.0 - alpha_inertial ) * cos_angle_lobe + alpha_inertial * cos_angle_parent;
@@ -567,7 +566,8 @@ void Simulation::run()
             perturb_lobe_angle( lobe_cur, slope_parent );
 
             // Add the inertial contribution
-            add_inertial_contribution( lobe_cur, lobe_parent, slope_parent );
+            const double slope_parent_norm = xt::linalg::norm( slope_parent, 2 );
+            add_inertial_contribution( lobe_cur, lobe_parent, slope_parent_norm );
 
             // Compute the final budding point
             // It is defined by the point on the perimeter of the parent lobe closest to the center of the new lobe
