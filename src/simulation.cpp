@@ -582,7 +582,7 @@ void Simulation::run()
             auto [height_budding_point, slope_budding_point] = topography.height_and_slope( final_budding_point );
 
             Vector2 diff_bp = ( final_budding_point - lobe_parent.center );
-            double norm_bp  = std::sqrt( diff[0] * diff[0] + diff[1] * diff[1] );
+            double norm_bp  = std::sqrt( diff_bp[0] * diff_bp[0] + diff_bp[1] * diff_bp[1] );
 
             slope_budding_point
                 = -std::min( 0.0, height_budding_point - height_lobe_center ) * diff_bp / ( norm_bp * norm_bp );
