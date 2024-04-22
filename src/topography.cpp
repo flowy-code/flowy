@@ -357,6 +357,25 @@ std::pair<double, Vector2> Topography::height_and_slope( const Vector2 & coordin
     return { height, -slope / cell_size() };
 }
 
+double Topography::slope_between_points(
+    const Vector2 & point1, const Vector2 & point2, std::optional<double> min_height_drop )
+{
+    const double height1 = height_and_slope( point1 ).first;
+    const double height2 = height_and_slope( point2 ).first;
+
+    const Vector2 diff       = point2 - point1;
+    double norm              = std::sqrt( diff[0] * diff[0] + diff[1] * diff[1] );
+    double height_difference = -( height2 - height1 );
+
+    if( min_height_drop.has_value() )
+    {
+        height_difference = std::max( min_height_drop.value(), height_difference );
+    }
+
+    double slope = height_difference / norm;
+    return slope;
+}
+
 void Topography::add_lobe( const Lobe & lobe, std::optional<int> idx_cache )
 {
     // In this function we simply add the thickness of the lobe to the topography

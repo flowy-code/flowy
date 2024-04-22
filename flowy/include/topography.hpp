@@ -108,6 +108,10 @@ public:
     // via linear interpolation from the square grid
     std::pair<double, Vector2> height_and_slope( const Vector2 & coordinates );
 
+    // Calculate the slope between points, given their heights
+    double
+    slope_between_points( const Vector2 & point1, const Vector2 & point2, std::optional<double> min_height_drop = 0.0 );
+
     // Compute the indices of a rectangular bounding box
     // The box is computed such that a circle with centered at 'center' with radius 'radius'
     // Is completely contained in the bounding box

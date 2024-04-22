@@ -45,17 +45,17 @@ public:
     void compute_initial_lobe_position( int idx_flow, Lobe & lobe );
 
     // perturbes the initial azimuthal angle of the lobe, which is
-    void compute_lobe_axes( Lobe & lobe, const Vector2 & slope ) const; // computed from the terrain slope
+    void compute_lobe_axes( Lobe & lobe, double slope ) const; // computed from the terrain slope
 
     void compute_descendent_lobe_position( Lobe & lobe, const Lobe & parent, Vector2 final_budding_point );
 
-    void perturb_lobe_angle( Lobe & lobe, const Vector2 & slope );
+    void perturb_lobe_angle( Lobe & lobe, double slope );
 
     int select_parent_lobe( int idx_descendant );
 
     void compute_cumulative_descendents( std::vector<Lobe> & lobes ) const;
 
-    void add_inertial_contribution( Lobe & lobe, const Lobe & parent, const Vector2 & slope ) const;
+    void add_inertial_contribution( Lobe & lobe, const Lobe & parent, double slope ) const;
 
     void write_lobe_data_to_file( const std::vector<Lobe> & lobes, const std::filesystem::path & output_path );
 
