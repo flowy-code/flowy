@@ -32,7 +32,8 @@ _deps = [
   dependency('xtensor'),
   dependency('xtensor-blas'),
   dependency('fmt'),
-  dependency('tomlplusplus')
+  dependency('tomlplusplus'),
+  dependency('netcdf', language : 'cpp'),
 ]
 
 # Static libraries for the executable and tests, shared for the bindings
@@ -69,7 +70,8 @@ if get_option('build_tests')
     ['Test_Topography', 'test/test_topography.cpp'],
     ['Test_Lobe', 'test/test_lobe.cpp'],
     ['Test_Trunc_Normal', 'test/test_truncated_normal.cpp'],
-    ['Test_Raster', 'test/test_rasterization.cpp']
+    ['Test_Raster', 'test/test_rasterization.cpp'],
+    ['Test_NetCDF', 'test/test_netcdf.cpp']
   ]
 
   Catch2 = dependency('Catch2', method : 'cmake', modules : ['Catch2::Catch2WithMain', 'Catch2::Catch2'])
