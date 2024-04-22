@@ -1,7 +1,6 @@
 #pragma once
 // GPL v3 License
 // Copyright 2023--present Flowy developers
-#include "flowy/include/definitions.hpp"
 #include "flowy/include/topography_file.hpp"
 #include <optional>
 
@@ -12,7 +11,8 @@ class AscFile : public TopographyFile
 {
 public:
     AscFile() = default;
-    AscFile( const std::filesystem::path & path, std::optional<AscCrop> crop = std::nullopt );
+    AscFile( const Topography & topography, Output output ) : TopographyFile::TopographyFile( topography, output ){};
+    AscFile( const std::filesystem::path & path, const std::optional<TopographyCrop> & crop = std::nullopt );
     void save( const std::filesystem::path & path ) override;
 };
 

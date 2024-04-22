@@ -12,23 +12,6 @@
 namespace Flowy
 {
 
-AscFile Topography::to_asc_file( Topography::Output output )
-{
-    AscFile asc_file{};
-    asc_file.lower_left_corner = { x_data[0], y_data[0] };
-    asc_file.cell_size         = cell_size();
-
-    if( output == Topography::Output::Height )
-    {
-        asc_file.height_data = height_data;
-    }
-    else
-    {
-        asc_file.height_data = hazard;
-    }
-    return asc_file;
-}
-
 bool Topography::is_point_near_boundary( const Vector2 & coordinates, double radius )
 {
     int n = std::ceil( radius / cell_size() );
