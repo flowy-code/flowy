@@ -25,16 +25,16 @@ void NetCDFFile::save( const std::filesystem::path & path )
     std::string missing_value = "missing_value";
     std::string fill_value    = "_FillValue";
 
-    MatrixX height_data_out = xt::flip( xt::transpose( height_data ), 0 );
+    MatrixX data_out = xt::flip( xt::transpose( data ), 0 );
 
-    int ncid;
+    int ncid{};
     int dimids[2];
-    int numdims = height_data_out.shape().size();
+    int numdims = data_out.shape().size();
 
     nc_create( path.string().c_str(), NC_CLOBBER, &ncid );
 
-    nc_def_dim( ncid, "x", height_data_out.shape()[0], dimids );
-    nc_def_dim( ncid, "y", height_data_out.shape()[1], &dimids[1] );
+    nc_def_dim( ncid, "x", data_out.shape()[0], dimids );
+    nc_def_dim( ncid, "y", data_out.shape()[1], &dimids[1] );
 
     // header for y variable (we save x_data here)
     int varid_y{};
@@ -60,20 +60,20 @@ void NetCDFFile::save( const std::filesystem::path & path )
     nc_enddef( ncid );
 
     // Write elevation data
-    nc_put_var_double( ncid, varid_elevation, height_data_out.data() );
+    nc_put_var_double( ncid, varid_elevation, static_cast<double*>(data_out.data()) );
 
     // Write x data
     // Since we transpose the height data, we have to write our x_data to the netcdf "y" attribute
     // QGIS also expects the coordinates of pixel centers, so we shift by 0.5 * cell_size
-    VectorX x_data_out = x_data + 0.5 * cell_size;
-    nc_put_var_double( ncid, varid_y, x_data_out.data() );
+    VectorX x_data_out = x_data + 0.5 * cell_size();
+    nc_put_var_double( ncid, varid_y,  static_cast<double*>(x_data_out.data()));
 
     // Write y data
     // Since we transpose the height data and flip the y values, we have to write our y_data to the netcdf "x" attribute
     // and flip it
-    // QGOS also expects the coordinates of pixel centers, so we shift by 0.5 * cell_size
-    VectorX y_data_out = xt::flip( y_data ) + 0.5 * cell_size;
-    nc_put_var_double( ncid, varid_x, y_data_out.data() );
+    // QGIS also expects the coordinates of pixel centers, so we shift by 0.5 * cell_size
+    VectorX y_data_out = xt::flip( y_data ) + 0.5 * cell_size();
+    nc_put_var_double( ncid, varid_x, static_cast<double*>(y_data_out.data()) );
 
     nc_close( ncid );
 }
