@@ -66,11 +66,11 @@ TEST_CASE( "netcdf_test", "[netcdf]" )
     nc_enddef( ncid );
 
     // Write elevation data
-    nc_put_var_double( ncid, varid_elevation, (double *)height_data.data() );
+    nc_put_var_double( ncid, varid_elevation, height_data.data() );
     // Write x data
-    nc_put_var_double( ncid, varid_x, (double *)x_data.data() );
+    nc_put_var_double( ncid, varid_x, x_data.data() );
     // Write y data
-    nc_put_var_double( ncid, varid_y, (double *)y_data.data() );
+    nc_put_var_double( ncid, varid_y, y_data.data() );
 
     nc_close( ncid );
 }

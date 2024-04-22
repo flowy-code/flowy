@@ -4,6 +4,7 @@
 #include "flowy/include/definitions.hpp"
 #include "flowy/include/lobe.hpp"
 #include "flowy/include/math.hpp"
+#include "flowy/include/netcdf_file.hpp"
 #include "flowy/include/topography.hpp"
 #include "pdf_cpplib/include/probability_dist.hpp"
 #include "pdf_cpplib/include/reservoir_sampling.hpp"
@@ -651,6 +652,14 @@ void Simulation::run()
     asc_file               = topography_thickness.to_asc_file();
     asc_file.no_data_value = 0;
     asc_file.save( input.output_folder / fmt::format( "{}_thickness_full.asc", input.run_name ) );
+
+    auto netcdf_file          = NetCDFFile();
+    netcdf_file.height_data   = topography_thickness.height_data;
+    netcdf_file.x_data        = topography_thickness.x_data;
+    netcdf_file.y_data        = topography_thickness.y_data;
+    netcdf_file.no_data_value = 0;
+    netcdf_file.cell_size     = topography.cell_size();
+    netcdf_file.save( input.output_folder / fmt::format( "{}_thickness_full.nc", input.run_name ) );
 
     // Save the full hazard map
     if( input.save_hazard_data )

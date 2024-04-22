@@ -21,7 +21,8 @@ _sources = [
   'src/asc_file.cpp',
   'src/simulation.cpp',
   'src/topography.cpp',
-  'src/config_parser.cpp'
+  'src/config_parser.cpp',
+  'src/netcdf_file.cpp'
 ]
 
 # Library dependencies
