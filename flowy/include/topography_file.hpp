@@ -1,6 +1,7 @@
 #pragma once
 #include "flowy/include/definitions.hpp"
 #include "flowy/include/topography.hpp"
+#include <cstddef>
 #include <filesystem>
 #include <stdexcept>
 namespace Flowy
@@ -76,6 +77,39 @@ public:
 
     virtual void save( const std::filesystem::path & path ) = 0;
     virtual ~TopographyFile()                               = default;
+
+    // Crops the topography according to user-defined crop dimensions
+    virtual void crop_to_content()
+    {
+        size_t idx_x_min = data.shape()[0] - 1;
+        size_t idx_y_min = data.shape()[1] - 1;
+        size_t idx_x_max{};
+        size_t idx_y_max{};
+
+        for( size_t ix = 0; ix < data.shape()[0]; ix++ )
+        {
+            for( size_t iy = 0; iy < data.shape()[1]; iy++ )
+            {
+                auto d = data( ix, iy );
+
+                if( d > no_data_value + 1e-3 )
+                {
+                    if( ix < idx_x_min )
+                        idx_x_min = ix;
+                    if( ix > idx_x_max )
+                        idx_x_max = ix;
+                    if( iy < idx_y_min )
+                        idx_y_min = iy;
+                    if( iy > idx_y_max )
+                        idx_y_max = iy;
+                }
+            }
+        }
+
+        data   = xt::view( data, xt::range( idx_x_min, idx_x_max + 1 ), xt::range( idx_y_min, idx_y_max + 1 ) );
+        x_data = xt::view( x_data, xt::range( idx_x_min, idx_x_max + 1 ) );
+        y_data = xt::view( y_data, xt::range( idx_y_min, idx_y_max + 1 ) );
+    }
 
 protected:
     // Crops the topography according to user-defined crop dimensions
