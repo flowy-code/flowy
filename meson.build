@@ -35,6 +35,7 @@ _deps = [
   dependency('fmt'),
   dependency('tomlplusplus'),
   dependency('netcdf', language : 'cpp'),
+  dependency('hdf5', language : 'cpp')
 ]
 
 # Static libraries for the executable and tests, shared for the bindings

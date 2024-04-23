@@ -16,3 +16,4 @@ dependencies:
   - cppcheck
   - cpplint
   - libnetcdf
+  - hdf5
