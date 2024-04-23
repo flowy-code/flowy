@@ -22,9 +22,13 @@ class NetCDFFile : public TopographyFile
     void determine_scale_and_offset();
 
 public:
+    bool compression      = false;
+    bool shuffle          = true;
+    int compression_level = 5;
+
     StorageDataType data_type = StorageDataType::Short;
     NetCDFFile()              = default;
-    NetCDFFile( const Topography & topography, Output output ) : TopographyFile::TopographyFile( topography, output ){};
+    NetCDFFile( const Topography & topography, Output output ) : TopographyFile::TopographyFile( topography, output ) {}
     // NetCDFFile( const std::filesystem::path & path, const std::optional<TopographyCrop> & crop = std::nullopt );
     void save( const std::filesystem::path & path ) override;
 };
