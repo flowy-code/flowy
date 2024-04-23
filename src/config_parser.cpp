@@ -222,9 +222,9 @@ void validate_settings( const InputParams & options )
     auto geq_zero         = []( auto x ) { return x >= 0; };
     auto geq_zero_leq_one = []( auto x ) { return x >= 0 && x <= 1; };
 
-    check( name_and_var( options.n_flows ), geq_zero );
+    check( name_and_var( options.n_flows ), g_zero );
     check( name_and_var( options.min_n_lobes ), geq_zero );
-    check( name_and_var( options.max_n_lobes ), geq_zero );
+    check( name_and_var( options.max_n_lobes ), g_zero );
     check( name_and_var( options.lobe_exponent ), geq_zero_leq_one );
     check( name_and_var( options.max_slope_prob ), geq_zero_leq_one );
     check( name_and_var( options.inertial_exponent ), geq_zero );
