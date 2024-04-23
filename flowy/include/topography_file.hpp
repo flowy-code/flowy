@@ -131,14 +131,12 @@ protected:
         // If cropping is used, we slice the data array
         int idx_x_min
             = std::clamp<int>( ( crop_dims.x_min - old_lower_left_corner[0] ) / cell_size(), 0, data.shape()[0] - 1 );
-        int idx_x_max
-            = std::clamp<int>( ( crop_dims.x_max - old_lower_left_corner[0] ) / cell_size(), 0, data.shape()[0] - 1 )
-              + 1;
+        int idx_x_max = std::clamp<int>(
+            ( crop_dims.x_max - old_lower_left_corner[0] ) / cell_size() + 1, 0, data.shape()[0] - 1 );
         int idx_y_min
             = std::clamp<int>( ( crop_dims.y_min - old_lower_left_corner[1] ) / cell_size(), 0, data.shape()[1] - 1 );
-        int idx_y_max
-            = std::clamp<int>( ( crop_dims.y_max - old_lower_left_corner[1] ) / cell_size(), 0, data.shape()[1] - 1 )
-              + 1;
+        int idx_y_max = std::clamp<int>(
+            ( crop_dims.y_max - old_lower_left_corner[1] ) / cell_size() + 1, 0, data.shape()[1] - 1 );
 
         data = xt::view( data, xt::range( idx_x_min, idx_x_max + 1 ), xt::range( idx_y_min, idx_y_max + 1 ) );
 
