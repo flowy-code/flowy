@@ -387,7 +387,8 @@ void Simulation::write_avg_thickness_file()
 
     // This lambda performs bisection search to find the threshold thickness at which a
     // relative volume proportion of `thresh` is contained within cells with greater thickness than the threshold thickness
-    auto bisection_search = [&]( double thresh, double tol, int max_iter ) {
+    auto bisection_search = [&]( double thresh, double tol, int max_iter )
+    {
         int idx_lo = 0;
         int idx_hi = n_cells - 1;
 
@@ -654,9 +655,14 @@ void Simulation::run()
     asc_file.no_data_value = 0;
     asc_file.save( input.output_folder / fmt::format( "{}_thickness_full.asc", input.run_name ) );
 
-    auto netcdf_file = NetCDFFile( topography_thickness, Output::Height );
+    asc_file.crop_to_content();
+    asc_file.save( input.output_folder / fmt::format( "{}_thickness_full_cropped.asc", input.run_name ) );
+
+    auto netcdf_file          = NetCDFFile( topography_thickness, Output::Height );
     netcdf_file.no_data_value = 0;
     netcdf_file.save( input.output_folder / fmt::format( "{}_thickness_full.nc", input.run_name ) );
+    netcdf_file.crop_to_content();
+    netcdf_file.save( input.output_folder / fmt::format( "{}_thickness_full_cropped.nc", input.run_name ) );
 
     // Save the full hazard map
     if( input.save_hazard_data )
