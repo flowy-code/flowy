@@ -23,6 +23,17 @@ enum class OutputQuantitiy
 
 class TopographyFile
 {
+
+protected:
+    virtual std::string suffix() = 0;
+
+    std::filesystem::path handle_suffix( const std::filesystem::path & path_in )
+    {
+        std::filesystem::path path_copy = path_in;
+        auto filename_old               = path_in.filename();
+        return path_copy.replace_filename( fmt::format( "{}{}", filename_old.string(), suffix() ) );
+    }
+
 public:
     // NOTE: that the order of rows in the asc file is opposite to the order of rows in the height_data
     // This is because we want the first row to correspond to the *low* y-values

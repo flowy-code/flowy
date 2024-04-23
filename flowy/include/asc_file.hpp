@@ -9,14 +9,17 @@ namespace Flowy
 
 class AscFile : public TopographyFile
 {
-private:
-    std::string suffix = ".asc";
-
 public:
     AscFile() = default;
     AscFile( const Topography & topography, OutputQuantitiy output )
             : TopographyFile::TopographyFile( topography, output ){};
     AscFile( const std::filesystem::path & path, const std::optional<TopographyCrop> & crop = std::nullopt );
+
+    std::string suffix() override
+    {
+        return ".asc";
+    }
+
     void save( const std::filesystem::path & path ) override;
 };
 

@@ -17,7 +17,6 @@ enum StorageDataType
 
 class NetCDFFile : public TopographyFile
 {
-    std::string suffix                 = ".nc";
     std::optional<double> scale_factor = std::nullopt;
     std::optional<double> add_offset   = std::nullopt;
     void determine_scale_and_offset();
@@ -34,6 +33,12 @@ public:
     {
     }
     // NetCDFFile( const std::filesystem::path & path, const std::optional<TopographyCrop> & crop = std::nullopt );
+
+    std::string suffix() override
+    {
+        return ".nc";
+    }
+
     void save( const std::filesystem::path & path ) override;
 };
 

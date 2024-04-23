@@ -76,8 +76,7 @@ AscFile::AscFile( const std::filesystem::path & path, const std::optional<Topogr
 
 void AscFile::save( const std::filesystem::path & path_ )
 {
-    auto path = path_;
-    path.replace_extension( suffix );
+    auto path = handle_suffix( path_ );
 
     std::fstream file;
     file.open( path, std::fstream::in | std::fstream::out | std::fstream::trunc );
