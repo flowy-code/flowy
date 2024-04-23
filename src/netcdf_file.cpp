@@ -2,15 +2,10 @@
 // Copyright 2023--present Flowy developers
 #include "flowy/include/netcdf_file.hpp"
 #include "flowy/include/definitions.hpp"
-#include "flowy/include/dump_csv.hpp"
 #include "xtensor/xmanipulation.hpp"
 #include "xtensor/xmath.hpp"
-#include "xtensor/xslice.hpp"
-#include "xtensor/xview.hpp"
 #include <fmt/format.h>
 #include <netcdf.h>
-#include <algorithm>
-#include <fstream>
 #include <limits>
 #include <stdexcept>
 
@@ -51,6 +46,126 @@ struct FileHandle
         nc_close( ncid );
     }
 };
+
+enum class XY
+{
+    X,
+    Y
+};
+
+VectorX get_xy_from_netcdf( int ncid, XY xy )
+{
+    // get the varid
+    int varid{};
+
+    if( xy == XY::X )
+        CHECK( nc_inq_varid( ncid, "x", &varid ) );
+    else
+        CHECK( nc_inq_varid( ncid, "y", &varid ) );
+
+    // read the attributes
+    nc_type vartype{};
+    int num_dims{};
+    int dimids[NC_MAX_DIMS];
+    int num_attrs{};
+    CHECK( nc_inq_var( ncid, varid, nullptr, &vartype, &num_dims, dimids, &num_attrs ) );
+
+    // compute the length
+    size_t dim_lengths[NC_MAX_DIMS];
+    for( int i = 0; i < num_dims; i++ )
+    {
+        CHECK( nc_inq_dimlen( ncid, dimids[i], &dim_lengths[i] ) );
+    }
+
+    size_t total_size = 1;
+    for( int i = 0; i < num_dims; i++ )
+    {
+        total_size *= dim_lengths[i];
+    }
+
+    VectorX data = xt::zeros<double>( { total_size } );
+
+    size_t start = 0;
+    size_t count = total_size;
+    nc_get_vara_double( ncid, varid, &start, &count, data.data() );
+
+    return data;
+}
+
+VectorX get_elevation_from_netcdf( int ncid )
+{
+    // get the varid
+    int varid{};
+
+    CHECK( nc_inq_varid( ncid, "elevation", &varid ) );
+
+    // read the attributes
+    nc_type vartype{};
+    int num_dims{};
+    int dimids[NC_MAX_DIMS];
+    int num_attrs{};
+    CHECK( nc_inq_var( ncid, varid, nullptr, &vartype, &num_dims, dimids, &num_attrs ) );
+
+    // compute the length
+    size_t dim_lengths[NC_MAX_DIMS];
+    for( int i = 0; i < num_dims; i++ )
+    {
+        CHECK( nc_inq_dimlen( ncid, dimids[i], &dim_lengths[i] ) );
+    }
+
+    // This is the data we will return
+    MatrixX data   = xt::zeros<double>( { dim_lengths[0], dim_lengths[1] } );
+    size_t start[] = { 0, 0 };
+    size_t count[] = { dim_lengths[0], dim_lengths[1] };
+
+    if( vartype == NC_FLOAT )
+    {
+        xt::xtensor<float, 2> data_read = xt::zeros<float>( { dim_lengths[0], dim_lengths[1] } );
+        nc_get_vara_float( ncid, varid, start, count, data_read.data() );
+        data = data_read;
+    }
+    else if( vartype == NC_DOUBLE )
+    {
+        nc_get_vara_double( ncid, varid, start, count, data.data() );
+    }
+    else if( vartype == NC_SHORT )
+    {
+        // Read the scale factor and add_offset attributes
+        double scale_factor{};
+        CHECK( nc_get_att_double( ncid, varid, "scale_factor", &scale_factor ) );
+
+        double add_offset{};
+        CHECK( nc_get_att_double( ncid, varid, "add_offset", &add_offset ) );
+
+        xt::xtensor<short, 2> data_read = xt::zeros<short>( { dim_lengths[0], dim_lengths[1] } );
+        nc_get_vara_short( ncid, varid, start, count, data_read.data() );
+        data = data_read;
+        data *= scale_factor;
+        data += add_offset;
+    }
+
+    // We need to undo the transformation we apply before saving
+    data = xt::transpose( xt::flip( data, 0 ) );
+
+    return data;
+}
+
+NetCDFFile::NetCDFFile( const std::filesystem::path & path, const std::optional<TopographyCrop> & crop )
+{
+    auto file_handle = FileHandle( path );
+    int ncid         = file_handle.ncid;
+
+    // Remember: Our x,y and their xy are flipped. Also theirs refers to the center of pixels, while ours refers to the
+    // lower left corner
+    y_data = get_xy_from_netcdf( ncid, XY::X );
+    y_data = xt::flip( y_data );
+    y_data -= 0.5 * cell_size();
+
+    x_data = get_xy_from_netcdf( ncid, XY::Y );
+    x_data -= 0.5 * cell_size();
+
+    data = get_elevation_from_netcdf( ncid );
+}
 
 void NetCDFFile::save( const std::filesystem::path & path_ )
 {

@@ -32,7 +32,8 @@ public:
             : TopographyFile::TopographyFile( topography, output )
     {
     }
-    // NetCDFFile( const std::filesystem::path & path, const std::optional<TopographyCrop> & crop = std::nullopt );
+
+    NetCDFFile( const std::filesystem::path & path, const std::optional<TopographyCrop> & crop = std::nullopt );
 
     std::string suffix() override
     {
