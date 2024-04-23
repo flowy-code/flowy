@@ -5,6 +5,7 @@
 #include "xtensor/xmanipulation.hpp"
 #include "xtensor/xmath.hpp"
 #include <fmt/format.h>
+#include <fmt/ostream.h>
 #include <netcdf.h>
 #include <limits>
 #include <stdexcept>
@@ -15,7 +16,10 @@ namespace Flowy
 void NetCDFFile::determine_scale_and_offset()
 {
     double data_max = xt::amax( data )();
+    data_max        = std::max( data_max, no_data_value );
+
     double data_min = xt::amin( data )();
+    data_min        = std::min( data_min, no_data_value );
 
     auto int_range = static_cast<double>( std::numeric_limits<short>::max() )
                      - static_cast<double>( std::numeric_limits<short>::min() );
@@ -36,9 +40,16 @@ void CHECK( int retval )
 struct FileHandle
 {
     int ncid{};
-    FileHandle( const std::filesystem::path & path )
+    FileHandle( const std::filesystem::path & path, bool read = false )
     {
-        CHECK( nc_create( path.string().c_str(), NC_NETCDF4, &ncid ) );
+        if( read )
+        {
+            CHECK( nc_open( path.string().c_str(), NC_NETCDF4, &ncid ) );
+        }
+        else
+        {
+            CHECK( nc_create( path.string().c_str(), NC_NETCDF4, &ncid ) );
+        }
     }
 
     ~FileHandle()
@@ -57,23 +68,32 @@ VectorX get_xy_from_netcdf( int ncid, XY xy )
 {
     // get the varid
     int varid{};
-
+    std::string name{};
     if( xy == XY::X )
+    {
+        name = "x";
         CHECK( nc_inq_varid( ncid, "x", &varid ) );
+    }
     else
+    {
+        name = "y";
         CHECK( nc_inq_varid( ncid, "y", &varid ) );
+    }
 
     // read the attributes
     nc_type vartype{};
     int num_dims{};
     int dimids[NC_MAX_DIMS];
     int num_attrs{};
+
     CHECK( nc_inq_var( ncid, varid, nullptr, &vartype, &num_dims, dimids, &num_attrs ) );
 
     // compute the length
     size_t dim_lengths[NC_MAX_DIMS];
+
     for( int i = 0; i < num_dims; i++ )
     {
+        CHECK( nc_inq_dimid( ncid, name.c_str(), &dimids[i] ) );
         CHECK( nc_inq_dimlen( ncid, dimids[i], &dim_lengths[i] ) );
     }
 
@@ -85,14 +105,12 @@ VectorX get_xy_from_netcdf( int ncid, XY xy )
 
     VectorX data = xt::zeros<double>( { total_size } );
 
-    size_t start = 0;
-    size_t count = total_size;
-    nc_get_vara_double( ncid, varid, &start, &count, data.data() );
+    nc_get_var_double( ncid, varid, data.data() );
 
     return data;
 }
 
-VectorX get_elevation_from_netcdf( int ncid )
+MatrixX NetCDFFile::get_elevation_from_netcdf( int ncid )
 {
     // get the varid
     int varid{};
@@ -108,25 +126,30 @@ VectorX get_elevation_from_netcdf( int ncid )
 
     // compute the length
     size_t dim_lengths[NC_MAX_DIMS];
+
+    CHECK( nc_inq_dimid( ncid, "x", &dimids[0] ) );
+    CHECK( nc_inq_dimid( ncid, "y", &dimids[1] ) );
+
     for( int i = 0; i < num_dims; i++ )
     {
         CHECK( nc_inq_dimlen( ncid, dimids[i], &dim_lengths[i] ) );
     }
 
+    // Set the no_data value to the fill value
+    CHECK( nc_get_att_double( ncid, varid, "_FillValue", &no_data_value ) );
+
     // This is the data we will return
-    MatrixX data   = xt::zeros<double>( { dim_lengths[0], dim_lengths[1] } );
-    size_t start[] = { 0, 0 };
-    size_t count[] = { dim_lengths[0], dim_lengths[1] };
+    MatrixX data = xt::zeros<double>( { dim_lengths[0], dim_lengths[1] } );
 
     if( vartype == NC_FLOAT )
     {
         xt::xtensor<float, 2> data_read = xt::zeros<float>( { dim_lengths[0], dim_lengths[1] } );
-        nc_get_vara_float( ncid, varid, start, count, data_read.data() );
+        nc_get_var_float( ncid, varid, data_read.data() );
         data = data_read;
     }
     else if( vartype == NC_DOUBLE )
     {
-        nc_get_vara_double( ncid, varid, start, count, data.data() );
+        nc_get_var_double( ncid, varid, data.data() );
     }
     else if( vartype == NC_SHORT )
     {
@@ -138,21 +161,23 @@ VectorX get_elevation_from_netcdf( int ncid )
         CHECK( nc_get_att_double( ncid, varid, "add_offset", &add_offset ) );
 
         xt::xtensor<short, 2> data_read = xt::zeros<short>( { dim_lengths[0], dim_lengths[1] } );
-        nc_get_vara_short( ncid, varid, start, count, data_read.data() );
+        nc_get_var_short( ncid, varid, data_read.data() );
         data = data_read;
         data *= scale_factor;
         data += add_offset;
+
+        no_data_value *= scale_factor;
+        no_data_value += add_offset;
     }
 
     // We need to undo the transformation we apply before saving
-    data = xt::transpose( xt::flip( data, 0 ) );
-
+    data = xt::eval( xt::transpose( xt::flip( data, 0 ) ) );
     return data;
 }
 
 NetCDFFile::NetCDFFile( const std::filesystem::path & path, const std::optional<TopographyCrop> & crop )
 {
-    auto file_handle = FileHandle( path );
+    auto file_handle = FileHandle( path, true );
     int ncid         = file_handle.ncid;
 
     // Remember: Our x,y and their xy are flipped. Also theirs refers to the center of pixels, while ours refers to the
@@ -160,11 +185,13 @@ NetCDFFile::NetCDFFile( const std::filesystem::path & path, const std::optional<
     y_data = get_xy_from_netcdf( ncid, XY::X );
     y_data = xt::flip( y_data );
     y_data -= 0.5 * cell_size();
-
     x_data = get_xy_from_netcdf( ncid, XY::Y );
     x_data -= 0.5 * cell_size();
-
     data = get_elevation_from_netcdf( ncid );
+
+    // apply crop
+    if( crop.has_value() )
+        crop_topography( crop.value() );
 }
 
 void NetCDFFile::save( const std::filesystem::path & path_ )
@@ -205,14 +232,12 @@ void NetCDFFile::save( const std::filesystem::path & path_ )
 
     // header for y variable (we save x_data here)
     int varid_y{};
-    int dimid_y{};
-    CHECK( nc_def_var( ncid, "y", NC_DOUBLE, 1, &dimid_y, &varid_y ) );
+    CHECK( nc_def_var( ncid, "y", NC_DOUBLE, 1, &dimids[1], &varid_y ) );
     CHECK( nc_put_att_text( ncid, varid_y, "units", unit.size(), unit.c_str() ) );
 
     // header for x variable (we save y_data here)
     int varid_x{};
-    int dimid_x{};
-    CHECK( nc_def_var( ncid, "x", NC_DOUBLE, 1, &dimid_x, &varid_x ) );
+    CHECK( nc_def_var( ncid, "x", NC_DOUBLE, 1, &dimids[0], &varid_x ) );
     CHECK( nc_put_att_text( ncid, varid_x, "units", unit.size(), unit.c_str() ) );
 
     // header for elevation variable
@@ -221,8 +246,23 @@ void NetCDFFile::save( const std::filesystem::path & path_ )
     CHECK( nc_def_var( ncid, "elevation", dtype, numdims, dimids, &varid_elevation ) );
     CHECK( nc_put_att_text( ncid, varid_elevation, "units", unit.size(), unit.c_str() ) );
 
-    CHECK( nc_def_var_fill( ncid, varid_elevation, 0, &no_data_value ) );
+    // Set the fill value
+    if( data_type == StorageDataType::Double )
+    {
+        CHECK( nc_def_var_fill( ncid, varid_elevation, 0, &no_data_value ) );
+    }
+    else if( data_type == StorageDataType::Float )
+    {
+        float no_data_value_temp = no_data_value;
+        CHECK( nc_def_var_fill( ncid, varid_elevation, 0, &no_data_value_temp ) );
+    }
+    else if( data_type == StorageDataType::Short )
+    {
+        short no_data_value_temp = no_data_value;
+        CHECK( nc_def_var_fill( ncid, varid_elevation, 0, &no_data_value_temp ) );
+    }
 
+    // Write elevation data
     if( compression )
     {
         CHECK( nc_def_var_deflate( ncid, varid_elevation, static_cast<int>( shuffle ), 1, compression_level ) );

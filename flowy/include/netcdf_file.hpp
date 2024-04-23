@@ -20,6 +20,7 @@ class NetCDFFile : public TopographyFile
     std::optional<double> scale_factor = std::nullopt;
     std::optional<double> add_offset   = std::nullopt;
     void determine_scale_and_offset();
+    MatrixX get_elevation_from_netcdf( int ncid );
 
 public:
     bool compression      = false;
