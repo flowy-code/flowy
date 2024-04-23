@@ -15,7 +15,7 @@ struct TopographyCrop
     double y_max;
 };
 
-enum class Output
+enum class OutputQuantitiy
 {
     Hazard,
     Height
@@ -37,14 +37,14 @@ public:
     TopographyFile() = default;
 
     // Constructor that takes topography
-    TopographyFile( const Topography & topography, Output output )
+    TopographyFile( const Topography & topography, OutputQuantitiy output )
             : x_data( topography.x_data ), y_data( topography.y_data )
     {
-        if( output == Output::Height )
+        if( output == OutputQuantitiy::Height )
         {
             data = topography.height_data;
         }
-        else if( output == Output::Hazard )
+        else if( output == OutputQuantitiy::Hazard )
         {
             data = topography.hazard;
         }
@@ -76,7 +76,8 @@ public:
     }
 
     virtual void save( const std::filesystem::path & path ) = 0;
-    virtual ~TopographyFile()                               = default;
+
+    virtual ~TopographyFile() = default;
 
     // Crops the topography according to user-defined crop dimensions
     virtual void crop_to_content()

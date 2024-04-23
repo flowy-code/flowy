@@ -6,7 +6,9 @@
 #include "flowy/include/definitions.hpp"
 #include "flowy/include/lobe.hpp"
 #include "flowy/include/topography.hpp"
+#include "flowy/include/topography_file.hpp"
 #include <filesystem>
+#include <memory>
 #include <random>
 #include <vector>
 
@@ -62,6 +64,8 @@ public:
     bool stop_condition( const Vector2 & point, double radius );
 
     void write_avg_thickness_file();
+
+    std::unique_ptr<TopographyFile> get_file_handle( const Topography & topography, OutputQuantitiy output_quantity );
 
     std::optional<std::vector<double>> compute_cumulative_fissure_length();
 

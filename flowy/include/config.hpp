@@ -2,6 +2,7 @@
 // GPL v3 License
 // Copyright 2023--present Flowy developers
 #include "flowy/include/definitions.hpp"
+#include "flowy/include/netcdf_file.hpp"
 #include <filesystem>
 #include <optional>
 #include <string>
@@ -9,6 +10,15 @@
 
 namespace Flowy::Config
 {
+
+struct OutputSettings
+{
+    bool crop_to_content           = true;
+    bool use_netcdf                = true;
+    std::optional<int> compression = 5;
+    bool shuffle                   = true;
+    StorageDataType data_type      = StorageDataType::Float;
+};
 
 class InputParams
 {
@@ -19,6 +29,8 @@ public:
 
     // The folder output is written to
     std::filesystem::path output_folder = "./output";
+
+    OutputSettings output_settings{};
 
     // If set to true one csv file, per flow, is written to the output folder.
     // The files are named 'lobes_{idx_flow}.csv' and contain information about the lobes in that specific flow

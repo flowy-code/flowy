@@ -52,8 +52,10 @@ struct FileHandle
     }
 };
 
-void NetCDFFile::save( const std::filesystem::path & path )
+void NetCDFFile::save( const std::filesystem::path & path_ )
 {
+    auto path = path_;
+    path.replace_extension( suffix );
 
     // define data type according to desired output type
     int dtype{};
