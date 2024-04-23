@@ -1,6 +1,6 @@
 project('flowy', 'cpp',
   version : '0.1',
-  default_options : ['warning_level=3', 'cpp_std=c++20', 'optimization=3'])
+  default_options : ['warning_level=3', 'cpp_std=c++20', 'optimization=0'])
 
 cpp_args = []
 
@@ -72,7 +72,7 @@ if get_option('build_tests')
     ['Test_Lobe', 'test/test_lobe.cpp'],
     ['Test_Trunc_Normal', 'test/test_truncated_normal.cpp'],
     ['Test_Raster', 'test/test_rasterization.cpp'],
-    ['Test_NetCDF', 'test/test_netcdf.cpp']
+    ['Test_FileIO', 'test/test_file_io.cpp']
   ]
 
   Catch2 = dependency('Catch2', method : 'cmake', modules : ['Catch2::Catch2WithMain', 'Catch2::Catch2'])
