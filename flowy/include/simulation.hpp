@@ -65,7 +65,8 @@ public:
 
     void write_avg_thickness_file();
 
-    std::unique_ptr<TopographyFile> get_file_handle( const Topography & topography, OutputQuantitiy output_quantity );
+    std::unique_ptr<TopographyFile>
+    get_file_handle( const Topography & topography, OutputQuantitiy output_quantity, double no_data_value );
 
     std::optional<std::vector<double>> compute_cumulative_fissure_length();
 

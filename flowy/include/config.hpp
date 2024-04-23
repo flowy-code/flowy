@@ -13,11 +13,12 @@ namespace Flowy::Config
 
 struct OutputSettings
 {
-    bool crop_to_content           = true;
-    bool use_netcdf                = true;
-    std::optional<int> compression = 5;
-    bool shuffle                   = true;
-    StorageDataType data_type      = StorageDataType::Float;
+    bool crop_to_content      = true;
+    bool use_netcdf           = true;
+    bool compression          = true;
+    int compression_level     = 5;
+    bool shuffle              = true;
+    StorageDataType data_type = StorageDataType::Float;
 };
 
 class InputParams

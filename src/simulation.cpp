@@ -445,19 +445,21 @@ void Simulation::write_avg_thickness_file()
         file << fmt::format( "Masked area = {} m2\n", area_masked );
         file << fmt::format( "Average thickness mask = {} m\n", avg_thickness );
 
+        // We make a temporary copy of the thickness topography
+        Topography topography_masked = topography_thickness;
+
+        // Apply the thickness filter to both
+        xt::filter( topography_masked.height_data, topography_thickness.height_data < threshold_thickness ) = 0.0;
+        xt::filter( topography_masked.hazard, topography_thickness.height_data < threshold_thickness )      = 0.0;
+
         // Write the masked thickness and the masked hazard maps
-        auto file_thick = get_file_handle( topography_thickness, OutputQuantitiy::Height );
-        // apply the filter mask
-        xt::filter( file_thick->data, file_thick->data < threshold_thickness ) = 0.0;
-        file_thick->no_data_value                                              = 0;
+        auto file_thick = get_file_handle( topography_masked, OutputQuantitiy::Height, 0.0 );
         file_thick->save(
             input.output_folder / fmt::format( "{}_thickness_masked_{:.2f}", input.run_name, threshold ) );
 
         if( input.save_hazard_data )
         {
-            auto file_hazard           = get_file_handle( topography, OutputQuantitiy::Hazard );
-            file_hazard->no_data_value = 0;
-            xt::filter( file_hazard->data, file_thick->data < threshold_thickness ) = 0.0;
+            auto file_hazard = get_file_handle( topography_masked, OutputQuantitiy::Hazard, 0.0 );
             file_hazard->save(
                 input.output_folder / fmt::format( "{}_hazard_masked_{:.2f}", input.run_name, threshold ) );
         }
@@ -466,17 +468,17 @@ void Simulation::write_avg_thickness_file()
 }
 
 std::unique_ptr<TopographyFile>
-Simulation::get_file_handle( const Topography & topography, OutputQuantitiy output_quantity )
+Simulation::get_file_handle( const Topography & topography, OutputQuantitiy output_quantity, double no_data_value )
 {
     std::unique_ptr<TopographyFile> res{};
 
     if( input.output_settings.use_netcdf )
     {
         auto netcdf_file        = NetCDFFile( topography, output_quantity );
-        netcdf_file.compression = input.output_settings.compression.has_value();
+        netcdf_file.compression = input.output_settings.compression;
         if( netcdf_file.compression )
         {
-            netcdf_file.compression_level = input.output_settings.compression.value();
+            netcdf_file.compression_level = input.output_settings.compression_level;
             netcdf_file.shuffle           = input.output_settings.shuffle;
             netcdf_file.data_type         = input.output_settings.data_type;
         }
@@ -487,6 +489,8 @@ Simulation::get_file_handle( const Topography & topography, OutputQuantitiy outp
         auto asc_file = AscFile( topography, output_quantity );
         res           = std::make_unique<AscFile>( asc_file );
     }
+
+    res->no_data_value = no_data_value;
 
     if( input.output_settings.crop_to_content )
         res->crop_to_content();
@@ -667,13 +671,13 @@ void Simulation::run()
     fmt::print( "Used RNG seed: {}\n", rng_seed );
 
     // Save initial topography to asc file
-    auto file_initial = get_file_handle( topography_initial, OutputQuantitiy::Height );
+    auto file_initial = get_file_handle( topography_initial, OutputQuantitiy::Height, -9999.0 );
     file_initial->save( input.output_folder / fmt::format( "{}_DEM", input.run_name ) );
 
     // Save final topography to asc file
     if( input.save_final_dem )
     {
-        auto file_final = get_file_handle( topography, OutputQuantitiy::Height );
+        auto file_final = get_file_handle( topography, OutputQuantitiy::Height, -9999.0 );
         file_final->save( input.output_folder / fmt::format( "{}_DEM_final", input.run_name ) );
     }
 
@@ -682,14 +686,14 @@ void Simulation::run()
     topography_thickness.height_data -= topography_initial.height_data;
     topography_thickness.height_data /= ( 1.0 - input.thickening_parameter );
 
-    auto file_thick           = get_file_handle( topography_thickness, OutputQuantitiy::Height );
+    auto file_thick           = get_file_handle( topography_thickness, OutputQuantitiy::Height, 0.0 );
     file_thick->no_data_value = 0;
     file_thick->save( input.output_folder / fmt::format( "{}_thickness_full", input.run_name ) );
 
     // Save the full hazard map
     if( input.save_hazard_data )
     {
-        auto file_hazard           = get_file_handle( topography, OutputQuantitiy::Hazard );
+        auto file_hazard           = get_file_handle( topography, OutputQuantitiy::Hazard, 0.0 );
         file_hazard->no_data_value = 0;
         file_hazard->save( input.output_folder / fmt::format( "{}_hazard_full", input.run_name ) );
     }
