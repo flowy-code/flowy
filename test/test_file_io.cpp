@@ -176,7 +176,7 @@ TEST_CASE( "file_crop_to_content", "[crop_to_content]" )
 
     auto proj_root_path   = fs::current_path();
     auto asc_file_path    = proj_root_path / fs::path( "test/res/asc/before_crop_to_content.asc" );
-    auto output_file_path = proj_root_path / fs::path( "test/res/asc/after_crop_to_content.asc" );
+    auto output_file_path = proj_root_path / fs::path( "test/res/asc/after_crop_to_content" );
 
     // Read in the topography from the ASCII file, with no crop
     auto asc_file = Flowy::AscFile( asc_file_path );
