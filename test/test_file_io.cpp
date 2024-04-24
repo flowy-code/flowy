@@ -185,7 +185,11 @@ TEST_CASE( "file_crop_to_content", "[crop_to_content]" )
     INFO( fmt::format( "x_data = {}\n", fmt::streamed( asc_file.x_data ) ) );
     INFO( fmt::format( "y_data = {}\n", fmt::streamed( asc_file.y_data ) ) );
 
+    double max_before = xt::amax( asc_file.data )();
     asc_file.crop_to_content();
+    double max_after = xt::amax( asc_file.data )();
+
+    REQUIRE( max_before == max_after );
 
     INFO( fmt::format( "Data from file after crop to content\n,data = {}\n", fmt::streamed( asc_file.data ) ) );
     INFO( fmt::format( "x_data = {}\n", fmt::streamed( asc_file.x_data ) ) );
