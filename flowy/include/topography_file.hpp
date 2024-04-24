@@ -78,6 +78,11 @@ public:
     // Coordinates of lower left corner
     Vector2 lower_left_corner() const
     {
+        if( x_data.size() < 1 || y_data.size() < 1 )
+        {
+            return { 0, 0 };
+        }
+
         return { x_data[0], y_data[0] };
     }
 
@@ -116,6 +121,12 @@ public:
                         idx_y_max = iy;
                 }
             }
+        }
+
+        // TODO: figure out what to do if idx_min == idx_max
+        if( idx_x_min == idx_x_max || idx_y_min == idx_y_max )
+        {
+            return;
         }
 
         data   = xt::view( data, xt::range( idx_x_min, idx_x_max + 1 ), xt::range( idx_y_min, idx_y_max + 1 ) );
