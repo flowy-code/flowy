@@ -169,3 +169,27 @@ TEST_CASE( "file_test_with_crop", "[crop]" )
     REQUIRE( asc_file.y_data.periodic( -1 ) >= crop.y_max );
     REQUIRE( asc_file.data.shape() == xt::shape( { asc_file.x_data.size(), asc_file.y_data.size() } ) );
 }
+
+TEST_CASE( "file_crop_to_content", "[crop_to_content]" )
+{
+    namespace fs = std::filesystem;
+
+    auto proj_root_path   = fs::current_path();
+    auto asc_file_path    = proj_root_path / fs::path( "test/res/asc/before_crop_to_content.asc" );
+    auto output_file_path = proj_root_path / fs::path( "test/res/asc/after_crop_to_content.asc" );
+
+    // Read in the topography from the ASCII file, with no crop
+    auto asc_file = Flowy::AscFile( asc_file_path );
+
+    INFO( fmt::format( "Data from file before crop to content\n,data = {}\n", fmt::streamed( asc_file.data ) ) );
+    INFO( fmt::format( "x_data = {}\n", fmt::streamed( asc_file.x_data ) ) );
+    INFO( fmt::format( "y_data = {}\n", fmt::streamed( asc_file.y_data ) ) );
+
+    asc_file.crop_to_content();
+
+    INFO( fmt::format( "Data from file after crop to content\n,data = {}\n", fmt::streamed( asc_file.data ) ) );
+    INFO( fmt::format( "x_data = {}\n", fmt::streamed( asc_file.x_data ) ) );
+    INFO( fmt::format( "y_data = {}\n", fmt::streamed( asc_file.y_data ) ) );
+
+    asc_file.save( output_file_path );
+}
