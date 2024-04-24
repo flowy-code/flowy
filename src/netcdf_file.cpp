@@ -234,15 +234,18 @@ void NetCDFFile::save( const std::filesystem::path & path_ )
     int varid_y{};
     CHECK( nc_def_var( ncid, "y", NC_DOUBLE, 1, &dimids[1], &varid_y ) );
     CHECK( nc_put_att_text( ncid, varid_y, "units", unit.size(), unit.c_str() ) );
+    std::string att = "projection_y_coordinate";
+    CHECK( nc_put_att_text( ncid, varid_y, "standard_name", att.size(), att.c_str() ) );
 
     // header for x variable (we save y_data here)
     int varid_x{};
     CHECK( nc_def_var( ncid, "x", NC_DOUBLE, 1, &dimids[0], &varid_x ) );
     CHECK( nc_put_att_text( ncid, varid_x, "units", unit.size(), unit.c_str() ) );
+    att = "projection_x_coordinate";
+    CHECK( nc_put_att_text( ncid, varid_x, "standard_name", att.size(), att.c_str() ) );
 
     // header for elevation variable
     int varid_elevation{};
-
     CHECK( nc_def_var( ncid, "elevation", dtype, numdims, dimids, &varid_elevation ) );
     CHECK( nc_put_att_text( ncid, varid_elevation, "units", unit.size(), unit.c_str() ) );
 
