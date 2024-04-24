@@ -162,25 +162,18 @@ void Simulation::compute_initial_lobe_position( int idx_flow, Lobe & lobe )
         // Find a random point on the polyline.
         std::uniform_real_distribution<double> dist( 0.0, 1.0 );
         double cum_dist = dist( gen );
-        // cumulative_fissure_len is sorted.
-        auto it = std::lower_bound(
-            cumulative_fissure_lens.value().begin(), cumulative_fissure_lens.value().end(), cum_dist );
-        // if (it == cumulative_fissure_lens.value().begin()){
-        //     lobe.center  = input.vent_coordinates[0];
-        //     return;
-        // }
-        size_t x_vent_index = it - cumulative_fissure_lens.value().begin();
+
+        auto fiss_len       = xt::adapt( cumulative_fissure_lens.value(), { cumulative_fissure_lens->size() } );
+        size_t x_vent_index = xt::argmax( fiss_len > cum_dist )();
 
         auto diff_from_prev_vent = cum_dist - cumulative_fissure_lens.value()[x_vent_index - 1];
 
         double diff_between_vents
             = cumulative_fissure_lens.value()[x_vent_index] - cumulative_fissure_lens.value()[x_vent_index - 1];
         double alpha_segment = diff_from_prev_vent / diff_between_vents;
-        double x             = alpha_segment * input.vent_coordinates[x_vent_index][0]
-                   + ( 1.0 - alpha_segment ) * input.vent_coordinates[x_vent_index - 1][0];
-        double y = alpha_segment * input.vent_coordinates[x_vent_index][1]
-                   + ( 1.0 - alpha_segment ) * input.vent_coordinates[x_vent_index - 1][1];
-        lobe.center = { x, y };
+
+        lobe.center = alpha_segment * input.vent_coordinates[x_vent_index]
+                      + ( 1.0 - alpha_segment ) * input.vent_coordinates[x_vent_index - 1];
     }
     else
     {
