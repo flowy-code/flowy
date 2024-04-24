@@ -61,7 +61,7 @@ public:
 
     bool save_hazard_data{}; // If true, a raster map is saved, such that the values represent the probability of a cell
                              // to be covered by lava.
-    int n_flows{};           // Number of flows per run
+    int n_flows{ 1 };        // Number of flows per run
     int n_lobes{};           // Number of lobes per flow
     double thickening_parameter{}; // Parameter that affects calculation of the slope [0,1]
     std::optional<double>
@@ -71,8 +71,8 @@ public:
 
     // Variables we don't understand
     std::vector<double> masking_threshold{};
-    int min_n_lobes{};
-    int max_n_lobes{};
+    int min_n_lobes{ 0 };
+    int max_n_lobes{ 1 };
 
     /*
     Inertial exponent, used for calculating the inertial modification to the azimuthal angle (also depends on the slope,

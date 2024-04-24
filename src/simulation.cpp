@@ -57,6 +57,13 @@ CommonLobeDimensions::CommonLobeDimensions( const Config::InputParams & input, c
     max_semiaxis      = std::sqrt( lobe_area * input.max_aspect_ratio / Math::pi );
     max_cells         = std::ceil( 2.0 * max_semiaxis / asc_file.cell_size() ) + 2;
     thickness_min     = 2.0 * input.thickness_ratio / ( input.thickness_ratio + 1.0 ) * avg_lobe_thickness;
+
+    FLOWY_CHECK( lobe_area );
+    FLOWY_CHECK( avg_lobe_thickness );
+    FLOWY_CHECK( thickness_min );
+    FLOWY_CHECK( exp_lobe_exponent );
+    FLOWY_CHECK( max_semiaxis );
+    FLOWY_CHECK( max_cells );
 }
 
 Simulation::Simulation( const Config::InputParams & input, std::optional<int> rng_seed ) : input( input )
@@ -534,8 +541,7 @@ void Simulation::run()
         topography.reset_intersection_cache( n_lobes );
 
         // Calculated for each flow with n_lobes number of lobes
-        double delta_lobe_thickness
-            = 2.0 * ( lobe_dimensions.avg_lobe_thickness - lobe_dimensions.thickness_min ) / ( n_lobes - 1.0 );
+        FLOWY_CHECK( delta_lobe_thickness );
 
         // Build initial lobes which do not propagate descendents
         for( int idx_lobe = 0; idx_lobe < input.n_init; idx_lobe++ )

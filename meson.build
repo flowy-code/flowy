@@ -8,7 +8,7 @@ cpp = meson.get_compiler('cpp')
 
 # clang and gcc specific flags
 if cpp.get_id() == 'gcc' or cpp.get_id() == 'clang'
-  cpp_args += ['-Wno-unused-local-typedefs', '-Wno-array-bounds', '-ffast-math']
+  cpp_args += ['-Wno-unused-local-typedefs', '-Wno-array-bounds', '-ffast-math', '-fno-finite-math-only']
 endif
 
 if cpp_args.length() > 0
