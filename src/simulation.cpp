@@ -476,11 +476,11 @@ Simulation::get_file_handle( const Topography & topography, OutputQuantitiy outp
     {
         auto netcdf_file        = NetCDFFile( topography, output_quantity );
         netcdf_file.compression = input.output_settings.compression;
+        netcdf_file.data_type   = input.output_settings.data_type;
         if( netcdf_file.compression )
         {
             netcdf_file.compression_level = input.output_settings.compression_level;
             netcdf_file.shuffle           = input.output_settings.shuffle;
-            netcdf_file.data_type         = input.output_settings.data_type;
         }
         res = std::make_unique<NetCDFFile>( netcdf_file );
     }
