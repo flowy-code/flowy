@@ -532,6 +532,8 @@ void Simulation::run()
 
         // set the intersection cache
         topography.reset_intersection_cache( n_lobes );
+        double delta_lobe_thickness
+            = 2.0 * ( lobe_dimensions.avg_lobe_thickness - lobe_dimensions.thickness_min ) / ( n_lobes - 1.0 );
 
         // Calculated for each flow with n_lobes number of lobes
         FLOWY_CHECK( delta_lobe_thickness );

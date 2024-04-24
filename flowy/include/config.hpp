@@ -13,8 +13,8 @@ namespace Flowy::Config
 
 struct OutputSettings
 {
-    bool crop_to_content      = true;
-    bool use_netcdf           = true;
+    bool crop_to_content      = false;
+    bool use_netcdf           = false;
     bool compression          = true;
     int compression_level     = 5;
     bool shuffle              = true;
