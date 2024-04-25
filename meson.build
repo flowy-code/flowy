@@ -28,13 +28,22 @@ _sources = [
 # Library dependencies
 pdflib_dep = dependency('pdf_cpplib', fallback : ['pdf_cpplib', 'pdflib_dep'])
 
+## Netcdf
+# On windows the conda-forge netcdf pkg-config file tells us to link against a mysterious debug.lib
+# Therefore, we use cmake as the preferred method, which does not make problems
+netcdf_dep = dependency('netcdf',  language : 'cpp', method: 'cmake', required: false)
+# On the linux CI, however, cmake cant find netcdf. So we still use pkg-config as a fallback.
+if not netcdf_dep.found()
+  netcdf_dep = dependency('netcdf',  language : 'cpp', method: 'pkg-config')
+endif
+
 _deps = [
   pdflib_dep,
   dependency('xtensor'),
   dependency('xtensor-blas'),
   dependency('fmt'),
   dependency('tomlplusplus'),
-  dependency('netcdf', language : 'cpp', method : 'cmake')
+  netcdf_dep
 ]
 
 # Static libraries for the executable and tests, shared for the bindings
