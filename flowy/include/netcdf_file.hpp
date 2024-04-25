@@ -4,6 +4,7 @@
 
 #include "flowy/include/topography_file.hpp"
 #include <optional>
+#include <string>
 
 namespace Flowy
 {
@@ -34,7 +35,8 @@ public:
     {
     }
 
-    NetCDFFile( const std::filesystem::path & path, const std::optional<TopographyCrop> & crop = std::nullopt );
+    explicit NetCDFFile(
+        const std::filesystem::path & path, const std::optional<TopographyCrop> & crop = std::nullopt );
 
     std::string suffix() override
     {

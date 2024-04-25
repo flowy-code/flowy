@@ -1,9 +1,12 @@
 #pragma once
+// GPL v3 License
+// Copyright 2023--present Flowy developers
 #include "flowy/include/definitions.hpp"
 #include "flowy/include/topography.hpp"
 #include <cstddef>
 #include <filesystem>
 #include <stdexcept>
+#include <string>
 namespace Flowy
 {
 
@@ -23,7 +26,6 @@ enum class OutputQuantitiy
 
 class TopographyFile
 {
-
 protected:
     virtual std::string suffix() = 0;
 

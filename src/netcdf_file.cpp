@@ -21,11 +21,11 @@ void NetCDFFile::determine_scale_and_offset()
     double data_min = xt::amin( data )();
     data_min        = std::min( data_min, no_data_value );
 
-    auto int_range = static_cast<double>( std::numeric_limits<short>::max() )
-                     - static_cast<double>( std::numeric_limits<short>::min() );
+    auto int_range = static_cast<double>( std::numeric_limits<int16_t>::max() )
+                     - static_cast<double>( std::numeric_limits<int16_t>::min() );
 
     scale_factor = ( data_max - data_min ) / int_range;
-    add_offset   = data_min - std::numeric_limits<short>::min() * scale_factor.value();
+    add_offset   = data_min - std::numeric_limits<int16_t>::min() * scale_factor.value();
 }
 
 void CHECK( int retval )
@@ -40,7 +40,7 @@ void CHECK( int retval )
 struct FileHandle
 {
     int ncid{};
-    FileHandle( const std::filesystem::path & path, bool read = false )
+    explicit FileHandle( const std::filesystem::path & path, bool read = false )
     {
         if( read )
         {
@@ -160,7 +160,7 @@ MatrixX NetCDFFile::get_elevation_from_netcdf( int ncid )
         double add_offset{};
         CHECK( nc_get_att_double( ncid, varid, "add_offset", &add_offset ) );
 
-        xt::xtensor<short, 2> data_read = xt::zeros<short>( { dim_lengths[0], dim_lengths[1] } );
+        xt::xtensor<int16_t, 2> data_read = xt::zeros<int16_t>( { dim_lengths[0], dim_lengths[1] } );
         nc_get_var_short( ncid, varid, data_read.data() );
         data = data_read;
         data *= scale_factor;
@@ -261,7 +261,7 @@ void NetCDFFile::save( const std::filesystem::path & path_ )
     }
     else if( data_type == StorageDataType::Short )
     {
-        short no_data_value_temp = no_data_value;
+        int16_t no_data_value_temp = no_data_value;
         CHECK( nc_def_var_fill( ncid, varid_elevation, 0, &no_data_value_temp ) );
     }
 
@@ -298,8 +298,8 @@ void NetCDFFile::save( const std::filesystem::path & path_ )
     }
     else if( data_type == StorageDataType::Short )
     {
-        xt::xtensor<short, 2> data_ = xt::round( ( data_out - add_offset.value() ) / scale_factor.value() );
-        CHECK( nc_put_var_short( ncid, varid_elevation, static_cast<short *>( data_.data() ) ) );
+        xt::xtensor<int16_t, 2> data_ = xt::round( ( data_out - add_offset.value() ) / scale_factor.value() );
+        CHECK( nc_put_var_short( ncid, varid_elevation, static_cast<int16_t *>( data_.data() ) ) );
     }
 
     // Write x data
