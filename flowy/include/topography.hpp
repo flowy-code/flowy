@@ -1,7 +1,6 @@
 #pragma once
 // GPL v3 License
 // Copyright 2023--present Flowy developers
-#include "flowy/include/asc_file.hpp"
 #include "flowy/include/definitions.hpp"
 #include "flowy/include/lobe.hpp"
 #include "xtensor/xbuilder.hpp"
@@ -30,12 +29,6 @@ public:
     // x limits = [idx_x_lower, idx_x_higher]
     // y limits = [idx_y_lower, idx_y_higher]
 
-    enum class Output
-    {
-        Hazard,
-        Height
-    };
-
     struct BoundingBox
     {
         int idx_x_lower{};
@@ -44,23 +37,12 @@ public:
         int idx_y_higher{};
     };
 
-    explicit Topography( const AscFile & asc_file )
-            : height_data( asc_file.height_data ),
-              hazard( xt::zeros_like( asc_file.height_data ) ),
-              x_data( asc_file.x_data ),
-              y_data( asc_file.y_data )
-    {
-    }
-
     Topography( const MatrixX & height_data, const VectorX & x_data, const VectorX & y_data )
             : height_data( height_data ), hazard( xt::zeros_like( height_data ) ), x_data( x_data ), y_data( y_data )
     {
     }
 
     Topography() = default;
-
-    // Creates an AscFile object that represents the topography
-    AscFile to_asc_file( Output output = Output::Height );
 
     MatrixX height_data{}; // The heights of the cells
     MatrixX hazard{};      // Contains data on the cumulative descendents

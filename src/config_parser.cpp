@@ -3,6 +3,7 @@
 
 #include "flowy/include/config_parser.hpp"
 #include "flowy/include/config.hpp"
+#include "flowy/include/netcdf_file.hpp"
 #include <fmt/format.h>
 #include <toml++/toml.h>
 #include <filesystem>
@@ -60,6 +61,35 @@ InputParams parse_config( const std::filesystem::path & path )
 
     set_if_specified( params.masking_tolerance, tbl["masking_tolerance"] );
     set_if_specified( params.masking_max_iter, tbl["masking_max_iter"] );
+
+    // Output
+    set_if_specified( params.output_settings.crop_to_content, tbl["Output"]["crop_to_content"] );
+    set_if_specified( params.output_settings.use_netcdf, tbl["Output"]["use_netcdf"] );
+    set_if_specified( params.output_settings.compression, tbl["Output"]["compression"] );
+    set_if_specified( params.output_settings.compression_level, tbl["Output"]["compression_level"] );
+    set_if_specified( params.output_settings.shuffle, tbl["Output"]["shuffle"] );
+
+    std::optional<std::string> packing_data_type;
+    packing_data_type = tbl["Output"]["packing_data_type"].value<std::string>();
+
+    if( packing_data_type == "float" )
+    {
+        params.output_settings.data_type = StorageDataType::Float;
+    }
+    else if( packing_data_type == "double" )
+    {
+        params.output_settings.data_type = StorageDataType::Double;
+    }
+    else if( packing_data_type == "short" )
+    {
+        params.output_settings.data_type = StorageDataType::Short;
+    }
+    else if( packing_data_type.has_value() )
+    {
+        throw std::runtime_error( fmt::format( "Unknown packing_data_type: '{}'", packing_data_type.value() ) );
+    }
+
+    // set_if_specified( params.output_settings.data_type, tbl["Output"]["Packing_data_type"] );
 
     // ===================================================================================
     // mr lava loba settings from input.py
@@ -192,9 +222,9 @@ void validate_settings( const InputParams & options )
     auto geq_zero         = []( auto x ) { return x >= 0; };
     auto geq_zero_leq_one = []( auto x ) { return x >= 0 && x <= 1; };
 
-    check( name_and_var( options.n_flows ), geq_zero );
+    check( name_and_var( options.n_flows ), g_zero );
     check( name_and_var( options.min_n_lobes ), geq_zero );
-    check( name_and_var( options.max_n_lobes ), geq_zero );
+    check( name_and_var( options.max_n_lobes ), g_zero );
     check( name_and_var( options.lobe_exponent ), geq_zero_leq_one );
     check( name_and_var( options.max_slope_prob ), geq_zero_leq_one );
     check( name_and_var( options.inertial_exponent ), geq_zero );
@@ -205,6 +235,10 @@ void validate_settings( const InputParams & options )
     check( name_and_var( options.npoints ), []( auto x ) { return x >= 1; } );
     check( name_and_var( options.aspect_ratio_coeff ), geq_zero );
     check( name_and_var( options.max_aspect_ratio ), g_zero );
+    // Output settings validation
+    check(
+        name_and_var( options.output_settings.compression_level ), []( auto x ) { return x >= 0 && x <= 9; },
+        "The compression level can only be between 0 and 9, inclusive." );
 }
 
 } // namespace Flowy::Config

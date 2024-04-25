@@ -8,7 +8,7 @@ cpp = meson.get_compiler('cpp')
 
 # clang and gcc specific flags
 if cpp.get_id() == 'gcc' or cpp.get_id() == 'clang'
-  cpp_args += ['-Wno-unused-local-typedefs', '-Wno-array-bounds', '-ffast-math']
+  cpp_args += ['-Wno-unused-local-typedefs', '-Wno-array-bounds', '-ffast-math', '-fno-finite-math-only']
 endif
 
 if cpp_args.length() > 0
@@ -21,18 +21,29 @@ _sources = [
   'src/asc_file.cpp',
   'src/simulation.cpp',
   'src/topography.cpp',
-  'src/config_parser.cpp'
+  'src/config_parser.cpp',
+  'src/netcdf_file.cpp'
 ]
 
 # Library dependencies
 pdflib_dep = dependency('pdf_cpplib', fallback : ['pdf_cpplib', 'pdflib_dep'])
+
+## Netcdf
+# On windows the conda-forge netcdf pkg-config file tells us to link against a mysterious debug.lib
+# Therefore, we use cmake as the preferred method, which does not make problems
+netcdf_dep = dependency('netcdf',  language : 'cpp', method: 'cmake', required: false)
+# On the linux CI, however, cmake cant find netcdf. So we still use pkg-config as a fallback.
+if not netcdf_dep.found()
+  netcdf_dep = dependency('netcdf',  language : 'cpp', method: 'pkg-config')
+endif
 
 _deps = [
   pdflib_dep,
   dependency('xtensor'),
   dependency('xtensor-blas'),
   dependency('fmt'),
-  dependency('tomlplusplus')
+  dependency('tomlplusplus'),
+  netcdf_dep
 ]
 
 # Static libraries for the executable and tests, shared for the bindings
@@ -69,7 +80,8 @@ if get_option('build_tests')
     ['Test_Topography', 'test/test_topography.cpp'],
     ['Test_Lobe', 'test/test_lobe.cpp'],
     ['Test_Trunc_Normal', 'test/test_truncated_normal.cpp'],
-    ['Test_Raster', 'test/test_rasterization.cpp']
+    ['Test_Raster', 'test/test_rasterization.cpp'],
+    ['Test_FileIO', 'test/test_file_io.cpp']
   ]
 
   Catch2 = dependency('Catch2', method : 'cmake', modules : ['Catch2::Catch2WithMain', 'Catch2::Catch2'])

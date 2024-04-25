@@ -2,6 +2,7 @@
 // GPL v3 License
 // Copyright 2023--present Flowy developers
 #include "flowy/include/definitions.hpp"
+#include "flowy/include/netcdf_file.hpp"
 #include <filesystem>
 #include <optional>
 #include <string>
@@ -9,6 +10,16 @@
 
 namespace Flowy::Config
 {
+
+struct OutputSettings
+{
+    bool crop_to_content      = false;
+    bool use_netcdf           = false;
+    bool compression          = true;
+    int compression_level     = 5;
+    bool shuffle              = true;
+    StorageDataType data_type = StorageDataType::Float;
+};
 
 class InputParams
 {
@@ -19,6 +30,8 @@ public:
 
     // The folder output is written to
     std::filesystem::path output_folder = "./output";
+
+    OutputSettings output_settings{};
 
     // If set to true one csv file, per flow, is written to the output folder.
     // The files are named 'lobes_{idx_flow}.csv' and contain information about the lobes in that specific flow
@@ -48,7 +61,7 @@ public:
 
     bool save_hazard_data{}; // If true, a raster map is saved, such that the values represent the probability of a cell
                              // to be covered by lava.
-    int n_flows{};           // Number of flows per run
+    int n_flows{ 1 };        // Number of flows per run
     int n_lobes{};           // Number of lobes per flow
     double thickening_parameter{}; // Parameter that affects calculation of the slope [0,1]
     std::optional<double>
@@ -58,8 +71,8 @@ public:
 
     // Variables we don't understand
     std::vector<double> masking_threshold{};
-    int min_n_lobes{};
-    int max_n_lobes{};
+    int min_n_lobes{ 0 };
+    int max_n_lobes{ 1 };
 
     /*
     Inertial exponent, used for calculating the inertial modification to the azimuthal angle (also depends on the slope,
