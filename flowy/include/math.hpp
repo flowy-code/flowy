@@ -18,8 +18,8 @@ inline double beta_pdf( double x, double alpha, double beta )
 
 #define FLOWY_CHECK( x ) Flowy::Math::check_number( #x, x, __FILE__, __LINE__ )
 
-template<typename N>
-inline void check_number( const std::string & name, const N & var, const std::string & file, int line )
+// Previously, this was a templated on the type of var (instead of double var), this caused issues on msvc, when putting an integer into the function
+inline void check_number( const std::string & name, const double & var, const std::string & file, int line )
 {
     if( !std::isfinite( var ) || std::isnan( var ) || std::isinf( var ) )
     {
