@@ -34,8 +34,7 @@ _deps = [
   dependency('xtensor-blas'),
   dependency('fmt'),
   dependency('tomlplusplus'),
-  dependency('netcdf', language : 'cpp'),
-  dependency('hdf5', language : 'cpp')
+  dependency('netcdf', language : 'cpp', method : 'cmake')
 ]
 
 # Static libraries for the executable and tests, shared for the bindings
