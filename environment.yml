@@ -17,3 +17,4 @@ dependencies:
   - cpplint
   - libnetcdf
   - hdf5
+  - towncrier
