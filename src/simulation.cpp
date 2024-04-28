@@ -5,7 +5,6 @@
 #include "flowy/include/definitions.hpp"
 #include "flowy/include/lobe.hpp"
 #include "flowy/include/math.hpp"
-#include "flowy/include/netcdf_file.hpp"
 #include "flowy/include/topography.hpp"
 #include "flowy/include/topography_file.hpp"
 #include "pdf_cpplib/include/probability_dist.hpp"
@@ -23,6 +22,11 @@
 #include <random>
 #include <stdexcept>
 #include <vector>
+
+// This is more for clarity since the ifdef is in the netcdf_file as well
+#ifdef WITH_NETCDF
+#include "flowy/include/netcdf_file.hpp"
+#endif
 
 namespace Flowy
 {
@@ -474,6 +478,7 @@ Simulation::get_file_handle( const Topography & topography, OutputQuantitiy outp
 
     if( input.output_settings.use_netcdf )
     {
+#ifdef WITH_NETCDF
         auto netcdf_file        = NetCDFFile( topography, output_quantity );
         netcdf_file.compression = input.output_settings.compression;
         netcdf_file.data_type   = input.output_settings.data_type;
@@ -483,6 +488,9 @@ Simulation::get_file_handle( const Topography & topography, OutputQuantitiy outp
             netcdf_file.shuffle           = input.output_settings.shuffle;
         }
         res = std::make_unique<NetCDFFile>( netcdf_file );
+#else
+        throw std::runtime_error( "NetCDF requested but Flowy wasn't built with NetCDF support!\n" );
+#endif
     }
     else
     {

@@ -1,6 +1,7 @@
 #pragma once
 // GPL v3 License
 // Copyright 2023--present Flowy developers
+#ifdef WITH_NETCDF
 
 #include "flowy/include/topography_file.hpp"
 #include <optional>
@@ -8,13 +9,6 @@
 
 namespace Flowy
 {
-
-enum StorageDataType
-{
-    Short,
-    Float,
-    Double
-};
 
 class NetCDFFile : public TopographyFile
 {
@@ -47,3 +41,5 @@ public:
 };
 
 } // namespace Flowy
+
+#endif
