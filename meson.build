@@ -34,7 +34,6 @@ _sources = [
   'src/simulation.cpp',
   'src/topography.cpp',
   'src/config_parser.cpp',
-  'src/netcdf_file.cpp'
 ]
 
 # Library dependencies
@@ -51,6 +50,8 @@ if get_option('with_netcdf')
     netcdf_dep = dependency('netcdf',  language : 'cpp', method: 'pkg-config')
   endif
   _deps += netcdf_dep
+  cpp_args += ['-DWITH_NETCDF']
+  _sources += ['src/netcdf_file.cpp']
 endif
 
 _deps += [
@@ -106,8 +107,11 @@ if get_option('build_tests')
     ['Test_Lobe', 'test/test_lobe.cpp'],
     ['Test_Trunc_Normal', 'test/test_truncated_normal.cpp'],
     ['Test_Raster', 'test/test_rasterization.cpp'],
-    ['Test_FileIO', 'test/test_file_io.cpp']
   ]
+
+  if get_option('with_netcdf')
+    tests += [['Test_FileIO', 'test/test_file_io.cpp']]
+  endif
 
   Catch2 = dependency('Catch2', method : 'cmake', modules : ['Catch2::Catch2WithMain', 'Catch2::Catch2'])
 
