@@ -20,4 +20,11 @@ using Vector3 = xt::xtensor_fixed<double, xt::xshape<3>>;
 using MatrixX = xt::xtensor<double, 2>;
 using VectorX = xt::xtensor<double, 1>;
 
+enum StorageDataType
+{
+    Short,
+    Float,
+    Double
+};
+
 } // namespace Flowy

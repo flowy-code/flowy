@@ -35,3 +35,10 @@ jobs:
       shell: micromamba-shell {0}
       run: |
         meson test -C build --verbose
+
+    - name: Compile and test without netcdf
+      shell: micromamba-shell {0}
+      run: |
+        meson setup build_nonetcdf --buildtype release --vsenv -Dwith_netcdf=false
+        meson compile -C build_nonetcdf
+        meson test -C build_nonetcdf --verbose

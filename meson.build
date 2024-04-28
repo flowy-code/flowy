@@ -1,15 +1,27 @@
 project('flowy', 'cpp',
   version : '0.1',
-  default_options : ['warning_level=3', 'cpp_std=c++20', 'optimization=3'])
+  default_options : ['warning_level=3',
+                     'cpp_std=c++20',
+                     # 'buildtype=debugoptimize', # debug=true, optimize=2
+                     'debug=true',
+                     'optimization=3'])
 
 cpp_args = []
 
-cpp = meson.get_compiler('cpp')
+cppc = meson.get_compiler('cpp')
 
-# clang and gcc specific flags
-if cpp.get_id() == 'gcc' or cpp.get_id() == 'clang'
-  cpp_args += ['-Wno-unused-local-typedefs', '-Wno-array-bounds', '-ffast-math', '-fno-finite-math-only']
-endif
+cpp_args += cppc.get_supported_arguments([
+  '-Wno-unused-local-typedefs',  # Ignore unused local typedefs warnings
+  '-Wno-array-bounds',           # Suppress out-of-bounds array access warnings
+  '-ffast-math',                 # Enable faster, non-IEEE math calculations
+  '-fno-finite-math-only',       # Allow Inf and NaN
+  # These are based on recommendations from
+  # https://youtu.be/_enXuIxuNV4?si=LvtMqPwJ6jYbDY66
+  '-fno-semantic-interposition', # Assume no interposition for module functions
+  '-fno-plt',                    # Avoid PLT for function calls within shared libs
+  '-fvisibility=hidden',         # Set default symbol visibility to hidden
+  '-Bsymbolic',                  # Resolve symbols to local definitions
+])
 
 if cpp_args.length() > 0
   message('Adding compiler flags', cpp_args)
@@ -22,29 +34,41 @@ _sources = [
   'src/simulation.cpp',
   'src/topography.cpp',
   'src/config_parser.cpp',
-  'src/netcdf_file.cpp'
 ]
 
 # Library dependencies
+_deps = []
 pdflib_dep = dependency('pdf_cpplib', fallback : ['pdf_cpplib', 'pdflib_dep'])
 
 ## Netcdf
-# On windows the conda-forge netcdf pkg-config file tells us to link against a mysterious debug.lib
-# Therefore, we use cmake as the preferred method, which does not make problems
-netcdf_dep = dependency('netcdf',  language : 'cpp', method: 'cmake', required: false)
-# On the linux CI, however, cmake cant find netcdf. So we still use pkg-config as a fallback.
-if not netcdf_dep.found()
-  netcdf_dep = dependency('netcdf',  language : 'cpp', method: 'pkg-config')
+if get_option('with_netcdf')
+  # On windows the conda-forge netcdf pkg-config file tells us to link against a mysterious debug.lib
+  # Therefore, we use cmake as the preferred method, which does not make problems
+  netcdf_dep = dependency('netcdf',  language : 'cpp', method: 'cmake', required: false)
+  # On the linux CI, however, cmake cant find netcdf. So we still use pkg-config as a fallback.
+  if not netcdf_dep.found()
+    netcdf_dep = dependency('netcdf',  language : 'cpp', method: 'pkg-config')
+  endif
+  _deps += netcdf_dep
+  cpp_args += ['-DWITH_NETCDF']
+  _sources += ['src/netcdf_file.cpp']
 endif
 
-_deps = [
+_deps += [
   pdflib_dep,
   dependency('xtensor'),
   dependency('xtensor-blas'),
   dependency('fmt'),
   dependency('tomlplusplus'),
-  netcdf_dep
 ]
+
+symbol_visibility = 'default'
+if get_option('default_library') == 'static'
+  # Ensure that if we link a static library into a shared library,
+  # private symbols don't get re-exported.
+  # Kanged from https://github.com/ERGO-Code/HiGHS/pull/1737/files
+  symbol_visibility = 'inlineshidden'
+endif
 
 # Static libraries for the executable and tests, shared for the bindings
 # Generates (linux) libflowy.so && libflowy.a
@@ -53,6 +77,8 @@ flowylib = both_libraries('flowy',
   install:true,
   dependencies : _deps,
   include_directories : incdir,
+  gnu_symbol_visibility: symbol_visibility,
+  pic: true,
   cpp_args : cpp_args,
 )
 # Generating both dependencies here is not a heavy ask
@@ -81,8 +107,11 @@ if get_option('build_tests')
     ['Test_Lobe', 'test/test_lobe.cpp'],
     ['Test_Trunc_Normal', 'test/test_truncated_normal.cpp'],
     ['Test_Raster', 'test/test_rasterization.cpp'],
-    ['Test_FileIO', 'test/test_file_io.cpp']
   ]
+
+  if get_option('with_netcdf')
+    tests += [['Test_FileIO', 'test/test_file_io.cpp']]
+  endif
 
   Catch2 = dependency('Catch2', method : 'cmake', modules : ['Catch2::Catch2WithMain', 'Catch2::Catch2'])
 
