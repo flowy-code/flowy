@@ -10,21 +10,18 @@ cpp_args = []
 
 cppc = meson.get_compiler('cpp')
 
-# clang and gcc specific flags
-if cppc.get_id() == 'gcc' or cppc.get_id() == 'clang'
-  cpp_args += cppc.get_supported_arguments([
-    '-Wno-unused-local-typedefs',
-    '-Wno-array-bounds',
-    '-ffast-math',
-    '-fno-finite-math-only',
-    # These are based on recommendations from
-    # https://youtu.be/_enXuIxuNV4?si=LvtMqPwJ6jYbDY66
-    '-fno-semantic-interposition',
-    '-fno-plt',
-    '-fvisibility=hidden',
-    '-Bsymbolic',
-  ])
-endif
+cpp_args += cppc.get_supported_arguments([
+  '-Wno-unused-local-typedefs',  # Ignore unused local typedefs warnings
+  '-Wno-array-bounds',           # Suppress out-of-bounds array access warnings
+  '-ffast-math',                 # Enable faster, non-IEEE math calculations
+  '-fno-finite-math-only',       # Allow Inf and NaN
+  # These are based on recommendations from
+  # https://youtu.be/_enXuIxuNV4?si=LvtMqPwJ6jYbDY66
+  '-fno-semantic-interposition', # Assume no interposition for module functions
+  '-fno-plt',                    # Avoid PLT for function calls within shared libs
+  '-fvisibility=hidden',         # Set default symbol visibility to hidden
+  '-Bsymbolic',                  # Resolve symbols to local definitions
+])
 
 if cpp_args.length() > 0
   message('Adding compiler flags', cpp_args)
