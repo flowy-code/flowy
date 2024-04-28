@@ -1,14 +1,29 @@
 project('flowy', 'cpp',
   version : '0.1',
-  default_options : ['warning_level=3', 'cpp_std=c++20', 'optimization=3'])
+  default_options : ['warning_level=3',
+                     'cpp_std=c++20',
+                     # 'buildtype=debugoptimize', # debug=true, optimize=2
+                     'debug=true',
+                     'optimization=3'])
 
 cpp_args = []
 
-cpp = meson.get_compiler('cpp')
+cppc = meson.get_compiler('cpp')
 
 # clang and gcc specific flags
-if cpp.get_id() == 'gcc' or cpp.get_id() == 'clang'
-  cpp_args += ['-Wno-unused-local-typedefs', '-Wno-array-bounds', '-ffast-math', '-fno-finite-math-only']
+if cppc.get_id() == 'gcc' or cppc.get_id() == 'clang'
+  cpp_args += cppc.get_supported_arguments([
+    '-Wno-unused-local-typedefs',
+    '-Wno-array-bounds',
+    '-ffast-math',
+    '-fno-finite-math-only',
+    # These are based on recommendations from
+    # https://youtu.be/_enXuIxuNV4?si=LvtMqPwJ6jYbDY66
+    '-fno-semantic-interposition',
+    '-fno-plt',
+    '-fvisibility=hidden',
+    '-Bsymbolic',
+  ])
 endif
 
 if cpp_args.length() > 0
