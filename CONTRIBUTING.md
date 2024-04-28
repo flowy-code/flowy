@@ -76,3 +76,25 @@ pipx run pre-commit run --all-files
 # Or install the git hook to enforce this
 pipx run pre-commit install
 ```
+
+# Changelog management
+
+We use markdown for the changelog fragments, and they are stored under `docs/newsfragments`
+
+- Use issues to number the snippets
+- Build a final variant with: `towncrier build --version 0.6.3 --date "$(date -u +%Y-%m-%d)"`
+- Supported categories are:
+ + `security`
+ + `removed`
+ + `deprecated`
+ + `added`
+ + `changed`
+ + `fixed`
+
+Here are some sample use cases:
+```sh
+towncrier create -c "Fancy new feature but without an issue attached" +new_feat.added.md
+towncrier create -c "Require C++17 only" 1.changed.md
+```
+
+The generated markdown files can be modified later as well.
