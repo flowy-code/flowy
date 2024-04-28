@@ -46,6 +46,14 @@ _deps = [
   netcdf_dep
 ]
 
+symbol_visibility = 'default'
+if get_option('default_library') == 'static'
+  # Ensure that if we link a static library into a shared library,
+  # private symbols don't get re-exported.
+  # Kanged from https://github.com/ERGO-Code/HiGHS/pull/1737/files
+  symbol_visibility = 'inlineshidden'
+endif
+
 # Static libraries for the executable and tests, shared for the bindings
 # Generates (linux) libflowy.so && libflowy.a
 flowylib = both_libraries('flowy',
@@ -53,6 +61,8 @@ flowylib = both_libraries('flowy',
   install:true,
   dependencies : _deps,
   include_directories : incdir,
+  gnu_symbol_visibility: symbol_visibility,
+  pic: true,
   cpp_args : cpp_args,
 )
 # Generating both dependencies here is not a heavy ask
