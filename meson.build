@@ -19,7 +19,6 @@ cpp_args += cppc.get_supported_arguments([
   # https://youtu.be/_enXuIxuNV4?si=LvtMqPwJ6jYbDY66
   '-fno-semantic-interposition', # Assume no interposition for module functions
   '-fno-plt',                    # Avoid PLT for function calls within shared libs
-  '-fvisibility=hidden',         # Set default symbol visibility to hidden
   '-Bsymbolic',                  # Resolve symbols to local definitions
 ])
 
