@@ -61,6 +61,7 @@ InputParams parse_config( const std::filesystem::path & path )
 
     set_if_specified( params.masking_tolerance, tbl["masking_tolerance"] );
     set_if_specified( params.masking_max_iter, tbl["masking_max_iter"] );
+    set_if_specified( params.volume_correction, tbl["volume_correction"] );
 
     // Output
     set_if_specified( params.output_settings.crop_to_content, tbl["Output"]["crop_to_content"] );

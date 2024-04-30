@@ -359,16 +359,40 @@ double Topography::slope_between_points(
     return slope;
 }
 
-void Topography::add_lobe( const Lobe & lobe, std::optional<int> idx_cache )
+void Topography::add_lobe( const Lobe & lobe, bool volume_correction, std::optional<int> idx_cache )
 {
     // In this function we simply add the thickness of the lobe to the topography
     // First, we find the intersected cells and the covered fractions
     std::vector<std::pair<std::array<int, 2>, double>> intersection_data = compute_intersection( lobe, idx_cache );
+    double volume_added            = 0.0; // Volume added to the topography from rasterization
+    double area_intersecting_cells = 0.0; // Total area covered by intersecting cells
+    double cell_volume{};
 
     // Then we add the tickness according to the fractions
     for( auto const & [indices, fraction] : intersection_data )
     {
-        height_data( indices[0], indices[1] ) += fraction * lobe.thickness;
+        cell_volume = fraction * lobe.thickness;
+        height_data( indices[0], indices[1] ) += cell_volume;
+        volume_added += cell_volume;
+        if( fraction < 1.0 )
+        {
+            area_intersecting_cells += fraction;
+        }
+    }
+
+    // Optionally compute the volume correction
+    if( volume_correction )
+    {
+        double volume_to_add = lobe.volume() - volume_added;
+        // Go over the cells
+        for( auto const & [indices, fraction] : intersection_data )
+        {
+            if( fraction < 1.0 )
+            {
+                cell_volume = fraction / area_intersecting_cells * volume_to_add;
+                height_data( indices[0], indices[1] ) += cell_volume;
+            }
+        }
     }
 }
 

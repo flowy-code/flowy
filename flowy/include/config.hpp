@@ -46,6 +46,9 @@ public:
 
     std::optional<int> rng_seed = std::nullopt;
 
+    // Whether to apply a volume correction or not. By default this is true
+    bool volume_correction = true;
+
     // ===================================================================================
     // mr lava loba settings from input.py
     // ===================================================================================

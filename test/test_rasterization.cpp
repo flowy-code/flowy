@@ -62,7 +62,8 @@ TEST_CASE( "test_add_lobe", "[topography]" )
     auto volume_before = topography.volume();
     auto area_before   = topography.area( 0.0 );
 
-    topography.add_lobe( lobe );
+    // No volume correction applied
+    topography.add_lobe( lobe, false );
 
     auto volume_after = topography.volume();
     auto area_after   = topography.area( 0.0 );

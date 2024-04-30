@@ -569,7 +569,7 @@ void Simulation::run()
             compute_lobe_axes( lobe_cur, slope_norm );
 
             // Add rasterized lobe
-            topography.add_lobe( lobe_cur, idx_lobe );
+            topography.add_lobe( lobe_cur, input.volume_correction, idx_lobe );
             n_lobes_processed++;
         }
 
@@ -640,7 +640,7 @@ void Simulation::run()
                                  * ( lobe_dimensions.thickness_min + idx_lobe * delta_lobe_thickness );
 
             // Add rasterized lobe
-            topography.add_lobe( lobe_cur, idx_lobe );
+            topography.add_lobe( lobe_cur, input.volume_correction, idx_lobe );
             n_lobes_processed++;
         }
 
