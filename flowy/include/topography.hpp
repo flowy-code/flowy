@@ -130,7 +130,7 @@ public:
     void add_lobe( const Lobe & lobe, std::optional<int> idx_cache = std::nullopt );
 
     // Computes the hazard for a flow
-    void compute_hazard_flow( const std::vector<Lobe> & lobes, MatrixX & flow_hazard );
+    void compute_hazard_flow( const std::vector<Lobe> & lobes );
 
     // Check if a point is near the boundary
     bool is_point_near_boundary( const Vector2 & coordinates, double radius );

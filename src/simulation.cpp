@@ -521,9 +521,6 @@ void Simulation::run()
     // Make a copy of the initial topography
     auto t_run_start = std::chrono::high_resolution_clock::now();
 
-    // We use this matrix to comute the hazard of the local flow, which has to be done by max_reducing
-    MatrixX flow_hazard = xt::zeros_like( topography.hazard );
-
     for( int idx_flow = 0; idx_flow < input.n_flows; idx_flow++ )
     {
         // Determine n_lobes
@@ -655,8 +652,7 @@ void Simulation::run()
         if( input.save_hazard_data )
         {
             compute_cumulative_descendents( lobes );
-            topography.compute_hazard_flow( lobes, flow_hazard );
-            topography.hazard += flow_hazard;
+            topography.compute_hazard_flow( lobes );
         }
 
         if( input.write_lobes_csv )
