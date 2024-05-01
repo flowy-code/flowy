@@ -386,9 +386,17 @@ void Simulation::write_avg_thickness_file()
 
     // Create a flattened, sorted view of the thickness, which will be used in the bisection search later
     auto thickness_non_zero = xt::filter( topography_thickness.height_data, topography_thickness.height_data > 0 );
-    auto flatten            = xt::flatten( thickness_non_zero );
-    auto thickness_sorted   = xt::eval( xt::sort( flatten ) );
-    const int n_cells       = thickness_sorted.size();
+
+    if( thickness_non_zero.size() == 0 )
+    {
+        fmt::print( "Cannot determine masked quantities, since thickness_non_zero.size() == 0\n" );
+        file.close();
+        return;
+    }
+
+    auto flatten          = xt::flatten( thickness_non_zero );
+    auto thickness_sorted = xt::eval( xt::sort( flatten ) );
+    const int n_cells     = thickness_sorted.size();
 
     // This lambda performs bisection search to find the threshold thickness at which a
     // relative volume proportion of `thresh` is contained within cells with greater thickness than the threshold thickness
