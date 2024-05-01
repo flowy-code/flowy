@@ -55,16 +55,16 @@ public:
     // between the center and any point on the boundary
     std::array<double, 2> extent_xy() const
     {
-        // the cartesina coordianates of the semi major axes
+        // the cartesian coordinates of the semi major axes
         const double ax = cos_azimuthal_angle * semi_axes[0];
         const double ay = sin_azimuthal_angle * semi_axes[0];
 
-        // the cartesian coordianates of the semi mainor axes
+        // the cartesian coordinates of the semi mainor axes
         const double bx = -sin_azimuthal_angle * semi_axes[1];
         const double by = cos_azimuthal_angle * semi_axes[1];
 
-        const double extent_x = ( ax * ax + bx * bx ) / std::sqrt( ax * ax + bx * bx );
-        const double extent_y = ( ay * ay + by * by ) / std::sqrt( ay * ay + by * by );
+        const double extent_x = std::sqrt( ax * ax + bx * bx );
+        const double extent_y = std::sqrt( ay * ay + by * by );
 
         return { extent_x, extent_y };
     }
@@ -136,7 +136,7 @@ public:
         // The solution to this quadratic equation is
         // t = (-beta +- sqrt(beta^2 - 4*alpha*gamma)) / (2*alpha)
 
-        // Therefore, if beta^2 - 4*alpha*gamma < 0, the line segment misses the ellipse
+        // Therefore, if beta^2 - 4*alpha*gamma < 0, the line se\beta\frgment misses the ellipse
         const double radicand = beta * beta - 4 * alpha * gamma;
         if( radicand < 0 )
             return std::nullopt;
@@ -148,6 +148,7 @@ public:
         const double t2 = ( -beta + sqrt_r ) / ( 2.0 * alpha );
 
         // This condition determines if any of the points of the line segment lie within the lobe
+        // This is the condition for the intersection of [0,1] and [t1, t2] to not be empty
         const bool condition = !( ( t1 < 0 && t2 < 0 ) || ( t1 > 1 && t2 > 1 ) );
         if( condition )
         {
