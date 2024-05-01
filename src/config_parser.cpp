@@ -235,6 +235,8 @@ void validate_settings( const InputParams & options )
     check( name_and_var( options.npoints ), []( auto x ) { return x >= 1; } );
     check( name_and_var( options.aspect_ratio_coeff ), geq_zero );
     check( name_and_var( options.max_aspect_ratio ), g_zero );
+    check( name_and_var( options.thickening_parameter ), []( auto x ) { return x >= 0.0 && x < 1.0; } );
+
     // Output settings validation
     check(
         name_and_var( options.output_settings.compression_level ), []( auto x ) { return x >= 0 && x <= 9; },
