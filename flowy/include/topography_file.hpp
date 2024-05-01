@@ -3,6 +3,7 @@
 // Copyright 2023--present Flowy developers
 #include "flowy/include/definitions.hpp"
 #include "flowy/include/topography.hpp"
+#include <fmt/ostream.h>
 #include <cstddef>
 #include <filesystem>
 #include <stdexcept>
@@ -134,6 +135,14 @@ public:
         data   = xt::view( data, xt::range( idx_x_min, idx_x_max + 1 ), xt::range( idx_y_min, idx_y_max + 1 ) );
         x_data = xt::view( x_data, xt::range( idx_x_min, idx_x_max + 1 ) );
         y_data = xt::view( y_data, xt::range( idx_y_min, idx_y_max + 1 ) );
+    }
+
+    std::string to_string()
+    {
+        return fmt::format(
+            "no_data_value = {}\nx_data = {}\ny_data = {}\nll_corner = {}\ncell_size = {}\ndata = {}\n", no_data_value,
+            fmt::streamed( x_data ), fmt::streamed( y_data ), fmt::streamed( lower_left_corner() ), cell_size(),
+            fmt::streamed( data ) );
     }
 
 protected:
