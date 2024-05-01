@@ -21,6 +21,10 @@ struct LobeCells
     using cellvecT = std::vector<std::array<int, 2>>;
     cellvecT cells_intersecting{};
     cellvecT cells_enclosed{};
+
+    static constexpr int n_trapz = 5;
+    using trapzT                 = std::array<double, n_trapz>;
+    std::vector<trapzT> cell_trapz_values{};
 };
 
 class Topography
@@ -29,7 +33,6 @@ public:
     // The indices are all inclusive, i.e.
     // x limits = [idx_x_lower, idx_x_higher]
     // y limits = [idx_y_lower, idx_y_higher]
-
     struct BoundingBox
     {
         int idx_x_lower{};
@@ -113,7 +116,7 @@ public:
     LobeCells get_cells_intersecting_lobe( const Lobe & lobe, std::optional<int> idx_cache = std::nullopt );
 
     double rasterize_cell_grid( int idx_x, int idx_y, const Lobe & lobe );
-    double rasterize_cell_trapz( int idx_x, int idx_y, const Lobe & lobe );
+    double rasterize_cell_trapz( LobeCells::trapzT & trapz_values );
 
     // Find the fraction of the cells covered by the lobe by rasterizing each cell
     // into a grid of N*N points

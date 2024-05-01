@@ -8,6 +8,7 @@
 #include <fmt/ranges.h>
 #include <fmt/std.h>
 #include <algorithm>
+#include <cstddef>
 #include <stdexcept>
 #include <vector>
 
@@ -67,6 +68,11 @@ struct RowIntersectionData
     std::optional<double> x_right_top{};
     std::optional<double> x_left_bot{};
     std::optional<double> x_right_bot{};
+
+    std::optional<int> idx_x_left_top{};
+    std::optional<int> idx_x_right_top{};
+    std::optional<int> idx_x_left_bot{};
+    std::optional<int> idx_x_right_bot{};
 
     // vectors of intermediate x and y values (used for trapezoidal rule)
     std::vector<double> x_left_arr{};
@@ -130,6 +136,12 @@ LobeCells Topography::get_cells_intersecting_lobe( const Lobe & lobe, std::optio
             row_data[irow - 1].x_right_top = p2[0];
             row_data[irow].x_left_bot      = p1[0];
             row_data[irow].x_right_bot     = p2[0];
+
+            row_data[irow - 1].idx_x_left_top  = ( p1[0] - x_data[0] ) / cell_size();
+            row_data[irow - 1].idx_x_right_top = ( p2[0] - x_data[0] ) / cell_size();
+
+            row_data[irow].idx_x_left_bot  = ( p1[0] - x_data[0] ) / cell_size();
+            row_data[irow].idx_x_right_bot = ( p2[0] - x_data[0] ) / cell_size();
         }
     }
 
@@ -143,11 +155,35 @@ LobeCells Topography::get_cells_intersecting_lobe( const Lobe & lobe, std::optio
     };
 
     // push_back intersected cells with x index in the interval [idx_start, idx_stop]
-    auto push_back_intersected_cells = [&]( int idx_start, int idx_stop, int idx_y )
+    auto push_back_intersected_cells
+        = [&]( int idx_start, int idx_stop, int idx_y,
+               const std::array<std::optional<std::array<double, 2>>, LobeCells::n_trapz> & intersection_values )
     {
         for( int idx_x = idx_start; idx_x <= idx_stop; idx_x++ )
         {
             res.cells_intersecting.push_back( { idx_x, idx_y } );
+            LobeCells::trapzT trapz_values{};
+
+            double x_cell_min = x_data[idx_x];
+            double x_cell_max = x_data[idx_x] + cell_size();
+
+            // Figure out the trapz value
+            for( size_t i = 0; i < intersection_values.size(); i++ )
+            {
+                const auto & inter = intersection_values[i];
+
+                if( inter.has_value() )
+                {
+                    const double x_left  = std::clamp( inter.value()[0], x_cell_min, x_cell_max );
+                    const double x_right = std::clamp( inter.value()[1], x_cell_min, x_cell_max );
+                    trapz_values[i]      = x_right - x_left;
+                }
+                else
+                {
+                    trapz_values[i] = 0;
+                }
+            }
+            res.cell_trapz_values.push_back( trapz_values );
         }
     };
 
@@ -157,40 +193,63 @@ LobeCells Topography::get_cells_intersecting_lobe( const Lobe & lobe, std::optio
 
         const auto & row_data_cur = row_data[irow];
 
+        std::array<std::optional<std::array<double, 2>>, LobeCells::n_trapz> intersections{};
+
+        // Fill in the already known intersections (at the bottom and the top of the row)
+        if( row_data_cur.x_left_bot.has_value() && row_data_cur.x_right_bot.has_value() )
+            intersections[0] = { row_data_cur.x_left_bot.value(), row_data_cur.x_right_bot.value() };
+
+        if( row_data_cur.x_left_top.has_value() && row_data_cur.x_right_top.has_value() )
+            intersections[LobeCells::n_trapz - 1]
+                = { row_data_cur.x_left_top.value(), row_data_cur.x_right_top.value() };
+
+        // Loop goes from i=1 to i=N-2, since the top and the bottom of the row are already known
+        for( int i = 1; i < LobeCells::n_trapz - 1; i++ )
+        {
+            const double y_cur = y_data[idx_y] + cell_size() / ( LobeCells::n_trapz - 1 ) * i;
+
+            // Get the line segment intersections
+            const Vector2 x1  = { lobe.center[0] - extent_xy[0], y_cur };
+            const Vector2 x2  = { lobe.center[0] + extent_xy[0], y_cur };
+            const auto points = lobe.line_segment_intersects( x1, x2 );
+
+            if( points.has_value() )
+            {
+                intersections[i] = { points.value()[0][0], points.value()[1][0] };
+            }
+        }
+
         // We treat the first and the last row separately, since here, there are no intersections
         // with the previous row (in case of the first) or the current row (in case of the last row)
         if( irow == 0 )
         {
-            const int idx_x_left_top  = ( row_data_cur.x_left_top.value() - x_data[0] ) / cell_size();
-            const int idx_x_right_top = ( row_data_cur.x_right_top.value() - x_data[0] ) / cell_size();
-            push_back_intersected_cells( idx_x_left_top, idx_x_right_top, idx_y_min );
+            push_back_intersected_cells(
+                row_data_cur.idx_x_left_top.value(), row_data_cur.idx_x_right_top.value(), idx_y_min, intersections );
         }
         else if( irow == n_rows - 1 )
         {
-            const int idx_x_left_bot  = ( row_data_cur.x_left_bot.value() - x_data[0] ) / cell_size();
-            const int idx_x_right_bot = ( row_data_cur.x_right_bot.value() - x_data[0] ) / cell_size();
-            push_back_intersected_cells( idx_x_left_bot, idx_x_right_bot, idx_y_max );
+            push_back_intersected_cells(
+                row_data_cur.idx_x_left_bot.value(), row_data_cur.idx_x_right_bot.value(), idx_y_max, intersections );
         }
         else
         {
-            const int idx_x_left_bot  = ( row_data_cur.x_left_bot.value() - x_data[0] ) / cell_size();
-            const int idx_x_right_bot = ( row_data_cur.x_right_bot.value() - x_data[0] ) / cell_size();
-            const int idx_x_left_top  = ( row_data_cur.x_left_top.value() - x_data[0] ) / cell_size();
-            const int idx_x_right_top = ( row_data_cur.x_right_top.value() - x_data[0] ) / cell_size();
+            const int start_left
+                = std::min<int>( row_data_cur.idx_x_left_bot.value(), row_data_cur.idx_x_left_top.value() );
+            const int stop_left
+                = std::max<int>( row_data_cur.idx_x_left_bot.value(), row_data_cur.idx_x_left_top.value() );
+            push_back_intersected_cells( start_left, stop_left, idx_y, intersections );
 
-            const int start_left = std::min<int>( idx_x_left_bot, idx_x_left_top );
-            const int stop_left  = std::max<int>( idx_x_left_bot, idx_x_left_top );
-            push_back_intersected_cells( start_left, stop_left, idx_y );
+            int start_right
+                = std::min<int>( row_data_cur.idx_x_right_bot.value(), row_data_cur.idx_x_right_top.value() );
+            const int stop_right
+                = std::max<int>( row_data_cur.idx_x_right_bot.value(), row_data_cur.idx_x_right_top.value() );
 
-            int start_right      = std::min<int>( idx_x_right_bot, idx_x_right_top );
-            const int stop_right = std::max<int>( idx_x_right_bot, idx_x_right_top );
-
-            // If stop_left and start right co-incide, which can happen when the tip of an ellipse barely touches a row
+            // If stop_left and start_right co-incide, which can happen when the tip of an ellipse barely touches a row
             // We need to make sure not to double count an intersected cell
             if( stop_left == start_right )
                 start_right++;
 
-            push_back_intersected_cells( start_right, stop_right, idx_y );
+            push_back_intersected_cells( start_right, stop_right, idx_y, intersections );
             push_back_enclosed_cells( stop_left + 1, start_right - 1, idx_y );
         }
     }
@@ -229,47 +288,20 @@ double Topography::rasterize_cell_grid( int idx_x, int idx_y, const Lobe & lobe 
     return fraction;
 }
 
-double Topography::rasterize_cell_trapz( int idx_x, int idx_y, const Lobe & lobe )
+double Topography::rasterize_cell_trapz( LobeCells::trapzT & trapz_values )
 {
-    constexpr int N = 5;
-
-    const double cell_size = this->cell_size();
-    const double cell_area = cell_size * cell_size;
-    const double step      = cell_size / ( N - 1 );
-
-    const double y_min = y_data[idx_y];
-    const double y_max = y_data[idx_y] + cell_size;
-
-    std::array<double, N> trapz{};
-
-    for( int ix = 0; ix < N; ix++ )
-    {
-        const double x = x_data[idx_x] + step * ix;
-
-        const auto y_intersection = lobe.line_segment_intersects( { x, y_min }, { x, y_max } );
-
-        // If there is no intersection, we just proceed
-        if( !y_intersection.has_value() )
-        {
-            trapz[ix] = 0;
-            continue;
-        }
-
-        auto [p1, p2]   = y_intersection.value();
-        const double y1 = p1[1];
-        const double y2 = p2[1];
-
-        trapz[ix] = std::abs( y2 - y1 );
-    }
+    const double cell_size     = this->cell_size();
+    const double cell_area     = cell_size * cell_size;
+    const double trapz_spacing = cell_size / ( LobeCells::n_trapz - 1 );
 
     // Evaluate trapezoidal rule
     double area = 0;
-    for( int ix = 0; ix < N - 1; ix++ )
+    for( size_t ix = 0; ix < trapz_values.size() - 1; ix++ )
     {
-        area += 0.5 * ( trapz[ix] + trapz[ix + 1] );
+        area += 0.5 * ( trapz_values[ix] + trapz_values[ix + 1] );
     }
 
-    const double fraction = area * step / cell_area;
+    const double fraction = area * trapz_spacing / cell_area;
     return fraction;
 }
 
@@ -288,9 +320,10 @@ Topography::compute_intersection( const Lobe & lobe, std::optional<int> idx_cach
     }
 
     // The intersecting cells get rasterized
-    for( const auto & [idx_x, idx_y] : lobe_cells.cells_intersecting )
+    for( size_t i = 0; i < lobe_cells.cells_intersecting.size(); i++ )
     {
-        const double fraction = rasterize_cell_trapz( idx_x, idx_y, lobe );
+        const auto & [idx_x, idx_y] = lobe_cells.cells_intersecting[i];
+        const double fraction       = rasterize_cell_trapz( lobe_cells.cell_trapz_values[i] );
         res.push_back( { { idx_x, idx_y }, fraction } );
     }
 
