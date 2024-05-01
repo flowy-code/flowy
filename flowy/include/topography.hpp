@@ -40,6 +40,15 @@ public:
     Topography( const MatrixX & height_data, const VectorX & x_data, const VectorX & y_data )
             : height_data( height_data ), hazard( xt::zeros_like( height_data ) ), x_data( x_data ), y_data( y_data )
     {
+        // Check that x_data spacing and y_data spacing is the same
+        double delta_x = x_data[1] - x_data[0];
+        double delta_y = y_data[1] - y_data[0];
+        if( !xt::isclose( delta_x, delta_y )[0] )
+        {
+            throw std::runtime_error( fmt::format(
+                "The spacing between x and y must be the same! It is delta_x = {} and delta_y = {}", delta_x,
+                delta_y ) );
+        }
     }
 
     Topography() = default;
