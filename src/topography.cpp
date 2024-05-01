@@ -71,17 +71,24 @@ LobeCells Topography::get_cells_intersecting_lobe( const Lobe & lobe, std::optio
     }
 
     LobeCells res{};
-    LobeCells::cellvecT cells_intersecting{};
-    LobeCells::cellvecT cells_enclosed{};
 
     auto extent_xy = lobe.extent_xy();
 
-    // push_back cells with x index in the interval [idx_start, idx_stop]
-    auto push_back_cells = [&]( LobeCells::cellvecT & cells, int idx_start, int idx_stop, int idx_y )
+    // push_back enclosed cells with x index in the interval [idx_start, idx_stop]
+    auto push_back_enclosed_cells = [&]( int idx_start, int idx_stop, int idx_y )
     {
         for( int idx_x = idx_start; idx_x <= idx_stop; idx_x++ )
         {
-            cells.push_back( { idx_x, idx_y } );
+            res.cells_enclosed.push_back( { idx_x, idx_y } );
+        }
+    };
+
+    // push_back intersected cells with x index in the interval [idx_start, idx_stop]
+    auto push_back_intersected_cells = [&]( int idx_start, int idx_stop, int idx_y )
+    {
+        for( int idx_x = idx_start; idx_x <= idx_stop; idx_x++ )
+        {
+            res.cells_intersecting.push_back( { idx_x, idx_y } );
         }
     };
 
@@ -136,17 +143,17 @@ LobeCells Topography::get_cells_intersecting_lobe( const Lobe & lobe, std::optio
         // with the previous row (in case of the first) or the current row (in case of the last row)
         if( idx_y == idx_y_min + 1 )
         {
-            push_back_cells( cells_intersecting, idx_left_cur, idx_right_cur, idx_y_min );
+            push_back_intersected_cells( idx_left_cur, idx_right_cur, idx_y_min );
         }
         else if( idx_y == idx_y_max + 1 )
         {
-            push_back_cells( cells_intersecting, idx_left_prev, idx_right_prev, idx_y_max );
+            push_back_intersected_cells( idx_left_prev, idx_right_prev, idx_y_max );
         }
         else
         {
             const int start_left = std::min<int>( idx_left_prev, idx_left_cur );
             const int stop_left  = std::max<int>( idx_left_prev, idx_left_cur );
-            push_back_cells( cells_intersecting, start_left, stop_left, idx_y - 1 );
+            push_back_intersected_cells( start_left, stop_left, idx_y - 1 );
 
             int start_right      = std::min<int>( idx_right_prev, idx_right_cur );
             const int stop_right = std::max<int>( idx_right_prev, idx_right_cur );
@@ -156,14 +163,10 @@ LobeCells Topography::get_cells_intersecting_lobe( const Lobe & lobe, std::optio
             if( stop_left == start_right )
                 start_right++;
 
-            push_back_cells( cells_intersecting, start_right, stop_right, idx_y - 1 );
-
-            push_back_cells( cells_enclosed, stop_left + 1, start_right - 1, idx_y - 1 );
+            push_back_intersected_cells( start_right, stop_right, idx_y - 1 );
+            push_back_enclosed_cells( stop_left + 1, start_right - 1, idx_y - 1 );
         }
     }
-
-    res.cells_intersecting = std::move( cells_intersecting );
-    res.cells_enclosed     = std::move( cells_enclosed );
 
     // If the cache is used, we copy the intersection data there
     if( use_cache )
