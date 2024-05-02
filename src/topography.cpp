@@ -343,16 +343,12 @@ struct hash_pair
     template<class T>
     size_t operator()( const std::array<T, 2> & p ) const
     {
-        auto hash1 = std::hash<T>{}( p[0] );
-        auto hash2 = std::hash<T>{}( p[1] );
-
-        if( hash1 != hash2 )
+        size_t seed = 0;
+        for( T i : p )
         {
-            return hash1 ^ hash2;
+            seed ^= std::hash<T>{}( i ) + 0x9e3779b9 + ( seed << 6 ) + ( seed >> 2 );
         }
-
-        // If hash1 == hash2, their XOR is zero.
-        return hash1;
+        return seed;
     }
 };
 
