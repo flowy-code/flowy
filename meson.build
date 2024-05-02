@@ -26,7 +26,7 @@ if cpp_args.length() > 0
   message('Adding compiler flags', cpp_args)
 endif
 
-incdir = include_directories('.')
+incdir = include_directories(['.', 'thirdparty/tsl'])
 
 _sources = [
   'src/asc_file.cpp',

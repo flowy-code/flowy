@@ -4,6 +4,7 @@
 #include "flowy/include/asc_file.hpp"
 #include "flowy/include/definitions.hpp"
 #include "flowy/include/lobe.hpp"
+#include "thirdparty/tsl/robin_set.h"
 #include "xtensor/xbuilder.hpp"
 #include "xtensor/xtensor_forward.hpp"
 #include <fmt/ranges.h>
@@ -356,7 +357,7 @@ struct hash_pair
 
 void Topography::compute_hazard_flow( const std::vector<Lobe> & lobes )
 {
-    std::unordered_set<std::array<int, 2>, hash_pair> parent_set{};
+    tsl::robin_set<std::array<int, 2>, hash_pair> parent_set{};
 
     // This computes the hazard for *one* flow
     // For one flow, the hazard of a cell is the maximum of lobe.n_descendant over all lobes touching it
