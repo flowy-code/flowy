@@ -5,6 +5,7 @@
 #include "flowy/include/definitions.hpp"
 #include "flowy/include/lobe.hpp"
 #include "xtensor/xbuilder.hpp"
+#include "xtensor/xtensor_forward.hpp"
 #include <fmt/ranges.h>
 #include <fmt/std.h>
 #include <algorithm>
@@ -332,7 +333,63 @@ Topography::compute_intersection( const Lobe & lobe, std::optional<int> idx_cach
 
 void Topography::compute_hazard_flow( const std::vector<Lobe> & lobes )
 {
+
+    auto lobe         = get_cells_intersecting_lobe( lobes[0] );
+    const int n_cells = lobe.cells_intersecting.size() + lobe.cells_enclosed.size();
+
+    constexpr int threshhold = 20;
+
     std::map<std::array<int, 2>, int> flow_hazard_map{};
+    xt::xtensor<int, 2> flow_hazard_matrix{};
+
+    if( n_cells < threshhold )
+        flow_hazard_matrix = xt::zeros_like( hazard );
+
+    auto get_value = [&]( int idx_x, int idx_y )
+    {
+        if( n_cells > threshhold )
+        {
+            if( flow_hazard_map.contains( { idx_x, idx_y } ) )
+            {
+                return flow_hazard_map[{ idx_x, idx_y }];
+            }
+            else
+            {
+                return 0;
+            }
+        }
+        else
+        {
+            return flow_hazard_matrix( idx_x, idx_y );
+        }
+    };
+
+    auto set_value = [&]( int idx_x, int idx_y, int val )
+    {
+        if( n_cells > threshhold )
+        {
+            flow_hazard_map[{ idx_x, idx_y }] = val;
+        }
+        else
+        {
+            flow_hazard_matrix( idx_x, idx_y ) = val;
+        }
+    };
+
+    auto add = [&]()
+    {
+        if( n_cells > threshhold )
+        {
+            for( const auto & [key, value] : flow_hazard_map )
+            {
+                hazard( key[0], key[1] ) += value;
+            }
+        }
+        else
+        {
+            hazard += flow_hazard_matrix;
+        }
+    };
 
     // This computes the hazard for *one* flow
     // For one flow, the hazard of a cell is the maximum of lobe.n_descendant over all lobes touching it
@@ -345,23 +402,12 @@ void Topography::compute_hazard_flow( const std::vector<Lobe> & lobes )
         {
             for( const auto & [idx_x, idx_y] : cells )
             {
-                if( flow_hazard_map.contains( { idx_x, idx_y } ) )
-                {
-                    flow_hazard_map[{ idx_x, idx_y }]
-                        = std::max<int>( lobe.n_descendents, flow_hazard_map[ {idx_x, idx_y} ] );
-                }
-                else
-                {
-                    flow_hazard_map[{ idx_x, idx_y }] = lobe.n_descendents;
-                }
+                set_value( idx_x, idx_y, std::max( lobe.n_descendents, get_value( idx_x, idx_y ) ) );
             }
         }
     }
 
-    for( const auto & [key, value] : flow_hazard_map )
-    {
-        hazard( key[0], key[1] ) += value;
-    }
+    add();
 }
 
 std::pair<double, Vector2> Topography::height_and_slope( const Vector2 & coordinates )
