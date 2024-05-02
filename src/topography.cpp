@@ -10,7 +10,9 @@
 #include <fmt/std.h>
 #include <algorithm>
 #include <cstddef>
+#include <functional>
 #include <stdexcept>
+#include <unordered_set>
 #include <vector>
 
 namespace Flowy
@@ -354,65 +356,7 @@ struct hash_pair
 
 void Topography::compute_hazard_flow( const std::vector<Lobe> & lobes )
 {
-
-    auto lobe         = get_cells_intersecting_lobe( lobes[0] );
-    const int n_cells = lobe.cells_intersecting.size() + lobe.cells_enclosed.size();
-
-    constexpr int threshhold = 0;
-
-    // std::map<std::array<int, 2>, int> flow_hazard_map{};
-    std::unordered_map<std::array<int, 2>, int, hash_pair> flow_hazard_map{};
-
-    xt::xtensor<int, 2> flow_hazard_matrix{};
-
-    if( n_cells < threshhold )
-        flow_hazard_matrix = xt::zeros_like( hazard );
-
-    auto get_value = [&]( int idx_x, int idx_y )
-    {
-        if( n_cells > threshhold )
-        {
-            if( flow_hazard_map.contains( { idx_x, idx_y } ) )
-            {
-                return flow_hazard_map[{ idx_x, idx_y }];
-            }
-            else
-            {
-                return 0;
-            }
-        }
-        else
-        {
-            return flow_hazard_matrix( idx_x, idx_y );
-        }
-    };
-
-    auto set_value = [&]( int idx_x, int idx_y, int val )
-    {
-        if( n_cells > threshhold )
-        {
-            flow_hazard_map[{ idx_x, idx_y }] = val;
-        }
-        else
-        {
-            flow_hazard_matrix( idx_x, idx_y ) = val;
-        }
-    };
-
-    auto add = [&]()
-    {
-        if( n_cells > threshhold )
-        {
-            for( const auto & [key, value] : flow_hazard_map )
-            {
-                hazard( key[0], key[1] ) += value;
-            }
-        }
-        else
-        {
-            hazard += flow_hazard_matrix;
-        }
-    };
+    std::unordered_set<std::array<int, 2>, hash_pair> parent_set{};
 
     // This computes the hazard for *one* flow
     // For one flow, the hazard of a cell is the maximum of lobe.n_descendant over all lobes touching it
@@ -421,16 +365,32 @@ void Topography::compute_hazard_flow( const std::vector<Lobe> & lobes )
         const auto & lobe     = lobes[idx];
         const auto lobe_cells = get_cells_intersecting_lobe( lobe, idx );
 
+        parent_set.clear();
+
+        if( lobe.idx_parent.has_value() )
+        {
+            const auto & lobe_parent     = lobes[lobe.idx_parent.value()];
+            const auto lobe_cells_parent = get_cells_intersecting_lobe( lobe_parent, lobe.idx_parent.value() );
+
+            for( const auto & cells : { lobe_cells_parent.cells_enclosed, lobe_cells_parent.cells_intersecting } )
+            {
+                for( const auto & c : cells )
+                {
+                    parent_set.insert( c );
+                }
+            }
+        }
+
         for( const auto & cells : { lobe_cells.cells_enclosed, lobe_cells.cells_intersecting } )
         {
             for( const auto & [idx_x, idx_y] : cells )
             {
-                set_value( idx_x, idx_y, std::max( lobe.n_descendents, get_value( idx_x, idx_y ) ) );
+                if( parent_set.contains( { idx_x, idx_y } ) )
+                    continue;
+                hazard( idx_x, idx_y ) += lobe.n_descendents + 1;
             }
         }
     }
-
-    add();
 }
 
 std::pair<double, Vector2> Topography::height_and_slope( const Vector2 & coordinates )
@@ -506,6 +466,7 @@ void Topography::add_lobe( const Lobe & lobe, std::optional<int> idx_cache )
 {
     // In this function we simply add the thickness of the lobe to the topography
     // First, we find the intersected cells and the covered fractions
+
     std::vector<std::pair<std::array<int, 2>, double>> intersection_data = compute_intersection( lobe, idx_cache );
 
     // Then we add the tickness according to the fractions
