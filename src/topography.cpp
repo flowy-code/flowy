@@ -331,15 +331,42 @@ Topography::compute_intersection( const Lobe & lobe, std::optional<int> idx_cach
     return res;
 }
 
+// knuth division hash function
+template<typename T>
+int division_hash( T k, int m )
+{
+    return k * ( k + 3 ) % m;
+}
+
+struct hash_pair
+{
+    template<class T>
+    size_t operator()( const std::array<T, 2> & p ) const
+    {
+        auto hash1 = std::hash<T>{}( p[0] );
+        auto hash2 = std::hash<T>{}( p[1] );
+
+        if( hash1 != hash2 )
+        {
+            return hash1 ^ hash2;
+        }
+
+        // If hash1 == hash2, their XOR is zero.
+        return hash1;
+    }
+};
+
 void Topography::compute_hazard_flow( const std::vector<Lobe> & lobes )
 {
 
     auto lobe         = get_cells_intersecting_lobe( lobes[0] );
     const int n_cells = lobe.cells_intersecting.size() + lobe.cells_enclosed.size();
 
-    constexpr int threshhold = 20;
+    constexpr int threshhold = 0;
 
-    std::map<std::array<int, 2>, int> flow_hazard_map{};
+    // std::map<std::array<int, 2>, int> flow_hazard_map{};
+    std::unordered_map<std::array<int, 2>, int, hash_pair> flow_hazard_map{};
+
     xt::xtensor<int, 2> flow_hazard_matrix{};
 
     if( n_cells < threshhold )
