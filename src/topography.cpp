@@ -366,31 +366,32 @@ void Topography::add_lobe( const Lobe & lobe, bool volume_correction, std::optio
     std::vector<std::pair<std::array<int, 2>, double>> intersection_data = compute_intersection( lobe, idx_cache );
     double volume_added            = 0.0; // Volume added to the topography from rasterization
     double area_intersecting_cells = 0.0; // Total area covered by intersecting cells
-    double cell_volume{};
+    const double cell_area         = cell_size() * cell_size();
 
     // Then we add the tickness according to the fractions
     for( auto const & [indices, fraction] : intersection_data )
     {
-        cell_volume = fraction * lobe.thickness;
-        height_data( indices[0], indices[1] ) += cell_volume;
-        volume_added += cell_volume;
+        const double cell_height = fraction * lobe.thickness;
+        height_data( indices[0], indices[1] ) += cell_height;
+        volume_added += cell_height * cell_area;
         if( fraction < 1.0 )
         {
-            area_intersecting_cells += fraction;
+            area_intersecting_cells += fraction * cell_area;
         }
     }
 
     // Optionally compute the volume correction
     if( volume_correction )
     {
-        double volume_to_add = lobe.volume() - volume_added;
+        const double volume_to_add     = lobe.volume() - volume_added;
+        const double avg_height_to_add = volume_to_add / area_intersecting_cells;
         // Go over the cells
         for( auto const & [indices, fraction] : intersection_data )
         {
             if( fraction < 1.0 )
             {
-                cell_volume = fraction / area_intersecting_cells * volume_to_add;
-                height_data( indices[0], indices[1] ) += cell_volume;
+                const double cell_height = fraction * avg_height_to_add;
+                height_data( indices[0], indices[1] ) += cell_height;
             }
         }
     }
