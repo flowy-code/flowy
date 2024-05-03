@@ -191,3 +191,29 @@ TEST_CASE( "test_finite_difference_slope", "[finite_difference_slope]" )
     INFO( fmt::format( "slope={}\n", slope ) );
     REQUIRE_THAT( slope, Catch::Matchers::WithinRel( expected_slope ) );
 }
+TEST_CASE( "test_volume_correction", "[volume_correction]" )
+{
+    Flowy::VectorX x_data      = xt::arange<double>( -3, 3, 1.2 );
+    Flowy::VectorX y_data      = xt::arange<double>( -3, 3, 1.2 );
+    Flowy::MatrixX height_data = xt::zeros<double>( { x_data.size(), y_data.size() } );
+
+    auto topography = Flowy::Topography( height_data, x_data, y_data );
+
+    Flowy::Lobe my_lobe;
+    my_lobe.center    = { 0, 0 };
+    my_lobe.semi_axes = { 2.0, 2.0 };
+    my_lobe.thickness = 1.0;
+    my_lobe.set_azimuthal_angle( 0 );
+
+    auto intersection_data = topography.compute_intersection( my_lobe, std::nullopt );
+
+    // Get the volume added from the topography
+    auto volume_before_lobe = topography.volume();
+    topography.add_lobe( my_lobe, true );
+    auto volume_added = topography.volume() - volume_before_lobe;
+    INFO( fmt::format( "Volume added = {}", volume_added ) );
+    // True volume and true area of the lobe
+    auto true_volume = my_lobe.volume();
+    INFO( fmt::format( "True volume of the lobe = {}", true_volume ) );
+    REQUIRE_THAT( volume_added, Catch::Matchers::WithinRel( true_volume ) );
+}

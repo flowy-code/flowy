@@ -114,7 +114,7 @@ public:
     compute_intersection( const Lobe & lobe, std::optional<int> idx_cache = std::nullopt );
 
     // Adds the lobe thickness to the topography, according to its fractional intersection with the cells
-    void add_lobe( const Lobe & lobe, std::optional<int> idx_cache = std::nullopt );
+    void add_lobe( const Lobe & lobe, bool volume_correction, std::optional<int> idx_cache = std::nullopt );
 
     // Computes the hazard for a flow
     void compute_hazard_flow( const std::vector<Lobe> & lobes, MatrixX & flow_hazard );

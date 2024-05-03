@@ -18,12 +18,12 @@ private:
     double cos_azimuthal_angle = 1.0;
 
 public:
-    double area()
+    double area() const
     {
         return Math::pi * semi_axes[0] * semi_axes[1];
     }
 
-    double volume()
+    double volume() const
     {
         return area() * thickness;
     }
