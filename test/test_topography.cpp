@@ -193,8 +193,8 @@ TEST_CASE( "test_finite_difference_slope", "[finite_difference_slope]" )
 }
 TEST_CASE( "test_volume_correction", "[volume_correction]" )
 {
-    Flowy::VectorX x_data      = xt::arange<double>( -3, 3, 1.0 );
-    Flowy::VectorX y_data      = xt::arange<double>( -3, 3, 1.0 );
+    Flowy::VectorX x_data      = xt::arange<double>( -3, 3, 1.2 );
+    Flowy::VectorX y_data      = xt::arange<double>( -3, 3, 1.2 );
     Flowy::MatrixX height_data = xt::zeros<double>( { x_data.size(), y_data.size() } );
 
     auto topography = Flowy::Topography( height_data, x_data, y_data );
