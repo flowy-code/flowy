@@ -82,9 +82,9 @@ TEST_CASE( "get_cells_intersecting_lobe", "[intersecting_lobe_cells]" )
         { 2, 3 } };
     // clang-format on
 
-    auto [cells_intersecting, cells_enclosed] = topography.get_cells_intersecting_lobe( my_lobe );
+    auto lobe_cells = topography.get_cells_intersecting_lobe( my_lobe );
 
-    REQUIRE_THAT( cell_indices_expected, Catch::Matchers::UnorderedRangeEquals( cells_intersecting ) );
+    REQUIRE_THAT( cell_indices_expected, Catch::Matchers::UnorderedRangeEquals( lobe_cells.cells_intersecting ) );
 }
 
 TEST_CASE( "test_compute_intersection", "[intersection]" )
@@ -157,8 +157,8 @@ TEST_CASE( "find_preliminary_budding_point", "[budding_point]" )
 
 TEST_CASE( "test_finite_difference_slope", "[finite_difference_slope]" )
 {
-    Flowy::VectorX x_data      = xt::linspace<double>( 0, 10, 10, true );
-    Flowy::VectorX y_data      = xt::linspace<double>( 0, 1.0, 2, true );
+    Flowy::VectorX x_data      = xt::arange<double>( 0.0, 10.0, 1.0 );
+    Flowy::VectorX y_data      = xt::arange<double>( 0.0, 1.1, 1.0 );
     Flowy::MatrixX height_data = xt::zeros<double>( { x_data.size(), y_data.size() } );
 
     for( size_t i = 0; i < x_data.size(); i++ )

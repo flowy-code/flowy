@@ -9,6 +9,7 @@
 #include <iterator>
 #include <memory>
 #include <optional>
+#include <stdexcept>
 #include <utility>
 #include <vector>
 
@@ -20,6 +21,10 @@ struct LobeCells
     using cellvecT = std::vector<std::array<int, 2>>;
     cellvecT cells_intersecting{};
     cellvecT cells_enclosed{};
+
+    static constexpr int n_trapz = 5;
+    using trapzT                 = std::array<double, n_trapz>;
+    std::vector<trapzT> cell_trapz_values{};
 };
 
 class Topography
@@ -28,7 +33,6 @@ public:
     // The indices are all inclusive, i.e.
     // x limits = [idx_x_lower, idx_x_higher]
     // y limits = [idx_y_lower, idx_y_higher]
-
     struct BoundingBox
     {
         int idx_x_lower{};
@@ -40,6 +44,15 @@ public:
     Topography( const MatrixX & height_data, const VectorX & x_data, const VectorX & y_data )
             : height_data( height_data ), hazard( xt::zeros_like( height_data ) ), x_data( x_data ), y_data( y_data )
     {
+        // Check that x_data spacing and y_data spacing is the same
+        double delta_x = x_data[1] - x_data[0];
+        double delta_y = y_data[1] - y_data[0];
+        if( !xt::isclose( delta_x, delta_y )[0] )
+        {
+            throw std::runtime_error( fmt::format(
+                "The spacing between x and y must be the same! It is delta_x = {} and delta_y = {}", delta_x,
+                delta_y ) );
+        }
     }
 
     Topography() = default;
@@ -103,7 +116,7 @@ public:
     LobeCells get_cells_intersecting_lobe( const Lobe & lobe, std::optional<int> idx_cache = std::nullopt );
 
     double rasterize_cell_grid( int idx_x, int idx_y, const Lobe & lobe );
-    double rasterize_cell_trapz( int idx_x, int idx_y, const Lobe & lobe );
+    double rasterize_cell_trapz( LobeCells::trapzT & trapz_values );
 
     // Find the fraction of the cells covered by the lobe by rasterizing each cell
     // into a grid of N*N points
@@ -117,7 +130,7 @@ public:
     void add_lobe( const Lobe & lobe, bool volume_correction, std::optional<int> idx_cache = std::nullopt );
 
     // Computes the hazard for a flow
-    void compute_hazard_flow( const std::vector<Lobe> & lobes, MatrixX & flow_hazard );
+    void compute_hazard_flow( const std::vector<Lobe> & lobes );
 
     // Check if a point is near the boundary
     bool is_point_near_boundary( const Vector2 & coordinates, double radius );
