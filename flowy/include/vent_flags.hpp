@@ -49,12 +49,11 @@ public:
         fissure_weights = std::vector<double>( n_fissures(), 1.0 );
     }
 
-    virtual void get_fissure_endpoints( int idx_fissure [[maybe_unused]] ) {};
+    virtual void get_fissure_endpoints( int idx_fissure [[maybe_unused]] ) {}
 
     // Get the lobe position from the endpoints of the fissure
     [[nodiscard]] virtual Vector2 get_position_from_endpoints()
     {
-
         return x1 + ( 1.0 - dist_line( gen ) ) * ( x2 - x1 );
     }
 
@@ -118,7 +117,9 @@ class VentFlag0 : public VentFlag
 
 public:
     VentFlag0( int idx_flow, int n_flows, const ventCoordT & vent_coordinates, std::mt19937 & gen )
-            : VentFlag( vent_coordinates, std::nullopt, std::nullopt, gen ), idx_flow( idx_flow ), n_flows( n_flows ){};
+            : VentFlag( vent_coordinates, std::nullopt, std::nullopt, gen ), idx_flow( idx_flow ), n_flows( n_flows )
+    {
+    }
 
     Vector2 get_position() override
     {
