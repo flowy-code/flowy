@@ -7,6 +7,7 @@
 #include "flowy/include/math.hpp"
 #include "flowy/include/topography.hpp"
 #include "flowy/include/topography_file.hpp"
+#include "flowy/include/vent_flags.hpp"
 #include "pdf_cpplib/include/probability_dist.hpp"
 #include "pdf_cpplib/include/reservoir_sampling.hpp"
 #include "xtensor/xbuilder.hpp"
@@ -146,163 +147,55 @@ std::optional<std::vector<double>> Simulation::compute_cumulative_fissure_length
 
 void Simulation::compute_initial_lobe_position( int idx_flow, Lobe & lobe )
 {
+    std::unique_ptr<VentFlag> f{};
+
     // Initial lobes are on the vent and flow starts from the first vent, second vent and so on
     if( input.vent_flag == 0 )
     {
-        int idx_vent = std::floor( idx_flow * input.n_vents() / input.n_flows );
-        lobe.center  = input.vent_coordinates[idx_vent];
+        f = std::make_unique<VentFlag0>( idx_flow, input.n_flows, input.vent_coordinates, gen );
     }
     else if( input.vent_flag == 1 )
     {
-        // the initial lobes are chosen randomly from the vents coordinates and each vent has the same probability
-        auto dist    = std::uniform_int_distribution<int>( 0, input.n_vents() - 1 );
-        int idx_vent = dist( gen );
-        lobe.center  = input.vent_coordinates[idx_vent];
+        f = std::make_unique<VentFlag1>(
+            input.vent_coordinates, input.fissure_probabilities, input.fissure_end_coordinates, gen );
     }
     else if( input.vent_flag == 2 )
     {
-
-        int n_fissures = input.n_vents() - 1;
-        std::vector<double> segment_weights( n_fissures );
-        for( int i_fissure = 0; i_fissure < n_fissures; i_fissure++ )
-        {
-            segment_weights[i_fissure]
-                = xt::linalg::norm( input.vent_coordinates[i_fissure + 1] - input.vent_coordinates[i_fissure] );
-        }
-
-        std::discrete_distribution<int> dist_segment( segment_weights.begin(), segment_weights.end() );
-        std::uniform_real_distribution<double> dist( 0.0, 1.0 );
-
-        int idx_vent     = dist_segment( gen );
-        const Vector2 x1 = input.vent_coordinates[idx_vent];
-        const Vector2 x2 = input.vent_coordinates[idx_vent + 1];
-        lobe.center      = x1 + ( 1.0 - dist( gen ) ) * ( x2 - x1 );
+        f = std::make_unique<VentFlag2>(
+            input.vent_coordinates, input.fissure_probabilities, input.fissure_end_coordinates, gen );
     }
     else if( input.vent_flag == 3 )
     {
-        // the initial lobes are on the polyline connecting
-        // the vents and all the segments of the polyline
-        // have the same probability
-        // You must have at least two vents to use this flag
-        if( input.vent_coordinates.size() < 2 )
-        {
-            throw std::runtime_error(
-                fmt::format( "You must have at least two vents to use vent_flag={}", input.vent_flag ) );
-        }
-        // This distribution decides on which line segment we are
-        std::uniform_int_distribution<int> dist_segment( 0, input.n_vents() - 2 );
-
-        // This distribution decides where on the line segment we are
-        std::uniform_real_distribution<double> dist( 0.0, 1.0 );
-
-        // Line segment from x1 to x2
-        int idx_vent = dist_segment( gen );
-        Vector2 x1   = input.vent_coordinates[idx_vent];
-        Vector2 x2   = input.vent_coordinates[idx_vent + 1];
-        lobe.center  = x1 + ( 1.0 - dist( gen ) ) * ( x2 - x1 );
+        f = std::make_unique<VentFlag3>(
+            input.vent_coordinates, input.fissure_probabilities, input.fissure_end_coordinates, gen );
     }
     else if( input.vent_flag == 4 )
     {
-        // If you haven't set the fissure_end_coordinates, this will throw
-        if( !input.fissure_end_coordinates.has_value() )
-        {
-            throw std::runtime_error( fmt::format(
-                "You need to define the end points of the fissures with x_vent_end and y_vent_end to use vent_flag={}",
-                input.vent_flag ) );
-        }
-
-        int n_fissures = input.n_vents();
-        std::vector<double> segment_weights( n_fissures );
-        for( int i_fissure = 0; i_fissure < n_fissures; i_fissure++ )
-        {
-            segment_weights[i_fissure] = xt::linalg::norm(
-                input.fissure_end_coordinates.value()[i_fissure] - input.vent_coordinates[i_fissure] );
-        }
-
-        std::discrete_distribution<int> dist_segment( segment_weights.begin(), segment_weights.end() );
-
-        // This distribution decides where on the line segment we are
-        std::uniform_real_distribution<double> dist( 0.0, 1.0 );
-
-        int idx_vent = dist_segment( gen );
-        Vector2 x1   = input.vent_coordinates[idx_vent];
-        Vector2 x2   = input.fissure_end_coordinates.value()[idx_vent];
-        lobe.center  = x1 + ( 1.0 - dist( gen ) ) * ( x2 - x1 );
+        f = std::make_unique<VentFlag4>(
+            input.vent_coordinates, input.fissure_probabilities, input.fissure_end_coordinates, gen );
     }
     else if( input.vent_flag == 5 )
     {
-        // If you haven't set the fissure_end_coordinates, this will throw
-        if( !input.fissure_end_coordinates.has_value() )
-        {
-            throw std::runtime_error( fmt::format(
-                "You need to define the end points of the fissures with x_vent_end and y_vent_end to use vent_flag={}",
-                input.vent_flag ) );
-        }
-
-        std::uniform_int_distribution<int> dist_segment( 0, input.n_vents() - 2 );
-
-        // This distribution decides where on the line segment we are
-        std::uniform_real_distribution<double> dist( 0.0, 1.0 );
-
-        int idx_vent = dist_segment( gen );
-        Vector2 x1   = input.vent_coordinates[idx_vent];
-        Vector2 x2   = input.fissure_end_coordinates.value()[idx_vent];
-        lobe.center  = x1 + ( 1.0 - dist( gen ) ) * ( x2 - x1 );
+        f = std::make_unique<VentFlag5>(
+            input.vent_coordinates, input.fissure_probabilities, input.fissure_end_coordinates, gen );
     }
     else if( input.vent_flag == 6 )
     {
-        // the initial lobes are on the polyline connecting
-        // the vents and the probability of
-        // each segment is fixed by "fissure probabilities"
-        if( input.fissure_probabilities->size() != input.n_vents() - 1 )
-        {
-            throw std::runtime_error(
-                fmt::format( "input.fissure_probabilities has wrong size for vent_flag={}", input.vent_flag ) );
-        }
-
-        std::discrete_distribution<int> dist_segment(
-            input.fissure_probabilities->begin(), input.fissure_probabilities->end() );
-        std::uniform_real_distribution<double> dist( 0.0, 1.0 );
-
-        int idx_vent = dist_segment( gen );
-        Vector2 x1   = input.vent_coordinates[idx_vent];
-        Vector2 x2   = input.vent_coordinates[idx_vent + 1];
-        lobe.center  = x1 + ( 1.0 - dist( gen ) ) * ( x2 - x1 );
+        f = std::make_unique<VentFlag6>(
+            input.vent_coordinates, input.fissure_probabilities, input.fissure_end_coordinates, gen );
     }
     else if( input.vent_flag == 7 )
     {
-        // the initial lobes are on multiple
-        // fissures and the probabilities are fixed in the input file
-        if( input.fissure_probabilities->size() != input.n_vents() )
-        {
-            throw std::runtime_error(
-                fmt::format( "input.fissure_probabilities has wrong size for vent_flag={}.", input.vent_flag ) );
-        }
-
-        std::discrete_distribution<int> dist_segment(
-            input.fissure_probabilities->begin(), input.fissure_probabilities->end() );
-        std::uniform_real_distribution<double> dist( 0.0, 1.0 );
-
-        int idx_vent = dist_segment( gen );
-        Vector2 x1   = input.vent_coordinates[idx_vent];
-        Vector2 x2   = input.fissure_end_coordinates.value()[idx_vent];
-        lobe.center  = x1 + ( 1.0 - dist( gen ) ) * ( x2 - x1 );
+        f = std::make_unique<VentFlag7>(
+            input.vent_coordinates, input.fissure_probabilities, input.fissure_end_coordinates, gen );
     }
     else if( input.vent_flag == 8 )
     {
-        // the initial lobes are chosen randomly from the vents
-        // coordinates and the probability of each vent
-        // fissures and the probabilities are fixed in the input file
-        if( input.fissure_probabilities->size() != input.n_vents() )
-        {
-            throw std::runtime_error(
-                fmt::format( "input.fissure_probabilities has wrong size for vent_flag={}.", input.vent_flag ) );
-        }
-        std::discrete_distribution<int> dist_vent(
-            input.fissure_probabilities->begin(), input.fissure_probabilities->end() );
-        int idx_vent = dist_vent( gen );
-        lobe.center  = input.vent_coordinates[idx_vent];
+        f = std::make_unique<VentFlag8>(
+            input.vent_coordinates, input.fissure_probabilities, input.fissure_end_coordinates, gen );
     }
+
+    lobe.center = f->get_position();
 }
 void Simulation::write_lobe_data_to_file( const std::vector<Lobe> & lobes, const std::filesystem::path & path )
 {
