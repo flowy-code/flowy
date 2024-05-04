@@ -232,11 +232,14 @@ void validate_settings( const InputParams & options )
     check( name_and_var( options.a_beta ), geq_zero );
     check( name_and_var( options.b_beta ), geq_zero );
     check( name_and_var( options.n_init ), []( auto x ) { return x >= 1; } );
-    check( name_and_var( options.dist_fact ), geq_zero_leq_one );
+    check( name_and_var( options.dist_fact ), geq_zero );
     check( name_and_var( options.npoints ), []( auto x ) { return x >= 1; } );
     check( name_and_var( options.aspect_ratio_coeff ), geq_zero );
     check( name_and_var( options.max_aspect_ratio ), g_zero );
     check( name_and_var( options.thickening_parameter ), []( auto x ) { return x >= 0.0 && x < 1.0; } );
+    check(
+        name_and_var( options.vent_flag ), []( auto x ) { return x >= 0.0 && x < 9; },
+        "Allowed values of the vent_flag are 0 to 8, inclusive." );
 
     // Output settings validation
     check(
