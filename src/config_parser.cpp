@@ -3,6 +3,7 @@
 
 #include "flowy/include/config_parser.hpp"
 #include "flowy/include/config.hpp"
+#include "flowy/include/definitions.hpp"
 #include "flowy/include/netcdf_file.hpp"
 #include <fmt/format.h>
 #include <fmt/ranges.h>
@@ -124,12 +125,12 @@ InputParams parse_config( const std::filesystem::path & path )
 
     if( !x_vent_end.empty() )
     {
-        params.fissure_end_coordinates = {};
-    }
-
-    for( size_t i = 0; i < x_vent_end.size(); i++ )
-    {
-        params.fissure_end_coordinates->push_back( { x_vent_end[i], y_vent_end[i] } );
+        std::vector<Vector2> fissure_end_coordinates{};
+        for( size_t i = 0; i < x_vent_end.size(); i++ )
+        {
+            fissure_end_coordinates.push_back( { x_vent_end[i], y_vent_end[i] } );
+        }
+        params.fissure_end_coordinates = fissure_end_coordinates;
     }
 
     std::optional<int> hazard_flag = tbl["hazard_flag"].value<int>();
@@ -291,7 +292,7 @@ void validate_settings( const InputParams & options )
             }
             return true;
         },
-        "fissure_probabilities and x_vent different sizes" );
+        "fissure_probabilities and x_vent have different sizes" );
 }
 
 } // namespace Flowy::Config
