@@ -281,18 +281,6 @@ void validate_settings( const InputParams & options )
             return true;
         },
         "x_vent and x_vent_end have different sizes" );
-
-    check(
-        name_and_var( options.fissure_probabilities ),
-        [&]( auto & x )
-        {
-            if( x.has_value() )
-            {
-                return x->size() == options.vent_coordinates.size();
-            }
-            return true;
-        },
-        "fissure_probabilities and x_vent have different sizes" );
 }
 
 } // namespace Flowy::Config
