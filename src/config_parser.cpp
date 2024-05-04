@@ -5,6 +5,8 @@
 #include "flowy/include/config.hpp"
 #include "flowy/include/netcdf_file.hpp"
 #include <fmt/format.h>
+#include <fmt/ranges.h>
+#include <fmt/std.h>
 #include <toml++/toml.h>
 #include <filesystem>
 #include <optional>
@@ -112,6 +114,24 @@ InputParams parse_config( const std::filesystem::path & path )
         params.vent_coordinates.push_back( { x_vent[i], y_vent[i] } );
     }
 
+    std::vector<double> x_vent_end = parse_vector<double>( tbl["x_vent_end"] );
+    std::vector<double> y_vent_end = parse_vector<double>( tbl["y_vent_end"] );
+
+    if( x_vent_end.size() != y_vent_end.size() )
+    {
+        throw std::runtime_error( "x_vent_end and y_vent_end have different sizes" );
+    }
+
+    if( !x_vent_end.empty() )
+    {
+        params.fissure_end_coordinates = {};
+    }
+
+    for( size_t i = 0; i < x_vent_end.size(); i++ )
+    {
+        params.fissure_end_coordinates->push_back( { x_vent_end[i], y_vent_end[i] } );
+    }
+
     std::optional<int> hazard_flag = tbl["hazard_flag"].value<int>();
     if( hazard_flag.has_value() )
     {
@@ -152,18 +172,21 @@ InputParams parse_config( const std::filesystem::path & path )
 
     set_if_specified( params.vent_flag, tbl["vent_flag"] );
 
-    params.fissure_probabilities = tbl["fissure_probabilities"].value<double>();
-    params.total_volume          = tbl["total_volume"].value<double>();
-    params.east_to_vent          = tbl["east_to_vent"].value<double>();
-    params.west_to_vent          = tbl["west_to_vent"].value<double>();
-    params.south_to_vent         = tbl["south_to_vent"].value<double>();
-    params.north_to_vent         = tbl["north_to_vent"].value<double>();
-    params.channel_file          = tbl["channel_file"].value<std::string>();
-    params.alfa_channel          = tbl["alfa_channel"].value<double>();
-    params.d1                    = tbl["d1"].value<double>();
-    params.d2                    = tbl["d2"].value<double>();
-    params.eps                   = tbl["eps"].value<double>();
-    params.union_diff_file       = tbl["union_diff_file"].value<std::string>();
+    auto fissure_probabilities = parse_vector<double>( tbl["fissure_probabilities"] );
+    if( !fissure_probabilities.empty() )
+        params.fissure_probabilities = fissure_probabilities;
+
+    params.total_volume    = tbl["total_volume"].value<double>();
+    params.east_to_vent    = tbl["east_to_vent"].value<double>();
+    params.west_to_vent    = tbl["west_to_vent"].value<double>();
+    params.south_to_vent   = tbl["south_to_vent"].value<double>();
+    params.north_to_vent   = tbl["north_to_vent"].value<double>();
+    params.channel_file    = tbl["channel_file"].value<std::string>();
+    params.alfa_channel    = tbl["alfa_channel"].value<double>();
+    params.d1              = tbl["d1"].value<double>();
+    params.d2              = tbl["d2"].value<double>();
+    params.eps             = tbl["eps"].value<double>();
+    params.union_diff_file = tbl["union_diff_file"].value<std::string>();
 
     // ===================================================================================
     // mr lava loba settings from input_advanced.py
@@ -245,6 +268,30 @@ void validate_settings( const InputParams & options )
     check(
         name_and_var( options.output_settings.compression_level ), []( auto x ) { return x >= 0 && x <= 9; },
         "The compression level can only be between 0 and 9, inclusive." );
+
+    check(
+        name_and_var( options.fissure_end_coordinates ),
+        [&]( auto & x )
+        {
+            if( x.has_value() )
+            {
+                return options.vent_coordinates.size() == x->size();
+            }
+            return true;
+        },
+        "x_vent and x_vent_end have different sizes" );
+
+    check(
+        name_and_var( options.fissure_probabilities ),
+        [&]( auto & x )
+        {
+            if( x.has_value() )
+            {
+                return x->size() == options.vent_coordinates.size();
+            }
+            return true;
+        },
+        "fissure_probabilities and x_vent different sizes" );
 }
 
 } // namespace Flowy::Config
