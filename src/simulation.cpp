@@ -8,6 +8,7 @@
 #include "flowy/include/topography.hpp"
 #include "flowy/include/topography_file.hpp"
 #include "flowy/include/vent_flags.hpp"
+#include "fmt/core.h"
 #include "pdf_cpplib/include/probability_dist.hpp"
 #include "pdf_cpplib/include/reservoir_sampling.hpp"
 #include "xtensor/xbuilder.hpp"
@@ -130,7 +131,7 @@ Topography Simulation::construct_initial_topography( const Config::InputParams &
 
         if( input.restart_filling_parameters.has_value() && input.restart_filling_parameters->size() != n_restart )
         {
-            throw std::runtime_error( std::format(
+            throw std::runtime_error( fmt::format(
                 "restart_filling_parameters has size {}, but there are {} restart files",
                 input.restart_filling_parameters->size(), n_restart ) );
         }
@@ -142,6 +143,9 @@ Topography Simulation::construct_initial_topography( const Config::InputParams &
             {
                 filling_parameter = input.restart_filling_parameters.value()[i_restart];
             }
+            fmt::print(
+                "Restart file {}/{}: {}\n", i_restart + 1, n_restart, input.restart_files.value()[i_restart].string() );
+            fmt::print( "    filling_parameter = {}\n", filling_parameter );
 
             // Create the topography for the restart file
             auto asc_file_restart   = AscFile( input.restart_files.value()[i_restart] );
