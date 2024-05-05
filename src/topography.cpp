@@ -425,6 +425,11 @@ std::pair<double, Vector2> Topography::height_and_slope( const Vector2 & coordin
     const double Z01 = height_data( idx_x_lower, idx_y_higher );
     const double Z11 = height_data( idx_x_higher, idx_y_higher );
 
+    if( Z00 == no_data_value || Z10 == no_data_value || Z01 == no_data_value || Z11 == no_data_value )
+    {
+        return { no_data_value, { no_data_value, no_data_value } };
+    }
+
     const double alpha = Z10 - Z00;
     const double beta  = Z01 - Z00;
     const double gamma = Z11 + Z00 - Z10 - Z01;
