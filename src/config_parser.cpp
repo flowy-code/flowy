@@ -206,9 +206,7 @@ InputParams parse_config( const std::filesystem::path & path )
     set_if_specified( params.max_length, tbl["Advanced"]["max_length"] );
     set_if_specified( params.n_check_loop, tbl["Advanced"]["n_check_loop"] );
 
-    auto restart_files                = parse_vector<std::string>( tbl["Advanced"]["restart_files"] );
-    params.restart_filling_parameters = parse_vector<double>( tbl["Advanced"]["restart_filling_parameters"] );
-
+    auto restart_files = parse_vector<std::string>( tbl["Advanced"]["restart_files"] );
     if( !restart_files.empty() )
     {
         params.restart_files = std::vector<std::filesystem::path>{};
@@ -216,6 +214,12 @@ InputParams parse_config( const std::filesystem::path & path )
     for( auto & s : restart_files )
     {
         params.restart_files.value().emplace_back( s );
+    }
+
+    auto restart_filling_parameters = parse_vector<double>( tbl["Advanced"]["restart_filling_parameters"] );
+    if( !restart_filling_parameters.empty() )
+    {
+        params.restart_filling_parameters = restart_filling_parameters;
     }
 
     return params;
