@@ -8,6 +8,7 @@
 #include "flowy/include/topography.hpp"
 #include "flowy/include/topography_file.hpp"
 #include "flowy/include/vent_flags.hpp"
+#include "fmt/core.h"
 #include "pdf_cpplib/include/probability_dist.hpp"
 #include "pdf_cpplib/include/reservoir_sampling.hpp"
 #include "xtensor/xbuilder.hpp"
@@ -32,7 +33,7 @@
 namespace Flowy
 {
 
-CommonLobeDimensions::CommonLobeDimensions( const Config::InputParams & input, const AscFile & asc_file )
+CommonLobeDimensions::CommonLobeDimensions( const Config::InputParams & input, const Topography & topography )
 {
     if( !input.total_volume.has_value() )
         throw std::runtime_error( "Total volume flag not set" );
@@ -60,7 +61,7 @@ CommonLobeDimensions::CommonLobeDimensions( const Config::InputParams & input, c
 
     exp_lobe_exponent = std::exp( input.lobe_exponent );
     max_semiaxis      = std::sqrt( lobe_area * input.max_aspect_ratio / Math::pi );
-    max_cells         = std::ceil( 2.0 * max_semiaxis / asc_file.cell_size() ) + 2;
+    max_cells         = std::ceil( 2.0 * max_semiaxis / topography.cell_size() ) + 2;
     thickness_min     = 2.0 * input.thickness_ratio / ( input.thickness_ratio + 1.0 ) * avg_lobe_thickness;
 
     FLOWY_CHECK( lobe_area );
@@ -78,6 +79,18 @@ Simulation::Simulation( const Config::InputParams & input, std::optional<int> rn
 
     // Create output directory
     std::filesystem::create_directories( input.output_folder ); // Create the output directory
+
+    topography = Simulation::construct_initial_topography( input );
+
+    lobe_dimensions = CommonLobeDimensions( input, topography );
+
+    // Make a copy of the initial topography
+    topography_initial = topography;
+};
+
+Topography Simulation::construct_initial_topography( const Config::InputParams & input )
+{
+    AscFile asc_file{};
 
     // Crop if all of these have a value
     if( input.east_to_vent.has_value() && input.west_to_vent.has_value() && input.south_to_vent.has_value()
@@ -110,39 +123,39 @@ Simulation::Simulation( const Config::InputParams & input, std::optional<int> rn
         asc_file = AscFile( input.source );
     }
 
-    topography      = asc_file.to_topography();
-    lobe_dimensions = CommonLobeDimensions( input, asc_file );
+    auto topography = asc_file.to_topography();
 
-    // Make a copy of the initial topography
-    topography_initial = topography;
-};
-
-std::optional<std::vector<double>> Simulation::compute_cumulative_fissure_length()
-{
-    auto lengths = std::vector<double>{};
-    lengths.reserve( input.n_vents() );
-    lengths.push_back( 0.0 );
-    int n_vents = input.n_vents();
-
-    for( int ivent = 1; ivent < n_vents; ivent++ )
+    if( input.restart_files.has_value() )
     {
-        Vector2 delta_vent = input.vent_coordinates[ivent] - input.vent_coordinates[ivent - 1];
-        lengths.push_back(
-            lengths[ivent - 1] + std::sqrt( delta_vent[0] * delta_vent[0] + delta_vent[1] * delta_vent[1] ) );
-    }
+        auto n_restart = input.restart_files->size();
 
-    if( lengths.size() > 1 )
-    {
-        for( int ivent = 0; ivent < n_vents; ivent++ )
+        if( input.restart_filling_parameters.has_value() && input.restart_filling_parameters->size() != n_restart )
         {
-            lengths[ivent] /= lengths[n_vents - 1];
+            throw std::runtime_error( fmt::format(
+                "restart_filling_parameters has size {}, but there are {} restart files",
+                input.restart_filling_parameters->size(), n_restart ) );
         }
-        return lengths;
+
+        for( size_t i_restart = 0; i_restart < n_restart; i_restart++ )
+        {
+            double filling_parameter = 1.0;
+            if( input.restart_filling_parameters.has_value() )
+            {
+                filling_parameter = input.restart_filling_parameters.value()[i_restart];
+            }
+            fmt::print(
+                "Restart file {}/{}: {}\n", i_restart + 1, n_restart, input.restart_files.value()[i_restart].string() );
+            fmt::print( "    filling_parameter = {}\n", filling_parameter );
+
+            // Create the topography for the restart file
+            auto asc_file_restart   = AscFile( input.restart_files.value()[i_restart] );
+            auto restart_topography = asc_file_restart.to_topography();
+            // Add the restart file to the topography
+            topography.add_to_topography( restart_topography, filling_parameter );
+        }
     }
-    else
-    {
-        return std::nullopt;
-    }
+
+    return topography;
 }
 
 void Simulation::compute_initial_lobe_position( int idx_flow, Lobe & lobe )
@@ -371,7 +384,7 @@ void Simulation::compute_descendent_lobe_position( Lobe & lobe, const Lobe & par
 bool Simulation::stop_condition( const Vector2 & point, double radius )
 {
     return topography.is_point_near_boundary( point, radius )
-           || topography.get_height( point ) <= asc_file.no_data_value;
+           || topography.get_height( point ) <= topography.no_data_value;
 }
 
 void Simulation::write_avg_thickness_file()
@@ -477,13 +490,13 @@ void Simulation::write_avg_thickness_file()
         xt::filter( topography_masked.hazard, topography_thickness.height_data < threshold_thickness )      = 0.0;
 
         // Write the masked thickness and the masked hazard maps
-        auto file_thick = get_file_handle( topography_masked, OutputQuantitiy::Height, 0.0 );
+        auto file_thick = get_file_handle( topography_masked, OutputQuantitiy::Height );
         file_thick->save(
             input.output_folder / fmt::format( "{}_thickness_masked_{:.2f}", input.run_name, threshold ) );
 
         if( input.save_hazard_data )
         {
-            auto file_hazard = get_file_handle( topography_masked, OutputQuantitiy::Hazard, 0.0 );
+            auto file_hazard = get_file_handle( topography_masked, OutputQuantitiy::Hazard );
             file_hazard->save(
                 input.output_folder / fmt::format( "{}_hazard_masked_{:.2f}", input.run_name, threshold ) );
         }
@@ -492,7 +505,7 @@ void Simulation::write_avg_thickness_file()
 }
 
 std::unique_ptr<TopographyFile>
-Simulation::get_file_handle( const Topography & topography, OutputQuantitiy output_quantity, double no_data_value )
+Simulation::get_file_handle( const Topography & topography, OutputQuantitiy output_quantity )
 {
     std::unique_ptr<TopographyFile> res{};
 
@@ -517,8 +530,6 @@ Simulation::get_file_handle( const Topography & topography, OutputQuantitiy outp
         auto asc_file = AscFile( topography, output_quantity );
         res           = std::make_unique<AscFile>( asc_file );
     }
-
-    res->no_data_value = no_data_value;
 
     if( input.output_settings.crop_to_content )
         res->crop_to_content();
@@ -576,6 +587,12 @@ void Simulation::run()
                                  * ( lobe_dimensions.thickness_min + idx_lobe * delta_lobe_thickness );
 
             auto [height_lobe_center, slope] = topography.height_and_slope( lobe_cur.center );
+
+            if( height_lobe_center == topography.no_data_value )
+            {
+                throw std::runtime_error(
+                    "The initial lobe center has been placed on a no_data value point in the topography." );
+            }
 
             // Perturb the angle (and set it)
             lobe_cur.set_azimuthal_angle( std::atan2( slope[1], slope[0] ) ); // Sets the angle prior to perturbation
@@ -696,30 +713,29 @@ void Simulation::run()
     fmt::print( "Used RNG seed: {}\n", rng_seed );
 
     // Save initial topography to asc file
-    auto file_initial = get_file_handle( topography_initial, OutputQuantitiy::Height, -9999.0 );
+    auto file_initial = get_file_handle( topography_initial, OutputQuantitiy::Height );
     file_initial->save( input.output_folder / fmt::format( "{}_DEM", input.run_name ) );
 
     // Save final topography to asc file
     if( input.save_final_dem )
     {
-        auto file_final = get_file_handle( topography, OutputQuantitiy::Height, -9999.0 );
+        auto file_final = get_file_handle( topography, OutputQuantitiy::Height );
         file_final->save( input.output_folder / fmt::format( "{}_DEM_final", input.run_name ) );
     }
 
     // Save full thickness to asc file
-    topography_thickness = topography;
+    topography_thickness               = topography;
+    topography_thickness.no_data_value = DEFAULT_NO_DATA_VALUE_THICKNESS;
     topography_thickness.height_data -= topography_initial.height_data;
     topography_thickness.height_data /= ( 1.0 - input.thickening_parameter );
 
-    auto file_thick           = get_file_handle( topography_thickness, OutputQuantitiy::Height, 0.0 );
-    file_thick->no_data_value = 0;
+    auto file_thick = get_file_handle( topography_thickness, OutputQuantitiy::Height );
     file_thick->save( input.output_folder / fmt::format( "{}_thickness_full", input.run_name ) );
 
     // Save the full hazard map
     if( input.save_hazard_data )
     {
-        auto file_hazard           = get_file_handle( topography, OutputQuantitiy::Hazard, 0.0 );
-        file_hazard->no_data_value = 0;
+        auto file_hazard = get_file_handle( topography, OutputQuantitiy::Hazard );
         file_hazard->save( input.output_folder / fmt::format( "{}_hazard_full", input.run_name ) );
     }
 

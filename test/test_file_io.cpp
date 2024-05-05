@@ -6,6 +6,7 @@
 #include <catch2/matchers/catch_matchers_range_equals.hpp>
 
 #include "flowy/include/asc_file.hpp"
+#include "flowy/include/definitions.hpp"
 #include "flowy/include/netcdf_file.hpp"
 #include "flowy/include/topography.hpp"
 #include "flowy/include/topography_file.hpp"
@@ -52,52 +53,46 @@ TEST_CASE( "file_io", "[netcdf]" )
 
     double NO_DATA_VALUE = -1;
 
-    auto topography   = Flowy::Topography( height_data, x_data, y_data );
+    auto topography   = Flowy::Topography( height_data, x_data, y_data, NO_DATA_VALUE );
     topography.hazard = xt::ones_like( height_data );
 
     auto write_asc_height = [&]( const Flowy::Topography & topography, const fs::path & path )
     {
-        auto file          = Flowy::AscFile( topography, Flowy::OutputQuantitiy::Height );
-        file.no_data_value = NO_DATA_VALUE;
+        auto file = Flowy::AscFile( topography, Flowy::OutputQuantitiy::Height );
         file.save( path );
     };
 
     auto write_asc_hazard = [&]( const Flowy::Topography & topography, const fs::path & path )
     {
-        auto file          = Flowy::AscFile( topography, Flowy::OutputQuantitiy::Hazard );
-        file.no_data_value = NO_DATA_VALUE;
+        auto file = Flowy::AscFile( topography, Flowy::OutputQuantitiy::Hazard );
         file.save( path );
     };
 
     auto read_asc            = [&]( const fs::path & path ) { return Flowy::AscFile( path ); };
     auto write_netcdf_height = [&]( const Flowy::Topography & topography, const fs::path & path )
     {
-        auto file          = Flowy::NetCDFFile( topography, Flowy::OutputQuantitiy::Height );
-        file.no_data_value = NO_DATA_VALUE;
-        file.data_type     = Flowy::StorageDataType::Double;
+        auto file      = Flowy::NetCDFFile( topography, Flowy::OutputQuantitiy::Height );
+        file.data_type = Flowy::StorageDataType::Double;
         file.save( path );
     };
 
     auto write_netcdf_height_float = [&]( const Flowy::Topography & topography, const fs::path & path )
     {
-        auto file          = Flowy::NetCDFFile( topography, Flowy::OutputQuantitiy::Height );
-        file.no_data_value = NO_DATA_VALUE;
-        file.data_type     = Flowy::StorageDataType::Float;
+        auto file      = Flowy::NetCDFFile( topography, Flowy::OutputQuantitiy::Height );
+        file.data_type = Flowy::StorageDataType::Float;
         file.save( path );
     };
 
     auto write_netcdf_height_short = [&]( const Flowy::Topography & topography, const fs::path & path )
     {
-        auto file          = Flowy::NetCDFFile( topography, Flowy::OutputQuantitiy::Height );
-        file.no_data_value = NO_DATA_VALUE;
-        file.data_type     = Flowy::StorageDataType::Short;
+        auto file      = Flowy::NetCDFFile( topography, Flowy::OutputQuantitiy::Height );
+        file.data_type = Flowy::StorageDataType::Short;
         file.save( path );
     };
 
     auto write_netcdf_hazard = [&]( const Flowy::Topography & topography, const fs::path & path )
     {
-        auto file          = Flowy::NetCDFFile( topography, Flowy::OutputQuantitiy::Hazard );
-        file.no_data_value = NO_DATA_VALUE;
+        auto file = Flowy::NetCDFFile( topography, Flowy::OutputQuantitiy::Hazard );
         file.save( path );
     };
 

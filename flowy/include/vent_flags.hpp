@@ -4,6 +4,7 @@
 #include "flowy/include/definitions.hpp"
 #include "flowy/include/math.hpp"
 #include <fmt/format.h>
+#include <cstddef>
 #include <optional>
 #include <random>
 #include <stdexcept>
@@ -61,7 +62,7 @@ public:
     {
         if( fissure_probabilities.has_value() )
         {
-            if( fissure_probabilities->size() != n_fissures() )
+            if( fissure_probabilities->size() != static_cast<size_t>( n_fissures() ) )
             {
                 throw std::runtime_error( fmt::format(
                     "The size of fissure_probabilities (= {}), does not match the number of fissures (= {})",

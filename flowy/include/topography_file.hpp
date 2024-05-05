@@ -52,7 +52,7 @@ public:
 
     // Constructor that takes topography
     TopographyFile( const Topography & topography, OutputQuantitiy output )
-            : x_data( topography.x_data ), y_data( topography.y_data )
+            : x_data( topography.x_data ), y_data( topography.y_data ), no_data_value( topography.no_data_value )
     {
         if( output == OutputQuantitiy::Height )
         {
@@ -89,9 +89,9 @@ public:
         return { x_data[0], y_data[0] };
     }
 
-    virtual Topography to_topography() const
+    Topography to_topography() const
     {
-        return Topography( data, x_data, y_data );
+        return Topography( data, x_data, y_data, no_data_value );
     }
 
     virtual void save( const std::filesystem::path & path ) = 0;

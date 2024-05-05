@@ -19,7 +19,7 @@ class CommonLobeDimensions
 {
 public:
     CommonLobeDimensions() = default;
-    CommonLobeDimensions( const Config::InputParams & input, const AscFile & asc_file );
+    CommonLobeDimensions( const Config::InputParams & input, const Topography & topography );
 
     double avg_lobe_thickness = 0;
     double lobe_area          = 0;
@@ -35,13 +35,15 @@ public:
     Simulation( const Config::InputParams & input, std::optional<int> rng_seed );
 
     Config::InputParams input;
-    AscFile asc_file;
+
     Topography topography_initial;   // Stores the initial topography, before any simulations are run
     Topography topography_thickness; // Stores the height_difference between initial and final topography
     Topography topography;           // The topography, which is modified during the simulation
     CommonLobeDimensions lobe_dimensions;
 
     std::vector<Lobe> lobes; // Lobes per flows
+
+    static Topography construct_initial_topography( const Config::InputParams & input );
 
     // calculates the initial lobe position
     void compute_initial_lobe_position( int idx_flow, Lobe & lobe );
@@ -65,10 +67,7 @@ public:
 
     void write_avg_thickness_file();
 
-    std::unique_ptr<TopographyFile>
-    get_file_handle( const Topography & topography, OutputQuantitiy output_quantity, double no_data_value );
-
-    std::optional<std::vector<double>> compute_cumulative_fissure_length();
+    std::unique_ptr<TopographyFile> get_file_handle( const Topography & topography, OutputQuantitiy output_quantity );
 
     void run();
 

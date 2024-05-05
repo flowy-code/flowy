@@ -41,8 +41,12 @@ public:
         int idx_y_higher{};
     };
 
-    Topography( const MatrixX & height_data, const VectorX & x_data, const VectorX & y_data )
-            : height_data( height_data ), hazard( xt::zeros_like( height_data ) ), x_data( x_data ), y_data( y_data )
+    Topography( const MatrixX & height_data, const VectorX & x_data, const VectorX & y_data, double no_data_value )
+            : height_data( height_data ),
+              hazard( xt::zeros_like( height_data ) ),
+              x_data( x_data ),
+              y_data( y_data ),
+              no_data_value( no_data_value )
     {
         // Check that x_data spacing and y_data spacing is the same
         double delta_x = x_data[1] - x_data[0];
@@ -61,13 +65,14 @@ public:
     MatrixX hazard{};      // Contains data on the cumulative descendents
     VectorX x_data{};
     VectorX y_data{};
+    double no_data_value{};
 
-    inline double get_height( int idx_x, int idx_y )
+    inline double get_height( int idx_x, int idx_y ) const
     {
         return height_data( idx_x, idx_y );
     }
 
-    inline double get_height( const Vector2 & point )
+    inline double get_height( const Vector2 & point ) const
     {
         auto [idx_x, idx_y] = locate_point( point );
         return height_data( idx_x, idx_y );
@@ -84,39 +89,39 @@ public:
         height_data( idx_x, idx_y ) = height;
     }
 
-    inline double cell_size()
+    inline double cell_size() const
     {
         return x_data[1] - x_data[0];
     };
 
-    inline double volume()
+    inline double volume() const
     {
         return xt::sum( height_data )() * cell_size() * cell_size();
     }
 
-    inline double area( double thresh = 0.0 )
+    inline double area( double thresh = 0.0 ) const
     {
         return xt::count_nonzero( xt::filter( height_data, height_data > thresh ) )() * cell_size() * cell_size();
     }
 
     // Calculate the height and the slope at coordinates
     // via linear interpolation from the square grid
-    std::pair<double, Vector2> height_and_slope( const Vector2 & coordinates );
+    std::pair<double, Vector2> height_and_slope( const Vector2 & coordinates ) const;
 
     // Calculate the slope between points, given their heights
-    double
-    slope_between_points( const Vector2 & point1, const Vector2 & point2, std::optional<double> min_height_drop = 0.0 );
+    double slope_between_points(
+        const Vector2 & point1, const Vector2 & point2, std::optional<double> min_height_drop = 0.0 ) const;
 
     // Compute the indices of a rectangular bounding box
     // The box is computed such that a circle with centered at 'center' with radius 'radius'
     // Is completely contained in the bounding box
-    BoundingBox bounding_box( const Vector2 & center, double extent_x, double extent_y );
+    BoundingBox bounding_box( const Vector2 & center, double extent_x, double extent_y ) const;
 
     // Find all the cells that intersect the lobe and all the cells that are fully enclosed by the lobe
     LobeCells get_cells_intersecting_lobe( const Lobe & lobe, std::optional<int> idx_cache = std::nullopt );
 
-    double rasterize_cell_grid( int idx_x, int idx_y, const Lobe & lobe );
-    double rasterize_cell_trapz( LobeCells::trapzT & trapz_values );
+    double rasterize_cell_grid( int idx_x, int idx_y, const Lobe & lobe ) const;
+    double rasterize_cell_trapz( LobeCells::trapzT & trapz_values ) const;
 
     // Find the fraction of the cells covered by the lobe by rasterizing each cell
     // into a grid of N*N points
@@ -133,12 +138,17 @@ public:
     void compute_hazard_flow( const std::vector<Lobe> & lobes );
 
     // Check if a point is near the boundary
-    bool is_point_near_boundary( const Vector2 & coordinates, double radius );
+    bool is_point_near_boundary( const Vector2 & coordinates, double radius ) const;
 
     // Figure out which cell a given point is in, returning the indices of the lowest left corner
-    std::array<int, 2> locate_point( const Vector2 & coordinates );
+    std::array<int, 2> locate_point( const Vector2 & coordinates ) const;
 
-    Vector2 find_preliminary_budding_point( const Lobe & lobe, int npoints );
+    // Add a topography to the topography object
+    // The filling_parameter is a scale factor to multiply the height by when adding to the topography
+    // Apparently the filling_parameter accounts for "subsurface flows"
+    void add_to_topography( const Topography & topography_to_a, double filling_parameter = 1.0 );
+
+    Vector2 find_preliminary_budding_point( const Lobe & lobe, int npoints ) const;
 
     void reset_intersection_cache( int N );
 

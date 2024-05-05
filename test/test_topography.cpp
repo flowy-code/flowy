@@ -24,7 +24,7 @@ TEST_CASE( "bounding_box", "[bounding_box]" )
     Flowy::VectorX y_data      = xt::arange<double>( 4.5, 10.5, 1.0 );
     Flowy::MatrixX height_data = xt::zeros<double>( { x_data.size(), y_data.size() } );
 
-    auto topography = Flowy::Topography( height_data, x_data, y_data );
+    auto topography = Flowy::Topography( height_data, x_data, y_data, Flowy::DEFAULT_NO_DATA_VALUE_HEIGHT );
 
     Flowy::Vector2 point = { 11.4, 7.6 };
 
@@ -63,7 +63,7 @@ TEST_CASE( "get_cells_intersecting_lobe", "[intersecting_lobe_cells]" )
     Flowy::VectorX y_data      = xt::arange<double>( -2.0, 2.0, 1.0 );
     Flowy::MatrixX height_data = xt::zeros<double>( { x_data.size(), y_data.size() } ); // not really needed here
 
-    auto topography = Flowy::Topography( height_data, x_data, y_data );
+    auto topography = Flowy::Topography( height_data, x_data, y_data, Flowy::DEFAULT_NO_DATA_VALUE_HEIGHT );
 
     Flowy::Lobe my_lobe;
     my_lobe.center    = { 0.0, 0.0 };
@@ -93,7 +93,7 @@ TEST_CASE( "test_compute_intersection", "[intersection]" )
     Flowy::VectorX y_data      = xt::arange<double>( -3, 3, 1.0 );
     Flowy::MatrixX height_data = xt::zeros<double>( { x_data.size(), y_data.size() } );
 
-    auto topography = Flowy::Topography( height_data, x_data, y_data );
+    auto topography = Flowy::Topography( height_data, x_data, y_data, Flowy::DEFAULT_NO_DATA_VALUE_HEIGHT );
 
     Flowy::Lobe my_lobe;
     my_lobe.center    = { 0, 0 };
@@ -131,7 +131,7 @@ TEST_CASE( "find_preliminary_budding_point", "[budding_point]" )
     Flowy::VectorX y_data      = xt::arange<double>( -2, 2, 1.0 );
     Flowy::MatrixX height_data = 5.0 * xt::ones<double>( { x_data.size(), y_data.size() } );
 
-    auto topography = Flowy::Topography( height_data, x_data, y_data );
+    auto topography = Flowy::Topography( height_data, x_data, y_data, Flowy::DEFAULT_NO_DATA_VALUE_HEIGHT );
 
     topography.set_height( { 0.5, 0.5 }, -5.0 );
 
@@ -169,7 +169,7 @@ TEST_CASE( "test_finite_difference_slope", "[finite_difference_slope]" )
         }
     }
 
-    auto topography = Flowy::Topography( height_data, x_data, y_data );
+    auto topography = Flowy::Topography( height_data, x_data, y_data, Flowy::DEFAULT_NO_DATA_VALUE_HEIGHT );
 
     const Flowy::Vector2 point1 = { 1.0, 0.5 };
     const Flowy::Vector2 point2 = { 3.0, 0.5 };
@@ -197,7 +197,7 @@ TEST_CASE( "test_volume_correction", "[volume_correction]" )
     Flowy::VectorX y_data      = xt::arange<double>( -3, 3, 1.2 );
     Flowy::MatrixX height_data = xt::zeros<double>( { x_data.size(), y_data.size() } );
 
-    auto topography = Flowy::Topography( height_data, x_data, y_data );
+    auto topography = Flowy::Topography( height_data, x_data, y_data, Flowy::DEFAULT_NO_DATA_VALUE_HEIGHT );
 
     Flowy::Lobe my_lobe;
     my_lobe.center    = { 0, 0 };
@@ -216,4 +216,25 @@ TEST_CASE( "test_volume_correction", "[volume_correction]" )
     auto true_volume = my_lobe.volume();
     INFO( fmt::format( "True volume of the lobe = {}", true_volume ) );
     REQUIRE_THAT( volume_added, Catch::Matchers::WithinRel( true_volume ) );
+}
+
+TEST_CASE( "test_adding_topography", "[add_to_topography]" )
+{
+    Flowy::VectorX x_data      = xt::arange<double>( -3, 3, 1.2 );
+    Flowy::VectorX y_data      = xt::arange<double>( -3, 3, 1.2 );
+    Flowy::MatrixX height_data = xt::zeros<double>( { x_data.size(), y_data.size() } );
+
+    auto topography = Flowy::Topography( height_data, x_data, y_data, Flowy::DEFAULT_NO_DATA_VALUE_HEIGHT );
+    topography.height_data( 0, 0 ) = 2;
+
+    auto topography_to_add = topography;
+
+    // Add one to the diagonal (this relies on x_data and y_data having the same size)
+    topography_to_add.height_data += xt::diag( xt::ones<double>( { x_data.size() } ) );
+
+    Flowy::MatrixX height_data_expected = topography.height_data + topography_to_add.height_data;
+
+    topography.add_to_topography( topography_to_add );
+
+    REQUIRE( xt::isclose( topography.height_data, height_data_expected )() );
 }
