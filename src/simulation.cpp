@@ -7,6 +7,7 @@
 #include "flowy/include/math.hpp"
 #include "flowy/include/topography.hpp"
 #include "flowy/include/topography_file.hpp"
+#include "flowy/include/vent_flags.hpp"
 #include "pdf_cpplib/include/probability_dist.hpp"
 #include "pdf_cpplib/include/reservoir_sampling.hpp"
 #include "xtensor/xbuilder.hpp"
@@ -146,45 +147,56 @@ std::optional<std::vector<double>> Simulation::compute_cumulative_fissure_length
 
 void Simulation::compute_initial_lobe_position( int idx_flow, Lobe & lobe )
 {
+    std::unique_ptr<VentFlag> f{};
+
     // Initial lobes are on the vent and flow starts from the first vent, second vent and so on
     if( input.vent_flag == 0 )
     {
-        int idx_vent = std::floor( idx_flow * input.n_vents() / input.n_flows );
-        lobe.center  = input.vent_coordinates[idx_vent];
+        f = std::make_unique<VentFlag0>( idx_flow, input.n_flows, input.vent_coordinates, gen );
+    }
+    else if( input.vent_flag == 1 )
+    {
+        f = std::make_unique<VentFlag1>(
+            input.vent_coordinates, input.fissure_probabilities, input.fissure_end_coordinates, gen );
     }
     else if( input.vent_flag == 2 )
     {
-        auto cumulative_fissure_lens = compute_cumulative_fissure_length();
-
-        // You must have at least two vents.
-        if( !cumulative_fissure_lens.has_value() )
-        {
-            throw std::runtime_error(
-                fmt::format( "You must have more than one vent to use vent_flag={}", input.vent_flag ) );
-        }
-
-        // Find a random point on the polyline.
-        std::uniform_real_distribution<double> dist( 0.0, 1.0 );
-        double cum_dist = dist( gen );
-
-        auto fiss_len       = xt::adapt( cumulative_fissure_lens.value(), { cumulative_fissure_lens->size() } );
-        size_t x_vent_index = xt::argmax( fiss_len > cum_dist )();
-
-        auto diff_from_prev_vent = cum_dist - cumulative_fissure_lens.value()[x_vent_index - 1];
-
-        double diff_between_vents
-            = cumulative_fissure_lens.value()[x_vent_index] - cumulative_fissure_lens.value()[x_vent_index - 1];
-        double alpha_segment = diff_from_prev_vent / diff_between_vents;
-
-        lobe.center = alpha_segment * input.vent_coordinates[x_vent_index]
-                      + ( 1.0 - alpha_segment ) * input.vent_coordinates[x_vent_index - 1];
+        f = std::make_unique<VentFlag2>(
+            input.vent_coordinates, input.fissure_probabilities, input.fissure_end_coordinates, gen );
     }
-    else
+    else if( input.vent_flag == 3 )
     {
-        throw std::runtime_error( fmt::format( "Not implemented vent_flag={}", input.vent_flag ) );
+        f = std::make_unique<VentFlag3>(
+            input.vent_coordinates, input.fissure_probabilities, input.fissure_end_coordinates, gen );
     }
-}
+    else if( input.vent_flag == 4 )
+    {
+        f = std::make_unique<VentFlag4>(
+            input.vent_coordinates, input.fissure_probabilities, input.fissure_end_coordinates, gen );
+    }
+    else if( input.vent_flag == 5 )
+    {
+        f = std::make_unique<VentFlag5>(
+            input.vent_coordinates, input.fissure_probabilities, input.fissure_end_coordinates, gen );
+    }
+    else if( input.vent_flag == 6 )
+    {
+        f = std::make_unique<VentFlag6>(
+            input.vent_coordinates, input.fissure_probabilities, input.fissure_end_coordinates, gen );
+    }
+    else if( input.vent_flag == 7 )
+    {
+        f = std::make_unique<VentFlag7>(
+            input.vent_coordinates, input.fissure_probabilities, input.fissure_end_coordinates, gen );
+    }
+    else if( input.vent_flag == 8 )
+    {
+        f = std::make_unique<VentFlag8>(
+            input.vent_coordinates, input.fissure_probabilities, input.fissure_end_coordinates, gen );
+    }
 
+    lobe.center = f->get_position();
+}
 void Simulation::write_lobe_data_to_file( const std::vector<Lobe> & lobes, const std::filesystem::path & path )
 {
     std::fstream file;

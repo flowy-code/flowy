@@ -152,7 +152,10 @@ public:
     */
     int vent_flag{};
 
-    std::optional<double> fissure_probabilities{};
+    /*To define the ends of fissures */
+    std::optional<std::vector<Vector2>> fissure_end_coordinates{}; // of shape [n_vents, 2]
+    /*Fissure probabilities, should be of length n_vents (or number of fissures)*/
+    std::optional<std::vector<double>> fissure_probabilities{};
     std::optional<double> total_volume{};
     std::optional<double> east_to_vent{};
     std::optional<double> west_to_vent{};
