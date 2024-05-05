@@ -217,3 +217,24 @@ TEST_CASE( "test_volume_correction", "[volume_correction]" )
     INFO( fmt::format( "True volume of the lobe = {}", true_volume ) );
     REQUIRE_THAT( volume_added, Catch::Matchers::WithinRel( true_volume ) );
 }
+
+TEST_CASE( "test_adding_topography", "[add_to_topography]" )
+{
+    Flowy::VectorX x_data      = xt::arange<double>( -3, 3, 1.2 );
+    Flowy::VectorX y_data      = xt::arange<double>( -3, 3, 1.2 );
+    Flowy::MatrixX height_data = xt::zeros<double>( { x_data.size(), y_data.size() } );
+
+    auto topography = Flowy::Topography( height_data, x_data, y_data, Flowy::DEFAULT_NO_DATA_VALUE_HEIGHT );
+    topography.height_data( 0, 0 ) = 2;
+
+    auto topography_to_add = topography;
+
+    // Add one to the diagonal (this relies on x_data and y_data having the same size)
+    topography_to_add.height_data += xt::diag( xt::ones<double>( { x_data.size() } ) );
+
+    Flowy::MatrixX height_data_expected = topography.height_data + topography_to_add.height_data;
+
+    topography.add_to_topography( topography_to_add );
+
+    REQUIRE( xt::isclose( topography.height_data, height_data_expected )() );
+}
