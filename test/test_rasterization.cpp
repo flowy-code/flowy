@@ -24,7 +24,7 @@ TEST_CASE( "test_rasterization", "[topography]" )
     lobe.set_azimuthal_angle( Flowy::Math::pi / 4 );
     lobe.center = { 20.0, 10.0 };
 
-    auto topography = Flowy::Topography( height_data, x_data, y_data );
+    auto topography = Flowy::Topography( height_data, x_data, y_data, Flowy::DEFAULT_NO_DATA_VALUE_HEIGHT );
     auto lobe_cells = topography.get_cells_intersecting_lobe( lobe );
 
     std::vector<std::array<int, 2>> cells_intersected_expected
@@ -55,7 +55,7 @@ TEST_CASE( "test_add_lobe", "[topography]" )
     lobe.set_azimuthal_angle( Flowy::Math::pi / 4 );
     lobe.center = { 20.0, 10.0 };
 
-    auto topography = Flowy::Topography( height_data, x_data, y_data );
+    auto topography = Flowy::Topography( height_data, x_data, y_data, Flowy::DEFAULT_NO_DATA_VALUE_HEIGHT );
     auto lobe_cells = topography.get_cells_intersecting_lobe( lobe );
 
     auto volume_before = topography.volume();

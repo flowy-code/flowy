@@ -20,6 +20,12 @@ using Vector3 = xt::xtensor_fixed<double, xt::xshape<3>>;
 using MatrixX = xt::xtensor<double, 2>;
 using VectorX = xt::xtensor<double, 1>;
 
+// The default NO_DATA_VALUE to be used for elevation data
+constexpr double DEFAULT_NO_DATA_VALUE_HEIGHT    = -9999;
+
+// The default NO_DATA_VALUE to be used for thickness data
+constexpr double DEFAULT_NO_DATA_VALUE_THICKNESS = 0.0;
+
 enum StorageDataType
 {
     Short,

@@ -41,8 +41,12 @@ public:
         int idx_y_higher{};
     };
 
-    Topography( const MatrixX & height_data, const VectorX & x_data, const VectorX & y_data )
-            : height_data( height_data ), hazard( xt::zeros_like( height_data ) ), x_data( x_data ), y_data( y_data )
+    Topography( const MatrixX & height_data, const VectorX & x_data, const VectorX & y_data, double no_data_value )
+            : height_data( height_data ),
+              hazard( xt::zeros_like( height_data ) ),
+              x_data( x_data ),
+              y_data( y_data ),
+              no_data_value( no_data_value )
     {
         // Check that x_data spacing and y_data spacing is the same
         double delta_x = x_data[1] - x_data[0];
@@ -61,6 +65,7 @@ public:
     MatrixX hazard{};      // Contains data on the cumulative descendents
     VectorX x_data{};
     VectorX y_data{};
+    double no_data_value{};
 
     inline double get_height( int idx_x, int idx_y )
     {
@@ -84,7 +89,7 @@ public:
         height_data( idx_x, idx_y ) = height;
     }
 
-    inline double cell_size()
+    inline double cell_size() const
     {
         return x_data[1] - x_data[0];
     };
