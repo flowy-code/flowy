@@ -19,7 +19,7 @@
 namespace Flowy
 {
 
-bool Topography::is_point_near_boundary( const Vector2 & coordinates, double radius )
+bool Topography::is_point_near_boundary( const Vector2 & coordinates, double radius ) const
 {
     int n = std::ceil( radius / cell_size() );
 
@@ -30,7 +30,7 @@ bool Topography::is_point_near_boundary( const Vector2 & coordinates, double rad
     return near_x_boundary || near_y_boundary;
 }
 
-std::array<int, 2> Topography::locate_point( const Vector2 & coordinates )
+std::array<int, 2> Topography::locate_point( const Vector2 & coordinates ) const
 {
     const bool outside_x = coordinates[0] < x_data[0] || coordinates[0] >= x_data.periodic( -1 ) + cell_size();
     const bool outside_y = coordinates[1] < y_data[0] || coordinates[1] >= y_data.periodic( -1 ) + cell_size();
@@ -45,7 +45,7 @@ std::array<int, 2> Topography::locate_point( const Vector2 & coordinates )
     return { idx_x, idx_y };
 }
 
-Topography::BoundingBox Topography::bounding_box( const Vector2 & center, double extent_x, double extent_y )
+Topography::BoundingBox Topography::bounding_box( const Vector2 & center, double extent_x, double extent_y ) const
 {
     const auto [idx_x_lower, idx_y_lower]  = locate_point( center );
     const int number_of_cells_to_include_x = std::ceil( extent_x / cell_size() );
@@ -267,7 +267,7 @@ LobeCells Topography::get_cells_intersecting_lobe( const Lobe & lobe, std::optio
     return res;
 }
 
-double Topography::rasterize_cell_grid( int idx_x, int idx_y, const Lobe & lobe )
+double Topography::rasterize_cell_grid( int idx_x, int idx_y, const Lobe & lobe ) const
 {
     constexpr int N = 15;
 
@@ -292,7 +292,7 @@ double Topography::rasterize_cell_grid( int idx_x, int idx_y, const Lobe & lobe 
     return fraction;
 }
 
-double Topography::rasterize_cell_trapz( LobeCells::trapzT & trapz_values )
+double Topography::rasterize_cell_trapz( LobeCells::trapzT & trapz_values ) const
 {
     const double cell_size     = this->cell_size();
     const double cell_area     = cell_size * cell_size;
@@ -332,13 +332,6 @@ Topography::compute_intersection( const Lobe & lobe, std::optional<int> idx_cach
     }
 
     return res;
-}
-
-// knuth division hash function
-template<typename T>
-int division_hash( T k, int m )
-{
-    return k * ( k + 3 ) % m;
 }
 
 struct hash_pair
@@ -394,7 +387,7 @@ void Topography::compute_hazard_flow( const std::vector<Lobe> & lobes )
     }
 }
 
-std::pair<double, Vector2> Topography::height_and_slope( const Vector2 & coordinates )
+std::pair<double, Vector2> Topography::height_and_slope( const Vector2 & coordinates ) const
 {
     const auto [idx_x, idx_y] = locate_point( coordinates );
     const Vector2 cell_center = { x_data[idx_x] + 0.5 * cell_size(), y_data[idx_y] + 0.5 * cell_size() };
@@ -445,7 +438,7 @@ std::pair<double, Vector2> Topography::height_and_slope( const Vector2 & coordin
 }
 
 double Topography::slope_between_points(
-    const Vector2 & point1, const Vector2 & point2, std::optional<double> min_height_drop )
+    const Vector2 & point1, const Vector2 & point2, std::optional<double> min_height_drop ) const
 {
     const double height1 = height_and_slope( point1 ).first;
     const double height2 = height_and_slope( point2 ).first;
@@ -502,7 +495,7 @@ void Topography::add_lobe( const Lobe & lobe, bool volume_correction, std::optio
     }
 }
 
-Vector2 Topography::find_preliminary_budding_point( const Lobe & lobe, int npoints )
+Vector2 Topography::find_preliminary_budding_point( const Lobe & lobe, int npoints ) const
 {
     // First, we rasterize the perimeter of the ellipse
     std::vector<Vector2> perimeter = lobe.rasterize_perimeter( npoints );
