@@ -122,7 +122,36 @@ Topography Simulation::construct_initial_topography( const Config::InputParams &
         asc_file = AscFile( input.source );
     }
 
-    return asc_file.to_topography();
+    auto topography = asc_file.to_topography();
+
+    if( input.restart_files.has_value() )
+    {
+        auto n_restart = input.restart_files->size();
+
+        if( input.restart_filling_parameters.has_value() && input.restart_filling_parameters->size() != n_restart )
+        {
+            throw std::runtime_error( std::format(
+                "restart_filling_parameters has size {}, but there are {} restart files",
+                input.restart_filling_parameters->size(), n_restart ) );
+        }
+
+        for( size_t i_restart = 0; i_restart < n_restart; i_restart++ )
+        {
+            double filling_parameter = 1.0;
+            if( input.restart_filling_parameters.has_value() )
+            {
+                filling_parameter = input.restart_filling_parameters.value()[i_restart];
+            }
+
+            // Create the topography for the restart file
+            auto asc_file_restart   = AscFile( input.restart_files.value()[i_restart] );
+            auto restart_topography = asc_file_restart.to_topography();
+            // Add the restart file to the topography
+            topography.add_to_topography( restart_topography, filling_parameter );
+        }
+    }
+
+    return topography;
 }
 
 void Simulation::compute_initial_lobe_position( int idx_flow, Lobe & lobe )
@@ -554,6 +583,12 @@ void Simulation::run()
                                  * ( lobe_dimensions.thickness_min + idx_lobe * delta_lobe_thickness );
 
             auto [height_lobe_center, slope] = topography.height_and_slope( lobe_cur.center );
+
+            if( height_lobe_center == topography.no_data_value )
+            {
+                throw std::runtime_error(
+                    "The initial lobe center has been placed on a no_data value point in the topography." );
+            }
 
             // Perturb the angle (and set it)
             lobe_cur.set_azimuthal_angle( std::atan2( slope[1], slope[0] ) ); // Sets the angle prior to perturbation
