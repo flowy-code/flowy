@@ -94,9 +94,6 @@ def plot_pyvista(
     asc_file_initial = AscFile(path_asc_file_initial)
     asc_file_final = AscFile(path_asc_file_final)
 
-    asc_file_initial.filter_height_data()
-    asc_file_final.filter_height_data()
-
     x_data = asc_file_initial.x_data()
     y_data = asc_file_initial.y_data()
 
@@ -135,7 +132,7 @@ def plot_pyvista(
     flow_thickness = (asc_file_final.height_data).flatten(order="F")
 
     warped_final_height_data = (
-        warp_factor * asc_file_final.height_data + asc_file_initial.height_data
+        warp_factor * (asc_file_final.height_data) + warped_initial_height_data
     )
 
     # This time we dont need a finite thickness
@@ -155,7 +152,7 @@ def plot_pyvista(
     if interactive:
         p = pv.Plotter(off_screen=False)
     else:
-        p = pv.Plotter(off_screen=True)
+        p = pv.Plotter(off_screen=True, window_size=[1024, 768], image_scale=4)
 
     if contour_spacing > 0:
         min_height = asc_file_initial.min_height()
@@ -166,12 +163,25 @@ def plot_pyvista(
 
         p.add_mesh(height_contours, color=contour_color, line_width=2)
 
+    light_args = dict(
+        line_width=3,
+        show_edges=False,
+        metallic=False,
+        specular=0.05,
+        ambient=0.3,
+        pickable=False,
+    )
+
     p.add_mesh(
         grid_initial,
-        # scalars="elevation",
+        scalars="elevation",
         cmap="gray",
         opacity=1.0,
+        clim=[asc_file_initial.min_height() * 1.1, asc_file_initial.max_height() * 1.1],
+        scalar_bar_args={"title": r"Elevation [m]"},
+        show_scalar_bar=True,
         smooth_shading=True,
+        **light_args
     )
 
     p.add_mesh(
@@ -179,7 +189,10 @@ def plot_pyvista(
         scalars="flow_thickness",
         cmap="magma",
         opacity=1.0,
+        scalar_bar_args={"title": r"Flow thickness [m]"},
+        show_scalar_bar=True,
         smooth_shading=True,
+        **light_args
     )
 
     # Callback for getting the last camera position
@@ -187,16 +200,17 @@ def plot_pyvista(
         if path is not None:
             x.screenshot(path)
 
-    if interactive:
-        p.show(
-            before_close_callback=lambda x: take_screenshot(x, image_outfile),
-            auto_close=False,
-        )
+    initial_cpos = None
 
-    if image_outfile is not None:
-        p.screenshot(image_outfile)
-    else:
-        p.screenshot("./image.png")
+    cpos = p.show(
+        before_close_callback=lambda x: take_screenshot(x, image_outfile),
+        auto_close=True,
+        return_cpos=True,
+        cpos=initial_cpos,
+    )
+
+    print("Camera position")
+    print(cpos)
 
 
 @app.command()
