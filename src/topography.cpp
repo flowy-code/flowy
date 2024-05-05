@@ -518,4 +518,32 @@ void Topography::reset_intersection_cache( int N )
     intersection_cache = std::vector<std::optional<LobeCells>>( N, std::nullopt );
 }
 
+void Topography::add_to_topography( const Topography & topography_to_add, double filling_parameter )
+{
+    // Loop over the cells in the topography
+    for( size_t idx_x = 0; idx_x < this->x_data.size(); idx_x++ )
+    {
+        for( size_t idx_y = 0; idx_y < this->y_data.size(); idx_y++ )
+        {
+            // Get the point
+            const Vector2 point = { this->x_data[idx_x], this->y_data[idx_y] };
+
+            // Skip if this point is outside the extents of topography_to_add
+            if( topography_to_add.is_point_near_boundary( point, 0.0 ) )
+            {
+                continue;
+            }
+
+            auto [height_to_add, slope] = topography_to_add.height_and_slope( point );
+            auto old_height             = height_data( idx_x, idx_y );
+
+            if( height_to_add == topography_to_add.no_data_value || old_height == this->no_data_value )
+                continue;
+
+            // Add this height to the current topography
+            height_data( idx_x, idx_y ) += filling_parameter * height_to_add;
+        }
+    }
+}
+
 } // namespace Flowy

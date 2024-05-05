@@ -143,6 +143,11 @@ public:
     // Figure out which cell a given point is in, returning the indices of the lowest left corner
     std::array<int, 2> locate_point( const Vector2 & coordinates ) const;
 
+    // Add a topography to the topography object
+    // The filling_parameter is a scale factor to multiply the height by when adding to the topography
+    // Apparently the filling_parameter accounts for "subsurface flows"
+    void add_to_topography( const Topography & topography_to_a, double filling_parameter = 1.0 );
+
     Vector2 find_preliminary_budding_point( const Lobe & lobe, int npoints ) const;
 
     void reset_intersection_cache( int N );
