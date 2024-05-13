@@ -50,7 +50,7 @@ public:
     bool volume_correction = false;
 
     // ===================================================================================
-    // mr lava loba settings from input.py
+    // MrLavaLoba settings, for feature parity
     // ===================================================================================
 
     std::string run_name{};                  // Name of the run (used to save the parameters and the output)
@@ -79,31 +79,30 @@ public:
 
     /*
     Inertial exponent, used for calculating the inertial modification to the azimuthal angle (also depends on the slope,
-    which cannot be negatives): inertial_exponent = 0 => the max probability direction for the new lobe is the max slope
-    direction; inertial_exponent > 0 => the max probability direction for the new lobe takes into account also the
-    direction of the parent lobe and the inertia increaes with increasing exponent
+    which cannot be negatives):
+    inertial_exponent = 0: no inertial contribution is added
+    direction; inertial_exponent > 0: some effect of the parent lobe semi-major axis direction is added to the budding
+    lobe semi-major axis direction.
     */
     double inertial_exponent{};
 
     /*
-    The lobe_exponent is associated with the probability that a new lobe will
-    be descended from a "young" or "old" parent lobe (far away from or close to the vent, when the
-    flag `start_from_dist_flag` is set). The closer that `lobe_exponent` is to 0, the
+    The lobe_exponent dictates the selection of the parent lobe. The closer that the `lobe_exponent` parameter is to 0, the
     larger is the probability that the new lobe will be generated from a
-    "younger" lobe (which is some "distance", in number of lobes,s away from the vent).
-    lobe_exponent = 1 => the parent lobe is chosen
-    with a uniform probability distribution. lobe_exponent = 0 => the new lobe is generated from the last one.
+    newer lobe (which is some "distance", in number of lobes, away from the vent).
+    lobe_exponent = 1: the parent lobe is chosen
+    with a uniform probability distribution.
+    lobe_exponent = 0: the new lobe is always generated from the last one.
+    lobe_exponent between 0 and 1: a factor is chosen from a probability distribution given by P(x) = (1/eps * x^{1/eps
+    -1 }), where eps is the lobe exponent
     */
     double lobe_exponent{};
 
     /*
-    `max_slope_prob` is related to the probability that the direction of
-    the new lobe is close to the maximum slope direction:
-    max_slope_prob = 0 => all the directions have the same probability;
-    max_slope_prob > 0 => the maximum slope direction has a larger
-                          probability, and the probability increases with increasing
-                          value of the parameter;
-    max_slope_prob = 1 => the direction of the new lobe is the maximum slope direction.
+    `max_slope_prob` dictates the extent of the azimuthal angle perturbation.
+    When max_slope_prob = 0: the angle perturbation is drawn from a uniform probability distribution
+    max_slope_prob > 0: the angle perturbation is drawn from a truncated normal distribution, constrained within
+    [-pi,pi] max_slope_prob = 1: the angle is not perturbed.
     */
     double max_slope_prob{};
 
@@ -123,32 +122,7 @@ public:
     int fixed_dimension_flag{};
 
     /*
-    This flag select how multiple initial coordinates are treated:
-    vent_flag = 0 => the initial lobes are on the vents coordinates
-                      and the flows start initially from the first vent,
-                      then from the second and so on.
-    vent_flag = 1 => the initial lobes are chosen randomly from the vents
-                      coordinates and each vent has the same probability
-    vent_flag = 2 => the initial lobes are on the polyline connecting
-                      the vents and all the point of the polyline
-                      have the same probability
-    vent_flag = 3 => the initial lobes are on the polyline connecting
-                      the vents and all the segments of the polyline
-                      have the same probability
-    vent_flag = 4 => the initial lobes are on multiple
-                      fissures and all the point of the fissures
-                      have the same probability
-    vent_flag = 5 => the initial lobes are on multiple
-                      fissures and all the fissures
-                      have the same probability
-    vent_flag = 6 => the initial lobes are on the polyline connecting
-                      the vents and the probability of
-                      each segment is fixed by "fissure probabilities"
-    vent_flag = 7 => the initial lobes are on multiple
-                      fissures and the probability of
-                      each fissure is fixed by "fissure_probabilities"
-    vent_flag = 8 => the initial lobes are chosen randomly from the vents
-                      coordinates and the probability of each vent
+    See VentFlag class
     */
     int vent_flag{};
 
@@ -169,72 +143,57 @@ public:
     std::optional<std::string> union_diff_file{};
 
     // ===================================================================================
-    // mr lava loba settings from input_advanced.py
+    // Advanced MrLavaLoba settings, for feature parity
     // ===================================================================================
 
     int npoints{ 30 }; // Number of points for rasterizing the ellipse
     int n_init{ 0 };   // Number of repetitions of the first lobe (useful for initial spreading)
 
     /*This factor is to choose where the center of the new lobe will be:
-      dist_fact = 0 => the center of the new lobe is on the border of the
-                        previous one;
-      dist fact > 0 => increase the distance of the center of the new lobe
-                        from the border of the previous one;
-      dist_fact = 1 => the two lobes touch in one point only. Only dist_fact=1 is implemented */
+      dist_fact = 0 : the center of the new budding lobe is on the budding point, which is on the perimeter of the
+      parent lobe; dist fact > 0 : this then increases the distance of the center of the new lobe from the budding point
+      dist_fact = 1 : the parent lobe and budding lobe touch in one point only (the budding points)
+      dist_fact > 1 : the parent lobe and budding lobe do not touch
+      By default the parent lobe and budding lobe overlap such that they intersect at a point (the budding point) */
     double dist_fact{ 1 };
 
     /*
-    Flag to select if it is cutted the volume of the area
-    flag_threshold = 1  => volume
-    flag_threshold = 2  => area
     Not used/implemented?
     */
     int flag_threshold{};
 
     /*
-    The number of lobes of the flow is defined accordingly to a random uniform
-    distribution or to a beta law, as a function of the flow number.
-    a_beta, b_beta = 0 => n_lobes is sampled randomly in [min_n_lobes,max_n_lobes]
-    a_beta, b_beta > 0 => n_lobes = min_n_lobes + 0.5 * ( max_n_lobes - min_n_lobes )
-                                                 * beta(flow/n_flows,a_beta,b_beta)
+    We haven't implemented this, but the number of lobes could be drawn from a beta probability density function (not a
+    beta probability distribution)
     */
     double a_beta{ 0 };
     double b_beta{ 0 };
 
-    double max_aspect_ratio{}; // Maximum aspect ration of the lobes
-    int saveraster_flag{};     // if saveraster_flag = 1 then the raster output is saved as a *.asc file
+    double max_aspect_ratio{}; // Maximum possible aspect ratio of the lobes
+    int saveraster_flag{};     // We don't use this
 
     /*
-    This parameter affect the shape of the lobes. The larger is this parameter
-    the larger is the effect of a small slope on the eccentricity of the lobes:
-    aspect_ratio_coeff = 0 => the lobe is always a circle
-    aspect_ratio_coeff > 0 => the lobe is an ellipse, with the aspect ratio
-                              increasing with the slope
+    Decides how the lobe aspect ratio scales with the slope
+    aspect_ratio_coeff = 0: the lobe is always a circle because the slope does not affect the aspect ratio at all
+    aspect_ratio_coeff > 0: the lobe is an ellipse, such that the aspect ratio increases with the slope; therefore the
+    lobes become more elongated with steeper slopes
     */
     double aspect_ratio_coeff{};
 
     /*
-    This flag controls which lobes have larger probability:
-    start_from_dist_flag = 1 => the lobes with a larger distance from
-                                 the vent have a higher probability
-    start_form_dist_flag = 0 => the younger lobes have a higher
-                                 probability
+    Not implemented
     */
     int start_from_dist_flag{};
 
-    int force_max_length{}; // Flag for maximum distances (number of chained lobes) from the vent
+    int force_max_length{}; // Not implemented
 
     /*
-    Maximum distances (number of chained lobes) from the vent
-    This parameter is used only when force_max_length = 1
+    Not implemented
     */
     double max_length{};
 
     /*
-    This parameter is to avoid a chain of loop getting stuck in a hole. It is
-    active only when n_check_loop>0. When it is greater than zero the code
-    check if the last n_check_loop lobes are all in a small box. If this is the
-    case then the slope modified by flow is evaluated, and the hole is filled.
+    Not implemented
     */
     int n_check_loop{};
 
@@ -245,7 +204,7 @@ public:
     */
     std::optional<std::vector<std::filesystem::path>> restart_files{};
 
-    // This seems to be described nowhere
+    // Multiply restart file thickness by a constant value
     std::optional<std::vector<double>> restart_filling_parameters{};
 };
 

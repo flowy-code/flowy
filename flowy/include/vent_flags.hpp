@@ -108,8 +108,8 @@ protected:
 };
 
 /*
-The initial lobes are on the vents coordinates and the flows start initially from the first vent,
-then from the second and so on.
+Initial lobes are positioned on vent coordinates. If there are multiple vents defined, each flow iteratively starts from
+the first, second, third vent, and so on.
 */
 class VentFlag0 : public VentFlag
 {
@@ -130,7 +130,8 @@ public:
 };
 
 /*
-The initial lobes are chosen randomly from the vent coordinates, and each vent has the same probability
+Vents are randomly chosen, such that each vent has the same probability. Therefore, the vent is drawn from a uniform
+probability distribution. Each initial lobe is then situated on the selected vent.
 */
 class VentFlag1 : public VentFlag
 {
@@ -146,8 +147,9 @@ public:
 };
 
 /*
-The initial lobes are on the polyline connecting the vents.
-All the segments of the polyline have the same probability (in other words, each "fissure" is a line seg)
+In this case, the end points of each fissure are vent coordinates. The fissure chosen is selected from a uniform
+probability distribution of these defined fissures. Further, for each initial lobe, the point which defines the lobe
+center is selected from all the points that constitute the selected fissure, using a uniform probability distribution.
 */
 class VentFlag3 : public VentFlag
 {
@@ -167,10 +169,9 @@ public:
 };
 
 /*
-The initial lobes are on the polyline connecting the vents.
-All fissures (line segments connecting the vents) have a probability that is weighted by the length of the "fissure".
-Once a fissure has been chosen, all points in the fissure have the same probability, and the location of the lobe is
-selected using a uniform probability distribution
+Similar to VentFlag3, the end points of each fissure are vent coordinates. However, the difference is that the fissure
+chosen is weighted by the length of each fissure. Once a fissure has been chosen, the initial lobe center is selected
+from all the points that constitute the selected fissure, using a uniform probability distribution.
 */
 class VentFlag2 : public VentFlag3
 {
@@ -189,9 +190,10 @@ public:
 };
 
 /*
-The initial lobes are on multiple fissures and all the fissures have the same probability.
-Therefore the fissure is chosen by using a unifrom probability distribution.
-The lobe position is chosen using the fissure end points (using a uniform probability distribution)
+The fissure end points are defined such that the first point is a vent coordinate, and the end point is set from the
+user-defined \texttt{fissure\_end\_coordinates}. Thereafter, the fissure is chosen using a uniform probability
+distribution. Next, the initial lobe center is selected from all the points that constitute the selected fissure, using
+a uniform probability distribution.
 */
 class VentFlag5 : public VentFlag
 {
@@ -212,8 +214,10 @@ public:
 };
 
 /*
-The initial lobes are on multiple fissures, but the probability of choosing a fissure is weighted by its length.
-The lobe position is chosen using the fissure end points (using a uniform probability distribution)
+Analogous to VentFlag5, the fissure end points are defined such that the first point is a vent coordinate, and the end
+point is set from the user-defined fissure_end_coordinates. Thereafter, the fissure is chosen such that the
+probability of selecting a fissure is weighted by its length. Next, the initial lobe center is selected from all the
+points that constitute the selected fissure, using a uniform probability distribution.
 */
 class VentFlag4 : public VentFlag5
 {
@@ -234,8 +238,9 @@ public:
 };
 
 /*
-The initial lobes are on the polyline connecting the vents (that's our "fissure")
-and the probability of each segment is fixed by "fissure probabilities"
+Analogous to VentFlag3, the fissure end points are vent coordinates. Each fissure is chosen such that the probability of
+selecting a fissure is determined using user-defined \texttt{fissure\_probabilities}. The initial lobe center is
+selected from all the points that constitute the selected fissure, using a uniform probability distribution.
 */
 class VentFlag6 : public VentFlag3
 {
@@ -250,8 +255,10 @@ public:
 };
 
 /*
-The initial lobes are on multiple fissures and the probability of each fissure is fixed by "fissure_probabilities"
-The lobe position is chosen using the fissure end points (using a uniform probability distribution)
+Similar to VentFlag5, the fissure end points are defined such that the first point is a vent coordinate, and the end
+point is set from the user-defined \texttt{fissure\_end\_coordinates}. Each fissure is chosen such that the probability
+of selecting a fissure is determined using user-defined \texttt{fissure\_probabilities}. The initial lobe center is
+selected from all the points that constitute the selected fissure, using a uniform probability distribution.
 */
 class VentFlag7 : public VentFlag5
 {
@@ -266,7 +273,9 @@ public:
 };
 
 /*
-The initial lobes are chosen randomly from the vent coordinates, as well as from the fissure probabilities
+In this case, a fissure is not defined. However, a vent is selected using the user-defined (and misleadingly named)
+fissure_probabilities. This is accomplished by drawing the vent from a discrete probability distribution,
+weighted by the fissure_probabilities. The initial lobe center is then set to the chosen vent coordinates.
 */
 class VentFlag8 : public VentFlag
 {

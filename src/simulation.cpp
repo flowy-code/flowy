@@ -290,7 +290,6 @@ int Simulation::select_parent_lobe( int idx_descendant )
 
     int idx_parent{};
 
-    // TODO: force max length
     // Generate from the last lobe
     if( input.lobe_exponent <= 0 )
     {
@@ -554,7 +553,8 @@ void Simulation::run()
             std::uniform_int_distribution<> dist_num_lobes( input.min_n_lobes, input.max_n_lobes );
             n_lobes = dist_num_lobes( gen );
         }
-        // Deterministic number of lobes according to a beta law
+        // Deterministic number of lobes, such that a beta probability density distribution is used (not a beta
+        // distribution). However this means that n_lobes could potentially be greater than min_n_lobes
         else
         {
             double x_beta        = ( 1.0 * idx_flow ) / ( input.n_flows - 1.0 );
