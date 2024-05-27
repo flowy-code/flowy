@@ -12,6 +12,7 @@
 #include <algorithm>
 #include <cstddef>
 #include <functional>
+#include <optional>
 #include <stdexcept>
 #include <unordered_set>
 #include <vector>
@@ -379,7 +380,7 @@ void Topography::compute_hazard_flow( const std::vector<Lobe> & lobes )
     }
 }
 
-std::pair<double, Vector2> Topography::height_and_slope( const Vector2 & coordinates ) const
+std::pair<double, Vector2> Topography::height_and_slope( const Vector2 & coordinates ) const noexcept
 {
     const auto [idx_x, idx_y] = locate_point( coordinates );
     const Vector2 cell_center = { x_data[idx_x] + 0.5 * cell_size(), y_data[idx_y] + 0.5 * cell_size() };
@@ -492,10 +493,25 @@ void Topography::add_lobe( const Lobe & lobe, bool volume_correction, std::optio
     }
 }
 
-Vector2 Topography::find_preliminary_budding_point( const Lobe & lobe, int npoints ) const
+Vector2 Topography::find_preliminary_budding_point( const Lobe & lobe, size_t npoints )
 {
+    bool compute_cache = cos_phi_lobe_perimeter == std::nullopt || sin_phi_lobe_perimeter == std::nullopt
+                         || npoints != cos_phi_lobe_perimeter->size() || npoints != sin_phi_lobe_perimeter->size();
+
+    if( compute_cache )
+    {
+        const auto phi_list    = xt::linspace<double>( 0.0, 2.0 * Math::pi, npoints, false );
+        cos_phi_lobe_perimeter = xt::cos( phi_list );
+        sin_phi_lobe_perimeter = xt::sin( phi_list );
+    }
+
     // First, we rasterize the perimeter of the ellipse
-    std::vector<Vector2> perimeter = lobe.rasterize_perimeter( npoints );
+    const auto sin = std::span<double>( sin_phi_lobe_perimeter->begin(), sin_phi_lobe_perimeter->end() );
+    const auto cos = std::span<double>( cos_phi_lobe_perimeter->begin(), cos_phi_lobe_perimeter->end() );
+
+    std::vector<Vector2> perimeter = lobe.rasterize_perimeter( sin, cos );
+
+    // std::vector<Vector2> perimeter = lobe.rasterize_perimeter( npoints );
 
     // Then, we find the point of minimal elevation amongst the rasterized points on the perimeter
     auto min_elevation_point_it = std::min_element(

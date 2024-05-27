@@ -106,7 +106,7 @@ public:
 
     // Calculate the height and the slope at coordinates
     // via linear interpolation from the square grid
-    std::pair<double, Vector2> height_and_slope( const Vector2 & coordinates ) const;
+    std::pair<double, Vector2> height_and_slope( const Vector2 & coordinates ) const noexcept;
 
     // Calculate the slope between points, given their heights
     double slope_between_points(
@@ -148,12 +148,15 @@ public:
     // Apparently the filling_parameter accounts for "subsurface flows"
     void add_to_topography( const Topography & topography_to_a, double filling_parameter = 1.0 );
 
-    Vector2 find_preliminary_budding_point( const Lobe & lobe, int npoints ) const;
+    Vector2 find_preliminary_budding_point( const Lobe & lobe, size_t npoints );
 
     void reset_intersection_cache( int N );
 
 private:
     std::vector<std::optional<LobeCells>> intersection_cache{};
+
+    std::optional<VectorX> sin_phi_lobe_perimeter = std::nullopt;
+    std::optional<VectorX> cos_phi_lobe_perimeter = std::nullopt;
 };
 
 } // namespace Flowy
