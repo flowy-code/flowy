@@ -5,6 +5,7 @@
 #include "flowy/include/math.hpp"
 #include <fmt/format.h>
 #include <optional>
+#include <span>
 #include <vector>
 
 namespace Flowy

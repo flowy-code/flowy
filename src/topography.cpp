@@ -1,20 +1,17 @@
 // GPL v3 License
 // Copyright 2023--present Flowy developers
 #include "flowy/include/topography.hpp"
-#include "flowy/include/asc_file.hpp"
 #include "flowy/include/definitions.hpp"
 #include "flowy/include/lobe.hpp"
 #include "thirdparty/tsl/robin_set.h"
 #include "xtensor/xbuilder.hpp"
-#include "xtensor/xtensor_forward.hpp"
 #include <fmt/ranges.h>
 #include <fmt/std.h>
 #include <algorithm>
 #include <cstddef>
 #include <functional>
 #include <optional>
-#include <stdexcept>
-#include <unordered_set>
+#include <span>
 #include <vector>
 
 namespace Flowy
