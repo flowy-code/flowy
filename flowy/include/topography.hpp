@@ -141,7 +141,7 @@ public:
     bool is_point_near_boundary( const Vector2 & coordinates, double radius ) const;
 
     // Figure out which cell a given point is in, returning the indices of the lowest left corner
-    std::array<int, 2> locate_point( const Vector2 & coordinates ) const;
+    std::array<int, 2> locate_point( const Vector2 & coordinates ) const noexcept;
 
     // Add a topography to the topography object
     // The filling_parameter is a scale factor to multiply the height by when adding to the topography

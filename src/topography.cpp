@@ -30,16 +30,8 @@ bool Topography::is_point_near_boundary( const Vector2 & coordinates, double rad
     return near_x_boundary || near_y_boundary;
 }
 
-std::array<int, 2> Topography::locate_point( const Vector2 & coordinates ) const
+std::array<int, 2> Topography::locate_point( const Vector2 & coordinates ) const noexcept
 {
-    const bool outside_x = coordinates[0] < x_data[0] || coordinates[0] >= x_data.periodic( -1 ) + cell_size();
-    const bool outside_y = coordinates[1] < y_data[0] || coordinates[1] >= y_data.periodic( -1 ) + cell_size();
-
-    if( outside_x || outside_y )
-    {
-        throw std::runtime_error( "Cannot locate point, because coordinates are outside of grid!" );
-    }
-
     const int idx_x = static_cast<int>( ( coordinates[0] - x_data[0] ) / cell_size() );
     const int idx_y = static_cast<int>( ( coordinates[1] - y_data[0] ) / cell_size() );
     return { idx_x, idx_y };
