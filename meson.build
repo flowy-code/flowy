@@ -58,7 +58,6 @@ _deps += [
   dependency('xtensor'),
   dependency('xtensor-blas'),
   dependency('fmt'),
-  dependency('tomlplusplus'),
 ]
 
 symbol_visibility = 'default'
