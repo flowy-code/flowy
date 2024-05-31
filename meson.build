@@ -56,7 +56,6 @@ endif
 _deps += [
   pdflib_dep,
   dependency('xtensor'),
-  dependency('openblas'),
   dependency('xtensor-blas'),
   dependency('fmt'),
 ]
