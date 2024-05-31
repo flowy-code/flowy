@@ -86,7 +86,7 @@ Simulation::Simulation( const Config::InputParams & input, std::optional<int> rn
 
     // Make a copy of the initial topography
     topography_initial = topography;
-};
+}
 
 Topography Simulation::construct_initial_topography( const Config::InputParams & input )
 {
