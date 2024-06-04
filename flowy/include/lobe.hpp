@@ -5,6 +5,7 @@
 #include "flowy/include/math.hpp"
 #include <fmt/format.h>
 #include <optional>
+#include <span>
 #include <vector>
 
 namespace Flowy
@@ -172,23 +173,41 @@ public:
     // The angle is relative to the semi major axis angle
     inline Vector2 point_at_angle( const double phi ) const
     {
+        return point_at_angle( std::sin( phi ), std::cos( phi ) );
+    }
+
+    // Gives a point on the perimeter of the ellipse
+    // The angle is relative to the semi major axis angle
+    inline Vector2 point_at_angle( const double sin_phi, const double cos_phi ) const
+    {
         const double a      = semi_axes[0]; // major axis
         const double b      = semi_axes[1]; // minor axis
-        const Vector2 coord = { a * std::cos( phi ) * cos_azimuthal_angle - b * std::sin( phi ) * sin_azimuthal_angle,
-                                a * std::cos( phi ) * sin_azimuthal_angle + b * std::sin( phi ) * cos_azimuthal_angle };
+        const Vector2 coord = { a * cos_phi * cos_azimuthal_angle - b * sin_phi * sin_azimuthal_angle,
+                                a * cos_phi * sin_azimuthal_angle + b * sin_phi * cos_azimuthal_angle };
         return coord + center;
     }
 
     inline std::vector<Vector2> rasterize_perimeter( int n_raster_points ) const
     {
-        auto phi_list = xt::linspace<double>( 0.0, 2.0 * Math::pi, n_raster_points, false );
-        auto res      = std::vector<Vector2>( n_raster_points );
+        VectorX phi_list = xt::linspace<double>( 0.0, 2.0 * Math::pi, n_raster_points, false );
+        auto res         = std::vector<Vector2>( n_raster_points );
 
         for( int idx_phi = 0; idx_phi < n_raster_points; idx_phi++ )
         {
             res[idx_phi] = point_at_angle( phi_list[idx_phi] );
         }
 
+        return res;
+    }
+
+    inline std::vector<Vector2> rasterize_perimeter( std::span<double> sin_phi, std::span<double> cos_phi ) const
+    {
+        const int n_raster_points = sin_phi.size();
+        auto res                  = std::vector<Vector2>( n_raster_points );
+        for( int idx_phi = 0; idx_phi < n_raster_points; idx_phi++ )
+        {
+            res[idx_phi] = point_at_angle( sin_phi[idx_phi], cos_phi[idx_phi] );
+        }
         return res;
     }
 };

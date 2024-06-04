@@ -1,19 +1,17 @@
 // GPL v3 License
 // Copyright 2023--present Flowy developers
 #include "flowy/include/topography.hpp"
-#include "flowy/include/asc_file.hpp"
 #include "flowy/include/definitions.hpp"
 #include "flowy/include/lobe.hpp"
 #include "thirdparty/tsl/robin_set.h"
 #include "xtensor/xbuilder.hpp"
-#include "xtensor/xtensor_forward.hpp"
 #include <fmt/ranges.h>
 #include <fmt/std.h>
 #include <algorithm>
 #include <cstddef>
 #include <functional>
-#include <stdexcept>
-#include <unordered_set>
+#include <optional>
+#include <span>
 #include <vector>
 
 namespace Flowy
@@ -30,16 +28,8 @@ bool Topography::is_point_near_boundary( const Vector2 & coordinates, double rad
     return near_x_boundary || near_y_boundary;
 }
 
-std::array<int, 2> Topography::locate_point( const Vector2 & coordinates ) const
+std::array<int, 2> Topography::locate_point( const Vector2 & coordinates ) const noexcept
 {
-    const bool outside_x = coordinates[0] < x_data[0] || coordinates[0] >= x_data.periodic( -1 ) + cell_size();
-    const bool outside_y = coordinates[1] < y_data[0] || coordinates[1] >= y_data.periodic( -1 ) + cell_size();
-
-    if( outside_x || outside_y )
-    {
-        throw std::runtime_error( "Cannot locate point, because coordinates are outside of grid!" );
-    }
-
     const int idx_x = static_cast<int>( ( coordinates[0] - x_data[0] ) / cell_size() );
     const int idx_y = static_cast<int>( ( coordinates[1] - y_data[0] ) / cell_size() );
     return { idx_x, idx_y };
@@ -398,7 +388,7 @@ void Topography::compute_hazard_flow( const std::vector<Lobe> & lobes )
     }
 }
 
-std::pair<double, Vector2> Topography::height_and_slope( const Vector2 & coordinates ) const
+std::pair<double, Vector2> Topography::height_and_slope( const Vector2 & coordinates ) const noexcept
 {
     const auto [idx_x, idx_y] = locate_point( coordinates );
     const Vector2 cell_center = { x_data[idx_x] + 0.5 * cell_size(), y_data[idx_y] + 0.5 * cell_size() };
@@ -511,10 +501,25 @@ void Topography::add_lobe( const Lobe & lobe, bool volume_correction, std::optio
     }
 }
 
-Vector2 Topography::find_preliminary_budding_point( const Lobe & lobe, int npoints ) const
+Vector2 Topography::find_preliminary_budding_point( const Lobe & lobe, size_t npoints )
 {
+    bool compute_cache = cos_phi_lobe_perimeter == std::nullopt || sin_phi_lobe_perimeter == std::nullopt
+                         || npoints != cos_phi_lobe_perimeter->size() || npoints != sin_phi_lobe_perimeter->size();
+
+    if( compute_cache )
+    {
+        const auto phi_list    = xt::linspace<double>( 0.0, 2.0 * Math::pi, npoints, false );
+        cos_phi_lobe_perimeter = xt::cos( phi_list );
+        sin_phi_lobe_perimeter = xt::sin( phi_list );
+    }
+
     // First, we rasterize the perimeter of the ellipse
-    std::vector<Vector2> perimeter = lobe.rasterize_perimeter( npoints );
+    const auto sin = std::span<double>( sin_phi_lobe_perimeter->begin(), sin_phi_lobe_perimeter->end() );
+    const auto cos = std::span<double>( cos_phi_lobe_perimeter->begin(), cos_phi_lobe_perimeter->end() );
+
+    std::vector<Vector2> perimeter = lobe.rasterize_perimeter( sin, cos );
+
+    // std::vector<Vector2> perimeter = lobe.rasterize_perimeter( npoints );
 
     // Then, we find the point of minimal elevation amongst the rasterized points on the perimeter
     auto min_elevation_point_it = std::min_element(
