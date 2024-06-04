@@ -5,10 +5,10 @@
 #include "flowy/include/config.hpp"
 #include "flowy/include/definitions.hpp"
 #include "flowy/include/netcdf_file.hpp"
+#include "thirdparty/toml.hpp"
 #include <fmt/format.h>
 #include <fmt/ranges.h>
 #include <fmt/std.h>
-#include <toml++/toml.h>
 #include <filesystem>
 #include <optional>
 #include <stdexcept>

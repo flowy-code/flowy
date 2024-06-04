@@ -5,13 +5,10 @@
 #include "flowy/include/definitions.hpp"
 #include "flowy/include/lobe.hpp"
 #include "flowy/include/math.hpp"
+#include "flowy/include/models/mr_lava_loba.hpp"
 #include "flowy/include/topography.hpp"
 #include "flowy/include/topography_file.hpp"
-#include "flowy/include/vent_flags.hpp"
 #include "fmt/core.h"
-#include "pdf_cpplib/include/probability_dist.hpp"
-#include "pdf_cpplib/include/reservoir_sampling.hpp"
-#include "xtensor/xbuilder.hpp"
 #include "xtensor/xmath.hpp"
 #include "xtensor/xsort.hpp"
 #include <fmt/chrono.h>
@@ -33,45 +30,6 @@
 namespace Flowy
 {
 
-CommonLobeDimensions::CommonLobeDimensions( const Config::InputParams & input, const Topography & topography )
-{
-    if( !input.total_volume.has_value() )
-        throw std::runtime_error( "Total volume flag not set" );
-
-    if( input.fixed_dimension_flag == 1 )
-    {
-        if( !input.prescribed_lobe_area.has_value() )
-            throw std::runtime_error( "prescribed_lobe_area is not set" );
-
-        lobe_area          = input.prescribed_lobe_area.value();
-        avg_lobe_thickness = input.total_volume.value()
-                             / ( input.n_flows * input.prescribed_lobe_area.value() * 0.5
-                                 * ( input.min_n_lobes + input.max_n_lobes ) );
-    }
-    else
-    {
-        if( !input.prescribed_avg_lobe_thickness.has_value() )
-            throw std::runtime_error( "prescribed_avg_lobe_thickness is not set" );
-
-        avg_lobe_thickness = input.prescribed_avg_lobe_thickness.value();
-        lobe_area          = input.total_volume.value()
-                    / ( input.n_flows * input.prescribed_avg_lobe_thickness.value() * 0.5
-                        * ( input.min_n_lobes + input.max_n_lobes ) );
-    }
-
-    exp_lobe_exponent = std::exp( input.lobe_exponent );
-    max_semiaxis      = std::sqrt( lobe_area * input.max_aspect_ratio / Math::pi );
-    max_cells         = std::ceil( 2.0 * max_semiaxis / topography.cell_size() ) + 2;
-    thickness_min     = 2.0 * input.thickness_ratio / ( input.thickness_ratio + 1.0 ) * avg_lobe_thickness;
-
-    FLOWY_CHECK( lobe_area );
-    FLOWY_CHECK( avg_lobe_thickness );
-    FLOWY_CHECK( thickness_min );
-    FLOWY_CHECK( exp_lobe_exponent );
-    FLOWY_CHECK( max_semiaxis );
-    FLOWY_CHECK( max_cells );
-}
-
 Simulation::Simulation( const Config::InputParams & input, std::optional<int> rng_seed ) : input( input )
 {
     this->rng_seed = rng_seed.value_or( std::random_device()() );
@@ -82,11 +40,9 @@ Simulation::Simulation( const Config::InputParams & input, std::optional<int> rn
 
     topography = Simulation::construct_initial_topography( input );
 
-    lobe_dimensions = CommonLobeDimensions( input, topography );
-
     // Make a copy of the initial topography
     topography_initial = topography;
-};
+}
 
 Topography Simulation::construct_initial_topography( const Config::InputParams & input )
 {
@@ -158,58 +114,6 @@ Topography Simulation::construct_initial_topography( const Config::InputParams &
     return topography;
 }
 
-void Simulation::compute_initial_lobe_position( int idx_flow, Lobe & lobe )
-{
-    std::unique_ptr<VentFlag> f{};
-
-    // Initial lobes are on the vent and flow starts from the first vent, second vent and so on
-    if( input.vent_flag == 0 )
-    {
-        f = std::make_unique<VentFlag0>( idx_flow, input.n_flows, input.vent_coordinates, gen );
-    }
-    else if( input.vent_flag == 1 )
-    {
-        f = std::make_unique<VentFlag1>(
-            input.vent_coordinates, input.fissure_probabilities, input.fissure_end_coordinates, gen );
-    }
-    else if( input.vent_flag == 2 )
-    {
-        f = std::make_unique<VentFlag2>(
-            input.vent_coordinates, input.fissure_probabilities, input.fissure_end_coordinates, gen );
-    }
-    else if( input.vent_flag == 3 )
-    {
-        f = std::make_unique<VentFlag3>(
-            input.vent_coordinates, input.fissure_probabilities, input.fissure_end_coordinates, gen );
-    }
-    else if( input.vent_flag == 4 )
-    {
-        f = std::make_unique<VentFlag4>(
-            input.vent_coordinates, input.fissure_probabilities, input.fissure_end_coordinates, gen );
-    }
-    else if( input.vent_flag == 5 )
-    {
-        f = std::make_unique<VentFlag5>(
-            input.vent_coordinates, input.fissure_probabilities, input.fissure_end_coordinates, gen );
-    }
-    else if( input.vent_flag == 6 )
-    {
-        f = std::make_unique<VentFlag6>(
-            input.vent_coordinates, input.fissure_probabilities, input.fissure_end_coordinates, gen );
-    }
-    else if( input.vent_flag == 7 )
-    {
-        f = std::make_unique<VentFlag7>(
-            input.vent_coordinates, input.fissure_probabilities, input.fissure_end_coordinates, gen );
-    }
-    else if( input.vent_flag == 8 )
-    {
-        f = std::make_unique<VentFlag8>(
-            input.vent_coordinates, input.fissure_probabilities, input.fissure_end_coordinates, gen );
-    }
-
-    lobe.center = f->get_position();
-}
 void Simulation::write_lobe_data_to_file( const std::vector<Lobe> & lobes, const std::filesystem::path & path )
 {
     std::fstream file;
@@ -244,76 +148,6 @@ void Simulation::write_lobe_data_to_file( const std::vector<Lobe> & lobes, const
         file << "\n";
     }
     file.close();
-}
-
-void Simulation::perturb_lobe_angle( Lobe & lobe, double slope )
-{
-    const double slope_deg = 180.0 / Math::pi * std::atan( slope );
-
-    if( input.max_slope_prob < 1 )
-    {
-        if( slope_deg > 0.0 && input.max_slope_prob > 0 )
-        {
-            // Since we use radians instead of degrees, max_slope_prob has to be rescaled accordingly
-            const double sigma = ( 1.0 - input.max_slope_prob ) / input.max_slope_prob * ( 90.0 - slope_deg )
-                                 / slope_deg * Math::pi / 180.0;
-
-            ProbabilityDist::truncated_normal_distribution<double> dist_truncated( 0, sigma, -Math::pi, Math::pi );
-            const double angle_perturbation = dist_truncated( gen );
-            lobe.set_azimuthal_angle( lobe.get_azimuthal_angle() + angle_perturbation );
-        }
-        else
-        {
-            std::uniform_real_distribution<double> dist_uniform( -Math::pi / 2, Math::pi / 2 );
-            const double angle_perturbation = dist_uniform( gen );
-            lobe.set_azimuthal_angle( lobe.get_azimuthal_angle() + angle_perturbation );
-        }
-    }
-}
-
-void Simulation::compute_lobe_axes( Lobe & lobe, double slope ) const
-{
-    // Factor for the lobe eccentricity
-    double aspect_ratio = std::min( input.max_aspect_ratio, 1.0 + input.aspect_ratio_coeff * slope );
-
-    // Compute the semi-axes of the lobe
-    double semi_major_axis = std::sqrt( lobe_dimensions.lobe_area / Math::pi ) * std::sqrt( aspect_ratio );
-    double semi_minor_axis = std::sqrt( lobe_dimensions.lobe_area / Math::pi ) / std::sqrt( aspect_ratio );
-    // Set the semi-axes
-    lobe.semi_axes = { semi_major_axis, semi_minor_axis };
-}
-
-// Select which lobe amongst the existing lobes will be the parent for the new descendent lobe
-int Simulation::select_parent_lobe( int idx_descendant )
-{
-    Lobe & lobe_descendent = lobes[idx_descendant];
-
-    int idx_parent{};
-
-    // Generate from the last lobe
-    if( input.lobe_exponent <= 0 )
-    {
-        idx_parent = idx_descendant - 1;
-    }
-    else if( input.lobe_exponent >= 1 ) // Draw from a uniform random distribution if exponent is 1
-    {
-        std::uniform_int_distribution<int> dist_int( 0, idx_descendant - 1 );
-        idx_parent = dist_int( gen );
-    }
-    else
-    {
-        std::uniform_real_distribution<double> dist( 0, 1 );
-        const double idx0 = dist( gen );
-        const auto idx1   = std::pow( idx0, input.lobe_exponent );
-        idx_parent        = idx_descendant * idx1;
-    }
-
-    // Update the lobe information
-    lobe_descendent.idx_parent   = idx_parent;
-    lobe_descendent.dist_n_lobes = lobes[idx_parent].dist_n_lobes + 1;
-    lobe_descendent.parent_weight *= lobe_dimensions.exp_lobe_exponent;
-
-    return idx_parent;
 }
 
 // Depth first search to compute cumulative descendents
@@ -351,36 +185,7 @@ void Simulation::compute_cumulative_descendents( std::vector<Lobe> & lobes ) con
     }
 }
 
-void Simulation::add_inertial_contribution( Lobe & lobe, const Lobe & parent, double slope ) const
-{
-    double cos_angle_parent = parent.get_cos_azimuthal_angle();
-    double sin_angle_parent = parent.get_sin_azimuthal_angle();
-    double cos_angle_lobe   = lobe.get_cos_azimuthal_angle();
-    double sin_angle_lobe   = lobe.get_sin_azimuthal_angle();
-
-    double alpha_inertial = 0.0;
-
-    const double eta = input.inertial_exponent;
-    if( eta > 0 )
-    {
-        alpha_inertial = std::pow( ( 1.0 - std::pow( 2.0 * std::atan( slope ) / Math::pi, eta ) ), ( 1.0 / eta ) );
-    }
-
-    const double x_avg = ( 1.0 - alpha_inertial ) * cos_angle_lobe + alpha_inertial * cos_angle_parent;
-    const double y_avg = ( 1.0 - alpha_inertial ) * sin_angle_lobe + alpha_inertial * sin_angle_parent;
-
-    lobe.set_azimuthal_angle( std::atan2( y_avg, x_avg ) );
-}
-
-void Simulation::compute_descendent_lobe_position( Lobe & lobe, const Lobe & parent, Vector2 final_budding_point )
-{
-    Vector2 direction_to_new_lobe
-        = ( final_budding_point - parent.center ) / xt::linalg::norm( final_budding_point - parent.center );
-    Vector2 new_lobe_center = final_budding_point + input.dist_fact * direction_to_new_lobe * lobe.semi_axes[0];
-    lobe.center             = new_lobe_center;
-}
-
-bool Simulation::stop_condition( const Vector2 & point, double radius )
+bool Simulation::stop_condition( const Vector2 & point, double radius ) const
 {
     return topography.is_point_near_boundary( point, radius )
            || topography.get_height( point ) <= topography.no_data_value;
@@ -402,6 +207,8 @@ void Simulation::write_avg_thickness_file()
     const double area          = topography_thickness.area();
     const double avg_thickness = volume / area;
     const double cell_area     = topography.cell_size() * topography.cell_size();
+
+    auto lobe_dimensions = CommonLobeDimensions( input );
 
     file << fmt::format( "Average lobe thickness = {} m\n", lobe_dimensions.avg_lobe_thickness );
     file << fmt::format( "Total volume = {} m3\n", volume );
@@ -504,7 +311,7 @@ void Simulation::write_avg_thickness_file()
 }
 
 std::unique_ptr<TopographyFile>
-Simulation::get_file_handle( const Topography & topography, OutputQuantitiy output_quantity )
+Simulation::get_file_handle( const Topography & topography, OutputQuantitiy output_quantity ) const
 {
     std::unique_ptr<TopographyFile> res{};
 
@@ -538,6 +345,9 @@ Simulation::get_file_handle( const Topography & topography, OutputQuantitiy outp
 
 void Simulation::run()
 {
+    // Initialize MrLavaLoba method
+    auto mr_lava_loba = MrLavaLoba( input, gen );
+
     int n_lobes_processed = 0;
 
     // Make a copy of the initial topography
@@ -546,33 +356,13 @@ void Simulation::run()
     for( int idx_flow = 0; idx_flow < input.n_flows; idx_flow++ )
     {
         // Determine n_lobes
-        int n_lobes{};
-        // Number of lobes in the flow is a random number between the min and max values
-        if( input.a_beta == 0 && input.b_beta == 0 )
-        {
-            std::uniform_int_distribution<> dist_num_lobes( input.min_n_lobes, input.max_n_lobes );
-            n_lobes = dist_num_lobes( gen );
-        }
-        // Deterministic number of lobes, such that a beta probability density distribution is used (not a beta
-        // distribution). However this means that n_lobes could potentially be greater than min_n_lobes
-        else
-        {
-            double x_beta        = ( 1.0 * idx_flow ) / ( input.n_flows - 1.0 );
-            double random_number = Math::beta_pdf( x_beta, input.a_beta, input.b_beta );
-            n_lobes              = int(
-                std::round( input.min_n_lobes + 0.5 * ( input.max_n_lobes - input.min_n_lobes ) * random_number ) );
-        }
+        int n_lobes = mr_lava_loba.compute_n_lobes( idx_flow );
 
         lobes = std::vector<Lobe>{};
         lobes.reserve( n_lobes );
 
         // set the intersection cache
         topography.reset_intersection_cache( n_lobes );
-        double delta_lobe_thickness
-            = 2.0 * ( lobe_dimensions.avg_lobe_thickness - lobe_dimensions.thickness_min ) / ( n_lobes - 1.0 );
-
-        // Calculated for each flow with n_lobes number of lobes
-        FLOWY_CHECK( delta_lobe_thickness );
 
         // Build initial lobes which do not propagate descendents
         for( int idx_lobe = 0; idx_lobe < input.n_init; idx_lobe++ )
@@ -580,11 +370,10 @@ void Simulation::run()
             lobes.emplace_back();
             Lobe & lobe_cur = lobes.back();
 
-            compute_initial_lobe_position( idx_flow, lobe_cur );
+            mr_lava_loba.compute_initial_lobe_position( idx_flow, lobe_cur );
 
             // Compute the thickness of the lobe
-            lobe_cur.thickness = ( 1.0 - input.thickening_parameter )
-                                 * ( lobe_dimensions.thickness_min + idx_lobe * delta_lobe_thickness );
+            lobe_cur.thickness = mr_lava_loba.compute_current_lobe_thickness( idx_lobe, n_lobes );
 
             auto [height_lobe_center, slope] = topography.height_and_slope( lobe_cur.center );
 
@@ -597,10 +386,10 @@ void Simulation::run()
             // Perturb the angle (and set it)
             lobe_cur.set_azimuthal_angle( std::atan2( slope[1], slope[0] ) ); // Sets the angle prior to perturbation
             const double slope_norm = xt::linalg::norm( slope, 2 );           // Similar to np.linalg.norm
-            perturb_lobe_angle( lobe_cur, slope_norm );
+            mr_lava_loba.perturb_lobe_angle( lobe_cur, slope_norm );
 
             // compute lobe axes
-            compute_lobe_axes( lobe_cur, slope_norm );
+            mr_lava_loba.compute_lobe_axes( lobe_cur, slope_norm );
 
             // Add rasterized lobe
             topography.add_lobe( lobe_cur, input.volume_correction, idx_lobe );
@@ -616,7 +405,7 @@ void Simulation::run()
 
             // Select which of the previously created lobes is the parent lobe
             // from which the new descendent lobe will bud
-            auto idx_parent    = select_parent_lobe( idx_lobe );
+            auto idx_parent    = mr_lava_loba.select_parent_lobe( idx_lobe, lobes );
             Lobe & lobe_parent = lobes[idx_parent];
 
             // stopping condition (parent lobe close the domain boundary or at a not defined z value)
@@ -638,10 +427,10 @@ void Simulation::run()
             // Perturb the angle and set it (not on the parent anymore)
             lobe_cur.set_azimuthal_angle( std::atan2( diff[1], diff[0] ) ); // Sets the angle prior to perturbation
             const double slope_parent_norm = topography.slope_between_points( lobe_parent.center, budding_point );
-            perturb_lobe_angle( lobe_cur, slope_parent_norm );
+            mr_lava_loba.perturb_lobe_angle( lobe_cur, slope_parent_norm );
 
             // Add the inertial contribution
-            add_inertial_contribution( lobe_cur, lobe_parent, slope_parent_norm );
+            mr_lava_loba.add_inertial_contribution( lobe_cur, lobe_parent, slope_parent_norm );
 
             // Compute the final budding point
             // It is defined by the point on the perimeter of the parent lobe closest to the center of the new lobe
@@ -658,10 +447,10 @@ void Simulation::run()
             double slope_budding_point = topography.slope_between_points( lobe_parent.center, final_budding_point );
 
             // compute the new lobe axes
-            compute_lobe_axes( lobe_cur, slope_budding_point );
+            mr_lava_loba.compute_lobe_axes( lobe_cur, slope_budding_point );
 
             // Get new lobe center
-            compute_descendent_lobe_position( lobe_cur, lobe_parent, final_budding_point );
+            mr_lava_loba.compute_descendent_lobe_position( lobe_cur, lobe_parent, final_budding_point );
 
             if( stop_condition( lobe_cur.center, lobe_cur.semi_axes[0] ) )
             {
@@ -670,8 +459,7 @@ void Simulation::run()
             }
 
             // Compute the thickness of the lobe
-            lobe_cur.thickness = ( 1.0 - input.thickening_parameter )
-                                 * ( lobe_dimensions.thickness_min + idx_lobe * delta_lobe_thickness );
+            lobe_cur.thickness = mr_lava_loba.compute_current_lobe_thickness( idx_lobe, n_lobes );
 
             // Add rasterized lobe
             topography.add_lobe( lobe_cur, input.volume_correction, idx_lobe );
