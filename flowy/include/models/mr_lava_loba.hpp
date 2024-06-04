@@ -8,6 +8,8 @@
 #include "flowy/include/simulation.hpp"
 #include "flowy/include/vent_flags.hpp"
 #include "pdf_cpplib/include/probability_dist.hpp"
+#include <algorithm>
+#include <memory>
 #include <vector>
 
 namespace Flowy
@@ -70,9 +72,9 @@ public:
     CommonLobeDimensions lobe_dimensions;
     Config::InputParams input;
 
-    MrLavaLoba( const Config::InputParams & input, std::mt19937 & gen ) : input( input ), gen( gen ){};
+    MrLavaLoba( const Config::InputParams & input, std::mt19937 & gen ) : input( input ), gen( gen ) {}
 
-    MrLavaLoba( Simulation & simulation ) : input( simulation.input ), gen( simulation.gen ){};
+    explicit MrLavaLoba( Simulation & simulation ) : input( simulation.input ), gen( simulation.gen ) {}
 
     // Calculate n_lobes
     int compute_n_lobes( int idx_flow )
