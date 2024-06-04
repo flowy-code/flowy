@@ -223,19 +223,25 @@ LobeCells Topography::get_cells_intersecting_lobe( const Lobe & lobe, std::optio
             }
         }
 
+        // Technically, we should not need to check these ... but hey
+        const bool top_intersection
+            = row_data_cur.idx_x_left_top.has_value() && row_data_cur.idx_x_right_top.has_value();
+        const bool bot_intersection
+            = row_data_cur.idx_x_left_bot.has_value() && row_data_cur.idx_x_right_bot.has_value();
+
         // We treat the first and the last row separately, since here, there are no intersections
         // with the previous row (in case of the first) or the current row (in case of the last row)
-        if( irow == 0 )
+        if( irow == 0 && top_intersection )
         {
             push_back_intersected_cells(
                 row_data_cur.idx_x_left_top.value(), row_data_cur.idx_x_right_top.value(), idx_y_min, intersections );
         }
-        else if( irow == n_rows - 1 )
+        else if( irow == n_rows - 1 && bot_intersection )
         {
             push_back_intersected_cells(
                 row_data_cur.idx_x_left_bot.value(), row_data_cur.idx_x_right_bot.value(), idx_y_max, intersections );
         }
-        else
+        else if( top_intersection && bot_intersection )
         {
             const int start_left
                 = std::min<int>( row_data_cur.idx_x_left_bot.value(), row_data_cur.idx_x_left_top.value() );
@@ -255,6 +261,11 @@ LobeCells Topography::get_cells_intersecting_lobe( const Lobe & lobe, std::optio
 
             push_back_intersected_cells( start_right, stop_right, idx_y, intersections );
             push_back_enclosed_cells( stop_left + 1, start_right - 1, idx_y );
+        }
+        else
+        {
+            // We should not end up here, but if we do, we just do nothing
+            fmt::print( "WARNING: empty row in topography::get_cells_intersecting_lobe\n" );
         }
     }
 
@@ -507,8 +518,7 @@ Vector2 Topography::find_preliminary_budding_point( const Lobe & lobe, int npoin
 
     // Then, we find the point of minimal elevation amongst the rasterized points on the perimeter
     auto min_elevation_point_it = std::min_element(
-        perimeter.begin(), perimeter.end(),
-        [&]( const Vector2 & p1, const Vector2 & p2 )
+        perimeter.begin(), perimeter.end(), [&]( const Vector2 & p1, const Vector2 & p2 )
         { return height_and_slope( p1 ).first < height_and_slope( p2 ).first; } );
 
     return *min_elevation_point_it;

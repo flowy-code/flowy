@@ -19,7 +19,7 @@ class CommonLobeDimensions
 {
 public:
     CommonLobeDimensions() = default;
-    CommonLobeDimensions( const Config::InputParams & input, const Topography & topography )
+    explicit CommonLobeDimensions( const Config::InputParams & input )
     {
         if( !input.total_volume.has_value() )
             throw std::runtime_error( "Total volume flag not set" );
@@ -47,7 +47,6 @@ public:
 
         exp_lobe_exponent = std::exp( input.lobe_exponent );
         max_semiaxis      = std::sqrt( lobe_area * input.max_aspect_ratio / Math::pi );
-        max_cells         = std::ceil( 2.0 * max_semiaxis / topography.cell_size() ) + 2;
         thickness_min     = 2.0 * input.thickness_ratio / ( input.thickness_ratio + 1.0 ) * avg_lobe_thickness;
 
         FLOWY_CHECK( lobe_area );
@@ -55,13 +54,11 @@ public:
         FLOWY_CHECK( thickness_min );
         FLOWY_CHECK( exp_lobe_exponent );
         FLOWY_CHECK( max_semiaxis );
-        FLOWY_CHECK( max_cells );
     }
 
     double avg_lobe_thickness = 0;
     double lobe_area          = 0;
     double max_semiaxis       = 0;
-    int max_cells             = 0;
     double thickness_min      = 0;
     double exp_lobe_exponent  = 1;
 };
@@ -72,9 +69,15 @@ public:
     CommonLobeDimensions lobe_dimensions;
     Config::InputParams input;
 
-    MrLavaLoba( const Config::InputParams & input, std::mt19937 & gen ) : input( input ), gen( gen ) {}
+    MrLavaLoba( const Config::InputParams & input, std::mt19937 & gen )
+            : lobe_dimensions( input ), input( input ), gen( gen )
+    {
+    }
 
-    explicit MrLavaLoba( Simulation & simulation ) : input( simulation.input ), gen( simulation.gen ) {}
+    explicit MrLavaLoba( Simulation & simulation )
+            : lobe_dimensions( simulation.input ), input( simulation.input ), gen( simulation.gen )
+    {
+    }
 
     // Calculate n_lobes
     int compute_n_lobes( int idx_flow )

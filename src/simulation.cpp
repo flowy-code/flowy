@@ -208,7 +208,7 @@ void Simulation::write_avg_thickness_file()
     const double avg_thickness = volume / area;
     const double cell_area     = topography.cell_size() * topography.cell_size();
 
-    auto lobe_dimensions = CommonLobeDimensions( input, topography );
+    auto lobe_dimensions = CommonLobeDimensions( input );
 
     file << fmt::format( "Average lobe thickness = {} m\n", lobe_dimensions.avg_lobe_thickness );
     file << fmt::format( "Total volume = {} m3\n", volume );
