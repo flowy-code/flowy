@@ -65,8 +65,8 @@ struct RowIntersectionData
 {
     int idx_row{};
 
-    double y_top;
-    double y_bot;
+    double y_top{};
+    double y_bot{};
 
     std::optional<double> x_left_top{};
     std::optional<double> x_right_top{};
@@ -103,11 +103,11 @@ LobeCells Topography::get_cells_intersecting_lobe( const Lobe & lobe, std::optio
 
     LobeCells res{};
 
-    auto extent_xy = lobe.extent_xy();
+    const auto extent_xy = lobe.extent_xy();
 
-    int idx_y_min    = ( lobe.center[1] - extent_xy[1] - y_data[0] ) / cell_size();
-    int idx_y_max    = ( lobe.center[1] + extent_xy[1] - y_data[0] ) / cell_size();
-    const int n_rows = idx_y_max - idx_y_min + 1;
+    const int idx_y_min = ( lobe.center[1] - extent_xy[1] - y_data[0] ) / cell_size();
+    const int idx_y_max = ( lobe.center[1] + extent_xy[1] - y_data[0] ) / cell_size();
+    const int n_rows    = idx_y_max - idx_y_min + 1;
 
     auto row_data = std::vector<RowIntersectionData>( n_rows );
 
@@ -168,8 +168,8 @@ LobeCells Topography::get_cells_intersecting_lobe( const Lobe & lobe, std::optio
             res.cells_intersecting.push_back( { idx_x, idx_y } );
             LobeCells::trapzT trapz_values{};
 
-            double x_cell_min = x_data[idx_x];
-            double x_cell_max = x_data[idx_x] + cell_size();
+            const double x_cell_min = x_data[idx_x];
+            const double x_cell_max = x_data[idx_x] + cell_size();
 
             // Figure out the trapz value
             for( size_t i = 0; i < intersection_values.size(); i++ )
@@ -448,8 +448,8 @@ double Topography::slope_between_points(
     const double height1 = height_and_slope( point1 ).first;
     const double height2 = height_and_slope( point2 ).first;
 
-    const Vector2 diff       = point2 - point1;
-    double norm              = std::sqrt( diff[0] * diff[0] + diff[1] * diff[1] );
+    const Vector2 diff             = point2 - point1;
+    const double norm              = std::sqrt( diff[0] * diff[0] + diff[1] * diff[1] );
     double height_difference = -( height2 - height1 );
 
     if( min_height_drop.has_value() )
@@ -465,13 +465,12 @@ void Topography::add_lobe( const Lobe & lobe, bool volume_correction, std::optio
 {
     // In this function we simply add the thickness of the lobe to the topography
     // First, we find the intersected cells and the covered fractions
-
     std::vector<std::pair<std::array<int, 2>, double>> intersection_data = compute_intersection( lobe, idx_cache );
     double volume_added            = 0.0; // Volume added to the topography from rasterization
     double area_intersecting_cells = 0.0; // Total area covered by intersecting cells
     const double cell_area         = cell_size() * cell_size();
 
-    // Then we add the tickness according to the fractions
+    // Then we add the thickness according to the fractions
     for( auto const & [indices, fraction] : intersection_data )
     {
         const double cell_height = fraction * lobe.thickness;
@@ -488,7 +487,8 @@ void Topography::add_lobe( const Lobe & lobe, bool volume_correction, std::optio
     {
         const double volume_to_add     = lobe.volume() - volume_added;
         const double avg_height_to_add = volume_to_add / area_intersecting_cells;
-        // Go over the cells
+
+        // Iterate over the cells and add correction
         for( auto const & [indices, fraction] : intersection_data )
         {
             if( fraction < 1.0 )
@@ -534,9 +534,11 @@ void Topography::add_to_topography( const Topography & topography_to_add, double
                 continue;
             }
 
+            // Get the interpolated height from topography_to_add
             auto [height_to_add, slope] = topography_to_add.height_and_slope( point );
-            auto old_height             = height_data( idx_x, idx_y );
 
+            // Make sure that there is no issue with no_data_values
+            auto old_height = height_data( idx_x, idx_y );
             if( height_to_add == topography_to_add.no_data_value || old_height == this->no_data_value )
                 continue;
 
