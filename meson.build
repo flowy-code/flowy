@@ -10,16 +10,44 @@ cpp_args = []
 
 cppc = meson.get_compiler('cpp')
 
+cppc_id = cppc.get_id()
+message('Got compiler', cppc_id)
+
+if cppc.get_id() != 'intel-llvm'
+  cpp_args += cppc.get_supported_arguments([
+    # GCC flags
+    '-ffast-math',                 # Enable faster, non-IEEE math calculations
+    '-fno-finite-math-only',       # Allow Inf and NaN
+    # These are based on recommendations from
+    # https://youtu.be/_enXuIxuNV4?si=LvtMqPwJ6jYbDY66
+    '-fno-semantic-interposition', # Assume no interposition for module functions
+    '-fno-plt',                    # Avoid PLT for function calls within shared libs
+    '-Bsymbolic',                  # Resolve symbols to local definitions
+  ])
+endif
+
+if cppc.get_id() == 'intel-llvm'
+  # Here: https://www.intel.com/content/www/us/en/docs/cpp-compiler/developer-guide-reference/2021-10/alphabetical-option-list.html
+  cpp_args += cppc.get_supported_arguments([
+    # Intel flags
+    '-xHost',
+    '-ipo',
+    '-fp-model=fast',
+    '-fma',
+    '-fiopenmp',
+  ])
+endif
+
+# Conditional arguments
 cpp_args += cppc.get_supported_arguments([
   '-Wno-unused-local-typedefs',  # Ignore unused local typedefs warnings
   '-Wno-array-bounds',           # Suppress out-of-bounds array access warnings
-  '-ffast-math',                 # Enable faster, non-IEEE math calculations
-  '-fno-finite-math-only',       # Allow Inf and NaN
-  # These are based on recommendations from
-  # https://youtu.be/_enXuIxuNV4?si=LvtMqPwJ6jYbDY66
-  '-fno-semantic-interposition', # Assume no interposition for module functions
-  '-fno-plt',                    # Avoid PLT for function calls within shared libs
-  '-Bsymbolic',                  # Resolve symbols to local definitions
+  '-Wno-unused-variable',
+  '-Wno-unused-but-set-variable',
+  '-Wno-unused-label',
+  # From xtensor
+  '-Wno-unused-parameter',
+  '-Wno-tautological-constant-compare',
 ])
 
 if cpp_args.length() > 0
@@ -37,6 +65,7 @@ _sources = [
 
 # Library dependencies
 _deps = []
+_libs = []
 pdflib_dep = dependency('pdf_cpplib', fallback : ['pdf_cpplib', 'pdflib_dep'])
 
 ## Netcdf
@@ -60,6 +89,17 @@ _deps += [
   dependency('fmt'),
 ]
 
+# mkl_dep = dependency('mkl', required: true)
+# mkl_libdirs = '/home/rgoswami/intel/oneapi/mkl/latest' #get_option('mkl_libdirs')
+# mkl_lib = cppc.find_library('mkl_rt', dirs: mkl_libdirs, required: true)
+# _libs += mkl_lib
+# static/dynamic or iomp/seq
+mkl_dep = dependency('mkl-dynamic-lp64-iomp', required: true)
+_deps += mkl_dep
+
+# TODO(rg): Use OpenBlas as a fallback
+cpp_args += ['-DHAVE_CBLAS=1', '-DHAVE_MKL']
+
 symbol_visibility = 'default'
 if get_option('default_library') == 'static'
   # Ensure that if we link a static library into a shared library,
@@ -76,6 +116,7 @@ flowylib = both_libraries('flowy',
   dependencies : _deps,
   include_directories : incdir,
   gnu_symbol_visibility: symbol_visibility,
+  link_with: _libs,
   pic: true,
   cpp_args : cpp_args,
 )
