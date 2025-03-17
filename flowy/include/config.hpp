@@ -39,6 +39,9 @@ public:
     bool print_remaining_time = false;
     bool save_final_dem       = false;
 
+    // If this std::optional has a value `n`, write the lava thickness (not the dem!) to a file every `n` lobes
+    std::optional<int> write_thickness_every_n_lobes{};
+
     // The tolerance in the volume ratio when finding the threshold thickness for masking
     double masking_tolerance = 1e-5;
     // The maximum number of bisection search iterations when finding the threshold thickness for masking

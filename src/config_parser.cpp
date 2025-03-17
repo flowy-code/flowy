@@ -52,6 +52,7 @@ InputParams parse_config( const std::filesystem::path & path )
     set_if_specified( params.write_lobes_csv, tbl["write_lobes_csv"] );
     set_if_specified( params.print_remaining_time, tbl["print_remaining_time"] );
     set_if_specified( params.save_final_dem, tbl["save_final_dem"] );
+    params.write_thickness_every_n_lobes = tbl["write_thickness_every_n_lobes"].value<int>();
 
     std::optional<std::string> output_folder_string{};
     output_folder_string = tbl["output_folder"].value<std::string>();
@@ -270,6 +271,11 @@ void validate_settings( const InputParams & options )
         "Allowed values of the vent_flag are 0 to 8, inclusive." );
 
     // Output settings validation
+    if( options.write_thickness_every_n_lobes.has_value() )
+    {
+        check( name_and_var( options.write_thickness_every_n_lobes.value() ), g_zero );
+    }
+
     check(
         name_and_var( options.output_settings.compression_level ), []( auto x ) { return x >= 0 && x <= 9; },
         "The compression level can only be between 0 and 9, inclusive." );

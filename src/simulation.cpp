@@ -343,6 +343,33 @@ Simulation::get_file_handle( const Topography & topography, OutputQuantity outpu
     return res;
 }
 
+void Simulation::compute_topography_thickness()
+{
+    // Compute the thickness by substracting the initial topography and correcting for the thickening parametr
+    topography_thickness               = topography;
+    topography_thickness.no_data_value = DEFAULT_NO_DATA_VALUE_THICKNESS;
+    topography_thickness.height_data -= topography_initial.height_data;
+    topography_thickness.height_data /= ( 1.0 - input.thickening_parameter );
+}
+
+void Simulation::write_thickness_if_necessary( int n_lobes_processed )
+{
+    // If the optional does not have a value, we simply return without doing anything
+    if( !input.write_thickness_every_n_lobes.has_value() )
+    {
+        return;
+    }
+
+    // Else we check if we have to write a dem file according to our setting
+    if( n_lobes_processed % input.write_thickness_every_n_lobes.value() == 0 )
+    {
+        compute_topography_thickness();
+        auto file_thick = get_file_handle( topography_thickness, OutputQuantity::Height );
+        file_thick->save(
+            input.output_folder / fmt::format( "{}_thickness_after_{}_lobes", input.run_name, n_lobes_processed ) );
+    }
+}
+
 void Simulation::run()
 {
     // Initialize MrLavaLoba method
@@ -394,6 +421,7 @@ void Simulation::run()
             // Add rasterized lobe
             topography.add_lobe( lobe_cur, input.volume_correction, idx_lobe );
             n_lobes_processed++;
+            write_thickness_if_necessary( n_lobes_processed );
         }
 
         // Loop over the rest of the lobes (skipping the initial ones).
@@ -464,6 +492,7 @@ void Simulation::run()
             // Add rasterized lobe
             topography.add_lobe( lobe_cur, input.volume_correction, idx_lobe );
             n_lobes_processed++;
+            write_thickness_if_necessary( n_lobes_processed );
         }
 
         if( input.save_hazard_data )
@@ -512,11 +541,7 @@ void Simulation::run()
     }
 
     // Save full thickness to asc file
-    topography_thickness               = topography;
-    topography_thickness.no_data_value = DEFAULT_NO_DATA_VALUE_THICKNESS;
-    topography_thickness.height_data -= topography_initial.height_data;
-    topography_thickness.height_data /= ( 1.0 - input.thickening_parameter );
-
+    compute_topography_thickness();
     auto file_thick = get_file_handle( topography_thickness, OutputQuantity::Height );
     file_thick->save( input.output_folder / fmt::format( "{}_thickness_full", input.run_name ) );
 
