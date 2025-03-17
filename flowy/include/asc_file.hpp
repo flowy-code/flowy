@@ -12,7 +12,7 @@ class AscFile : public TopographyFile
 {
 public:
     AscFile() = default;
-    AscFile( const Topography & topography, OutputQuantitiy output )
+    AscFile( const Topography & topography, OutputQuantity output )
             : TopographyFile::TopographyFile( topography, output )
     {
     }

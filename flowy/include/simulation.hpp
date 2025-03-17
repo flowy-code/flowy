@@ -40,7 +40,7 @@ public:
     void write_avg_thickness_file();
 
     std::unique_ptr<TopographyFile>
-    get_file_handle( const Topography & topography, OutputQuantitiy output_quantity ) const;
+    get_file_handle( const Topography & topography, OutputQuantity output_quantity ) const;
 
     void run();
 

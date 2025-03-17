@@ -24,7 +24,7 @@ public:
 
     StorageDataType data_type = StorageDataType::Short;
     NetCDFFile()              = default;
-    NetCDFFile( const Topography & topography, OutputQuantitiy output )
+    NetCDFFile( const Topography & topography, OutputQuantity output )
             : TopographyFile::TopographyFile( topography, output )
     {
     }
