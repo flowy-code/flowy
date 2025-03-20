@@ -187,19 +187,6 @@ public:
         return coord + center;
     }
 
-    inline std::vector<Vector2> rasterize_perimeter( int n_raster_points ) const
-    {
-        VectorX phi_list = xt::linspace<double>( 0.0, 2.0 * Math::pi, n_raster_points, false );
-        auto res         = std::vector<Vector2>( n_raster_points );
-
-        for( int idx_phi = 0; idx_phi < n_raster_points; idx_phi++ )
-        {
-            res[idx_phi] = point_at_angle( phi_list[idx_phi] );
-        }
-
-        return res;
-    }
-
     inline std::vector<Vector2> rasterize_perimeter( std::span<double> sin_phi, std::span<double> cos_phi ) const
     {
         const int n_raster_points = sin_phi.size();

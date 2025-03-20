@@ -516,10 +516,7 @@ Vector2 Topography::find_preliminary_budding_point( const Lobe & lobe, size_t np
     // First, we rasterize the perimeter of the ellipse
     const auto sin = std::span<double>( sin_phi_lobe_perimeter->begin(), sin_phi_lobe_perimeter->end() );
     const auto cos = std::span<double>( cos_phi_lobe_perimeter->begin(), cos_phi_lobe_perimeter->end() );
-
     std::vector<Vector2> perimeter = lobe.rasterize_perimeter( sin, cos );
-
-    // std::vector<Vector2> perimeter = lobe.rasterize_perimeter( npoints );
 
     // Then, we find the point of minimal elevation amongst the rasterized points on the perimeter
     auto min_elevation_point_it = std::min_element(

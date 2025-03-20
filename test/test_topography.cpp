@@ -140,13 +140,6 @@ TEST_CASE( "find_preliminary_budding_point", "[budding_point]" )
     my_lobe.semi_axes = { 0.8, 0.8 };
     my_lobe.set_azimuthal_angle( 0.0 );
 
-    auto perimeter = my_lobe.rasterize_perimeter( 32 );
-    for( auto & p : perimeter )
-    {
-        INFO( fmt::format( "p = {}\n", fmt::streamed( p ) ) );
-        INFO( fmt::format( "height = {}\n\n", topography.height_and_slope( p ).first ) );
-    }
-
     Flowy::Vector2 budding_point = topography.find_preliminary_budding_point( my_lobe, 32 );
 
     INFO( fmt::format( "budding_point  = {}", budding_point ) );
