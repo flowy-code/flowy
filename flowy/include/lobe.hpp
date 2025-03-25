@@ -130,27 +130,29 @@ public:
         const double a2 = a * a;
         const double b2 = b * b;
 
+        // Compute coefficients of quadratic equation
         const double alpha = 1.0 / ( a2 ) * ( diff[0] * diff[0] ) + 1.0 / b2 * ( diff[1] * diff[1] );
         const double beta  = 2.0 * ( x1_prime[0] * diff[0] / a2 + x1_prime[1] * diff[1] / b2 );
         const double gamma = x1_prime[0] * x1_prime[0] / a2 + x1_prime[1] * x1_prime[1] / b2 - 1.0;
 
-        // The solution to this quadratic equation is
+        // The solution to the quadratic equation is
         // t = (-beta +- sqrt(beta^2 - 4*alpha*gamma)) / (2*alpha)
-
-        // Therefore, if beta^2 - 4*alpha*gamma < 0, the line se\beta\frgment misses the ellipse
+        // Therefore, if beta^2 - 4*alpha*gamma < 0, the line segment misses the ellipse
         const double radicand = beta * beta - 4 * alpha * gamma;
         if( radicand < 0 )
             return std::nullopt;
 
         const double sqrt_r = std::sqrt( radicand );
 
-        // Else, we compute the two points of intersection and check if they fall into the interval [0, 1]
+        // Else (if the line segment does not miss the ellipse) we compute the two points of intersection t1 and t2 and check if
         const double t1 = ( -beta - sqrt_r ) / ( 2.0 * alpha );
         const double t2 = ( -beta + sqrt_r ) / ( 2.0 * alpha );
 
-        // This condition determines if any of the points of the line segment lie within the lobe
-        // This is the condition for the intersection of [0,1] and [t1, t2] to not be empty
+        // The following condition determines if any of the points of the line segment lie within the lobe
+        // It can be thought of as the the condition for the intersection of [0,1] and [t1,t2] to not be empty
         const bool condition = !( ( t1 < 0 && t2 < 0 ) || ( t1 > 1 && t2 > 1 ) );
+
+        // If the conditions if fulfilled, we compute the intersection points
         if( condition )
         {
             // We clamp t1 and t2 to the interval [0,1] in case the line segment intersects the ellipse only once
@@ -165,20 +167,22 @@ public:
             const std::array<Vector2, 2> res = { v1 + center, v2 + center };
             return res;
         }
-
-        return std::nullopt;
+        else // else we return nullopt
+        {
+            return std::nullopt;
+        }
     }
 
     // Gives a point on the perimeter of the ellipse
     // The angle is relative to the semi major axis angle
-    inline Vector2 point_at_angle( const double phi ) const
+    inline Vector2 point_at_angle( double phi ) const
     {
         return point_at_angle( std::sin( phi ), std::cos( phi ) );
     }
 
     // Gives a point on the perimeter of the ellipse
     // The angle is relative to the semi major axis angle
-    inline Vector2 point_at_angle( const double sin_phi, const double cos_phi ) const
+    inline Vector2 point_at_angle( double sin_phi, double cos_phi ) const
     {
         const double a      = semi_axes[0]; // major axis
         const double b      = semi_axes[1]; // minor axis
@@ -187,7 +191,8 @@ public:
         return coord + center;
     }
 
-    inline std::vector<Vector2> rasterize_perimeter( std::span<double> sin_phi, std::span<double> cos_phi ) const
+    inline std::vector<Vector2>
+    rasterize_perimeter( const std::span<double> sin_phi, const std::span<double> cos_phi ) const
     {
         const int n_raster_points = sin_phi.size();
         auto res                  = std::vector<Vector2>( n_raster_points );
