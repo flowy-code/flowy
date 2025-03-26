@@ -7,13 +7,38 @@
 #include "flowy/include/lobe.hpp"
 #include "flowy/include/topography.hpp"
 #include "flowy/include/topography_file.hpp"
+#include <chrono>
 #include <filesystem>
 #include <memory>
+#include <optional>
 #include <random>
 #include <vector>
 
 namespace Flowy
 {
+
+/**
+ * @brief Track the current state of the Simulation run
+ *
+ */
+struct SimulationState
+{
+    int n_lobes_processed = 0;
+    std::chrono::time_point<std::chrono::system_clock> t_run_start{};
+    int n_lobes{};
+    std::vector<Lobe> lobes{};
+
+    int step                 = 0;
+    int idx_flow             = 0;
+    int idx_lobe             = 0;
+    int n_lobes_current_flow = 0;
+};
+
+enum class RunStatus
+{
+    Finished,
+    Ongoing
+};
 
 class Simulation
 {
@@ -51,9 +76,13 @@ public:
 
     void run();
 
+    // Perform `n_steps` steps of the simulation (per step, a single lobe is added to the topography)
+    RunStatus steps( int n_steps );
+
 private:
     int rng_seed;
     std::mt19937 gen{};
+    std::optional<SimulationState> simulation_state = std::nullopt;
 };
 
 } // namespace Flowy
