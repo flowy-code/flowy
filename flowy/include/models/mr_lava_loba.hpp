@@ -80,8 +80,8 @@ inline int compute_n_lobes( int idx_flow, const Config::InputParams & input, std
     {
         const double x_beta        = ( 1.0 * idx_flow ) / ( input.n_flows - 1.0 );
         const double random_number = Math::beta_pdf( x_beta, input.a_beta, input.b_beta );
-        n_lobes
-            = int( std::round( input.min_n_lobes + 0.5 * ( input.max_n_lobes - input.min_n_lobes ) * random_number ) );
+        n_lobes                    = static_cast<int>(
+            std::round( input.min_n_lobes + 0.5 * ( input.max_n_lobes - input.min_n_lobes ) * random_number ) );
     }
     return n_lobes;
 }
