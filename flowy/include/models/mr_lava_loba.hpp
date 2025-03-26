@@ -88,7 +88,7 @@ inline int compute_n_lobes( int idx_flow, const Config::InputParams & input, std
 
 // Calculate the current thickness of a lobe
 inline double compute_current_lobe_thickness(
-    int idx_lobe, int n_lobes, const Config::InputParams & input, CommonLobeDimensions & lobe_dimensions )
+    int idx_lobe, int n_lobes, const Config::InputParams & input, const CommonLobeDimensions & lobe_dimensions )
 {
     const double delta_lobe_thickness
         = 2.0 * ( lobe_dimensions.avg_lobe_thickness - lobe_dimensions.thickness_min ) / ( n_lobes - 1.0 );
@@ -157,7 +157,7 @@ compute_initial_lobe_position( int idx_flow, Lobe & lobe, const Config::InputPar
 // perturbes the initial azimuthal angle of the lobe, which is
 // computed from the terrain slope
 inline void compute_lobe_axes(
-    Lobe & lobe, double slope, const Config::InputParams & input, CommonLobeDimensions & lobe_dimensions )
+    Lobe & lobe, double slope, const Config::InputParams & input, const CommonLobeDimensions & lobe_dimensions )
 {
     // Factor for the lobe eccentricity
     const double aspect_ratio = std::min( input.max_aspect_ratio, 1.0 + input.aspect_ratio_coeff * slope );
@@ -206,7 +206,7 @@ inline void perturb_lobe_angle( Lobe & lobe, double slope, const Config::InputPa
 // Select which lobe amongst the existing lobes will be the parent for the new descendent lobe
 inline int select_parent_lobe(
     int idx_descendant, std::vector<Lobe> & lobes, const Config::InputParams & input,
-    CommonLobeDimensions & lobe_dimensions, std::mt19937 & gen )
+    const CommonLobeDimensions & lobe_dimensions, std::mt19937 & gen )
 {
     Lobe & lobe_descendent = lobes[idx_descendant];
 
