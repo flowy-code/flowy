@@ -42,7 +42,7 @@ public:
     // Check if the dem has to be written (because of the input.write_dem_every_n_lobes_setting) and, if yes, writes the topography
     void write_thickness_if_necessary(int n_lobes_processed);
 
-    // Computes the topography_thickness field by substacting the initial topography and dividing by (1.0 - filling_parameter)
+    // Computes the topography_thickness field by subtracting the initial topography and dividing by (1.0 - filling_parameter)
     void compute_topography_thickness();
 
     std::unique_ptr<TopographyFile>
