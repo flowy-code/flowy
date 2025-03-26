@@ -231,8 +231,7 @@ void Simulation::write_avg_thickness_file()
 
     // This lambda performs bisection search to find the threshold thickness at which a
     // relative volume proportion of `thresh` is contained within cells with greater thickness than the threshold thickness
-    auto bisection_search = [&]( double thresh, double tol, int max_iter )
-    {
+    auto bisection_search = [&]( double thresh, double tol, int max_iter ) {
         int idx_lo = 0;
         int idx_hi = n_cells - 1;
 
@@ -372,18 +371,15 @@ void Simulation::write_thickness_if_necessary( int n_lobes_processed )
 
 void Simulation::run()
 {
-    // Initialize MrLavaLoba method
-    auto mr_lava_loba = MrLavaLoba( input, gen );
-
     int n_lobes_processed = 0;
 
-    // Make a copy of the initial topography
-    auto t_run_start = std::chrono::high_resolution_clock::now();
+    auto t_run_start            = std::chrono::high_resolution_clock::now();
+    auto common_lobe_dimensions = CommonLobeDimensions( input );
 
     for( int idx_flow = 0; idx_flow < input.n_flows; idx_flow++ )
     {
         // Determine n_lobes
-        int n_lobes = mr_lava_loba.compute_n_lobes( idx_flow );
+        int n_lobes = MrLavaLoba::compute_n_lobes( idx_flow, input, gen );
 
         lobes = std::vector<Lobe>{};
         lobes.reserve( n_lobes );
@@ -397,10 +393,11 @@ void Simulation::run()
             lobes.emplace_back();
             Lobe & lobe_cur = lobes.back();
 
-            mr_lava_loba.compute_initial_lobe_position( idx_flow, lobe_cur );
+            MrLavaLoba::compute_initial_lobe_position( idx_flow, lobe_cur, input, gen );
 
             // Compute the thickness of the lobe
-            lobe_cur.thickness = mr_lava_loba.compute_current_lobe_thickness( idx_lobe, n_lobes );
+            lobe_cur.thickness
+                = MrLavaLoba::compute_current_lobe_thickness( idx_lobe, n_lobes, input, common_lobe_dimensions );
 
             auto [height_lobe_center, slope] = topography.height_and_slope( lobe_cur.center );
 
@@ -413,10 +410,10 @@ void Simulation::run()
             // Perturb the angle (and set it)
             lobe_cur.set_azimuthal_angle( std::atan2( slope[1], slope[0] ) ); // Sets the angle prior to perturbation
             const double slope_norm = xt::linalg::norm( slope, 2 );           // Similar to np.linalg.norm
-            mr_lava_loba.perturb_lobe_angle( lobe_cur, slope_norm );
+            MrLavaLoba::perturb_lobe_angle( lobe_cur, slope_norm, input, gen );
 
             // compute lobe axes
-            mr_lava_loba.compute_lobe_axes( lobe_cur, slope_norm );
+            MrLavaLoba::compute_lobe_axes( lobe_cur, slope_norm, input, common_lobe_dimensions );
 
             // Add rasterized lobe
             topography.add_lobe( lobe_cur, input.volume_correction, idx_lobe );
@@ -433,7 +430,7 @@ void Simulation::run()
 
             // Select which of the previously created lobes is the parent lobe
             // from which the new descendent lobe will bud
-            auto idx_parent    = mr_lava_loba.select_parent_lobe( idx_lobe, lobes );
+            auto idx_parent    = MrLavaLoba::select_parent_lobe( idx_lobe, lobes, input, common_lobe_dimensions, gen );
             Lobe & lobe_parent = lobes[idx_parent];
 
             // stopping condition (parent lobe close the domain boundary or at a not defined z value)
@@ -455,10 +452,10 @@ void Simulation::run()
             // Perturb the angle and set it (not on the parent anymore)
             lobe_cur.set_azimuthal_angle( std::atan2( diff[1], diff[0] ) ); // Sets the angle prior to perturbation
             const double slope_parent_norm = topography.slope_between_points( lobe_parent.center, budding_point );
-            mr_lava_loba.perturb_lobe_angle( lobe_cur, slope_parent_norm );
+            MrLavaLoba::perturb_lobe_angle( lobe_cur, slope_parent_norm, input, gen );
 
             // Add the inertial contribution
-            mr_lava_loba.add_inertial_contribution( lobe_cur, lobe_parent, slope_parent_norm );
+            MrLavaLoba::add_inertial_contribution( lobe_cur, lobe_parent, slope_parent_norm, input );
 
             // Compute the final budding point
             // It is defined by the point on the perimeter of the parent lobe closest to the center of the new lobe
@@ -475,10 +472,10 @@ void Simulation::run()
             double slope_budding_point = topography.slope_between_points( lobe_parent.center, final_budding_point );
 
             // compute the new lobe axes
-            mr_lava_loba.compute_lobe_axes( lobe_cur, slope_budding_point );
+            MrLavaLoba::compute_lobe_axes( lobe_cur, slope_budding_point, input, common_lobe_dimensions );
 
             // Get new lobe center
-            mr_lava_loba.compute_descendent_lobe_position( lobe_cur, lobe_parent, final_budding_point );
+            MrLavaLoba::compute_descendent_lobe_position( lobe_cur, lobe_parent, final_budding_point, input );
 
             if( stop_condition( lobe_cur.center, lobe_cur.semi_axes[0] ) )
             {
@@ -487,7 +484,8 @@ void Simulation::run()
             }
 
             // Compute the thickness of the lobe
-            lobe_cur.thickness = mr_lava_loba.compute_current_lobe_thickness( idx_lobe, n_lobes );
+            lobe_cur.thickness
+                = MrLavaLoba::compute_current_lobe_thickness( idx_lobe, n_lobes, input, common_lobe_dimensions );
 
             // Add rasterized lobe
             topography.add_lobe( lobe_cur, input.volume_correction, idx_lobe );

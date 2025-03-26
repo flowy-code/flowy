@@ -31,9 +31,8 @@ TEST_CASE( "perturb_angle", "[perturb_angle]" )
     input.prescribed_avg_lobe_thickness = 1.0;
 
     INFO( fmt::format( "{}", fmt::streamed( input.source ) ) );
-    auto simulation   = Simulation( input, 0 );
-    auto mr_lava_loba = MrLavaLoba( simulation );
-
+    auto simulation = Simulation( input, 0 );
+    std::mt19937 gen{};
     Lobe my_lobe;
 
     int n_samples                    = 100000;
@@ -53,7 +52,7 @@ TEST_CASE( "perturb_angle", "[perturb_angle]" )
     {
         my_lobe.set_azimuthal_angle( std::atan2( slope[1], slope[0] ) ); // Sets the angle prior to perturbation
         const double slope_norm = xt::linalg::norm( slope, 2 );          // Similar to np.linalg.norm
-        mr_lava_loba.perturb_lobe_angle( my_lobe, slope_norm );
+        MrLavaLoba::perturb_lobe_angle( my_lobe, slope_norm, input, gen );
         angle_samples[i] = my_lobe.get_azimuthal_angle();
 
         REQUIRE( ( ( my_lobe.get_azimuthal_angle() > -Math::pi ) && ( my_lobe.get_azimuthal_angle() < Math::pi ) ) );
@@ -91,9 +90,10 @@ TEST_CASE( "budding_point", "[budding_point]" )
 
     Vector2 final_budding_point = lobe_parent.point_at_angle( 0 );
 
-    auto simulation   = Simulation( input_params, std::nullopt );
-    auto mr_lava_loba = MrLavaLoba( simulation );
-    mr_lava_loba.compute_descendent_lobe_position( lobe_cur, lobe_parent, final_budding_point );
+    auto simulation = Simulation( input_params, std::nullopt );
+    std::mt19937 gen{};
+
+    MrLavaLoba::compute_descendent_lobe_position( lobe_cur, lobe_parent, final_budding_point, input_params );
 
     INFO( fmt::format( "budding_point = {}\n", fmt::streamed( final_budding_point ) ) );
     INFO( fmt::format( "lobe_cur.center = {}\n", fmt::streamed( lobe_cur.center ) ) );

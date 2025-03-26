@@ -14,12 +14,10 @@
 
 namespace Flowy
 {
-class MrLavaLoba;
 
 class Simulation
 {
 public:
-    friend class MrLavaLoba;
     Simulation( const Config::InputParams & input, std::optional<int> rng_seed );
 
     Config::InputParams input;
