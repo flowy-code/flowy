@@ -75,7 +75,7 @@ inline int compute_n_lobes( int idx_flow, const Config::InputParams & input, std
         n_lobes = dist_num_lobes( gen );
     }
     // Deterministic number of lobes, such that a beta probability density distribution is used (not a beta
-    // distribution). However this means that n_lobes could potentially be greater than min_n_lobes
+    // distribution). However this means that n_lobes could potentially be greater than max_n_lobes
     else
     {
         const double x_beta        = ( 1.0 * idx_flow ) / ( input.n_flows - 1.0 );

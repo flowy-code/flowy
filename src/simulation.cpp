@@ -231,7 +231,8 @@ void Simulation::write_avg_thickness_file()
 
     // This lambda performs bisection search to find the threshold thickness at which a
     // relative volume proportion of `thresh` is contained within cells with greater thickness than the threshold thickness
-    auto bisection_search = [&]( double thresh, double tol, int max_iter ) {
+    auto bisection_search = [&]( double thresh, double tol, int max_iter )
+    {
         int idx_lo = 0;
         int idx_hi = n_cells - 1;
 
@@ -417,30 +418,41 @@ RunStatus Simulation::steps( int n_steps )
     auto & n_lobes           = simulation_state->n_lobes;
 
     // Now we have to figure out the value of idx_flow and if we are past n_init or not
-    const int step_initial = simulation_state->step;
-
-    for( int step = step_initial; step < step_initial + n_steps; step++ )
+    for( int step = 0; step < n_steps; step++ )
     {
-        const bool is_last_step_of_flow      = idx_lobe == n_lobes - 1;
-        const bool is_first_step_of_new_flow = simulation_state->beginning_of_new_flow;
-        const bool is_an_initial_lobe        = idx_lobe < input.n_init;
-        const bool is_last_step              = ( idx_flow == input.n_flows ) && is_last_step_of_flow;
+        std::cout << "step " << step << "\n";
+        std::cout << "idx_flow " << idx_flow << "\n";
+        std::cout << "idx_lobe " << idx_lobe << "\n";
+        std::cout << "n_lobes " << n_lobes << "\n";
+        std::cout << "n_lobes_processed " << n_lobes_processed << "\n";
 
-        if( is_first_step_of_new_flow )
+        const bool is_last_step_of_flow = idx_lobe == n_lobes - 1;
+        const bool is_an_initial_lobe   = idx_lobe < input.n_init;
+        const bool is_last_step         = ( idx_flow == input.n_flows - 1 ) && is_last_step_of_flow;
+
+        std::cout << "is_last_step_of_flow " << is_last_step_of_flow << "\n";
+        std::cout << "is_an_initial_lobe " << is_an_initial_lobe << "\n";
+        std::cout << "is_last_step " << is_last_step << "\n ===== \n\n";
+
+        if( simulation_state->beginning_of_new_flow )
         {
-            // simulation_state->idx_flow++;
-            simulation_state->n_lobes_current_flow
-                = MrLavaLoba::compute_n_lobes( simulation_state->idx_flow, input, gen );
-            simulation_state->lobes = std::vector<Lobe>{};
-            simulation_state->lobes.reserve( simulation_state->n_lobes_current_flow );
+            simulation_state->n_lobes = MrLavaLoba::compute_n_lobes( simulation_state->idx_flow, input, gen );
+            simulation_state->lobes   = std::vector<Lobe>{};
+            simulation_state->lobes.reserve( simulation_state->n_lobes );
             // set the intersection cache
-            topography.reset_intersection_cache( simulation_state->n_lobes_current_flow );
+            topography.reset_intersection_cache( simulation_state->n_lobes );
 
             // set idx_lobe to zero, because we are at the beginning of a flow
             idx_lobe = 0;
 
-            // switch back the flag 
+            // switch back the flag
             simulation_state->beginning_of_new_flow = false;
+        }
+
+        if( idx_lobe >= n_lobes || idx_flow >= input.n_flows )
+        {
+            run_status = RunStatus::Finished;
+            break;
         }
 
         if( is_an_initial_lobe )
@@ -472,7 +484,6 @@ RunStatus Simulation::steps( int n_steps )
 
             // Add rasterized lobe
             topography.add_lobe( lobe_cur, input.volume_correction, idx_lobe );
-            n_lobes_processed++;
             write_thickness_if_necessary( n_lobes_processed );
         }
         else
@@ -482,7 +493,8 @@ RunStatus Simulation::steps( int n_steps )
 
             // Select which of the previously created lobes is the parent lobe
             // from which the new descendent lobe will bud
-            const auto idx_parent    = MrLavaLoba::select_parent_lobe( idx_lobe, lobes, input, common_lobe_dimensions, gen );
+            const auto idx_parent
+                = MrLavaLoba::select_parent_lobe( idx_lobe, lobes, input, common_lobe_dimensions, gen );
             const Lobe & lobe_parent = lobes[idx_parent];
 
             // stopping condition (parent lobe close the domain boundary or at a not defined z value)
@@ -495,7 +507,8 @@ RunStatus Simulation::steps( int n_steps )
 
             // Find the preliminary budding point on the perimeter of the parent lobe (npoints is the number of raster
             // points on the ellipse)
-            const Flowy::Vector2 budding_point = topography.find_preliminary_budding_point( lobe_parent, input.npoints );
+            const Flowy::Vector2 budding_point
+                = topography.find_preliminary_budding_point( lobe_parent, input.npoints );
 
             const auto [height_lobe_center, slope_parent] = topography.height_and_slope( lobe_parent.center );
             const auto [height_bp, slope_bp]              = topography.height_and_slope( budding_point );
@@ -523,7 +536,8 @@ RunStatus Simulation::steps( int n_steps )
                 break;
             }
             // Get the slope at the final budding point
-            const double slope_budding_point = topography.slope_between_points( lobe_parent.center, final_budding_point );
+            const double slope_budding_point
+                = topography.slope_between_points( lobe_parent.center, final_budding_point );
 
             // compute the new lobe axes
             MrLavaLoba::compute_lobe_axes( lobe_cur, slope_budding_point, input, common_lobe_dimensions );
@@ -544,14 +558,14 @@ RunStatus Simulation::steps( int n_steps )
 
             // Add rasterized lobe
             topography.add_lobe( lobe_cur, input.volume_correction, idx_lobe );
-            n_lobes_processed++;
             write_thickness_if_necessary( n_lobes_processed );
         }
 
+        n_lobes_processed++;
+        idx_lobe++;
+
         if( is_last_step_of_flow )
         {
-            // Increment idx_flow
-            idx_flow++;
             simulation_state->beginning_of_new_flow = true;
 
             if( input.save_hazard_data )
@@ -572,15 +586,14 @@ RunStatus Simulation::steps( int n_steps )
                     ( input.n_flows - idx_flow - 1 ) * ( t_cur - simulation_state->t_run_start ) / ( idx_flow + 1 ) );
                 fmt::print( "     remaining_time = {:%Hh %Mm %Ss}\n", remaining_time );
             }
+            idx_flow++;
+            idx_lobe = 0;
         }
 
         if( is_last_step )
         {
             run_status = RunStatus::Finished;
         }
-
-        n_lobes_processed++;
-        idx_lobe++;
     }
 
     if( run_status == RunStatus::Finished )
@@ -595,7 +608,7 @@ void Simulation::run()
 {
     int n_lobes_processed = 0;
 
-    auto t_run_start            = std::chrono::high_resolution_clock::now();
+    auto t_run_start                  = std::chrono::high_resolution_clock::now();
     const auto common_lobe_dimensions = CommonLobeDimensions( input );
 
     for( int idx_flow = 0; idx_flow < input.n_flows; idx_flow++ )
@@ -652,7 +665,8 @@ void Simulation::run()
 
             // Select which of the previously created lobes is the parent lobe
             // from which the new descendent lobe will bud
-            const auto idx_parent    = MrLavaLoba::select_parent_lobe( idx_lobe, lobes, input, common_lobe_dimensions, gen );
+            const auto idx_parent
+                = MrLavaLoba::select_parent_lobe( idx_lobe, lobes, input, common_lobe_dimensions, gen );
             const Lobe & lobe_parent = lobes[idx_parent];
 
             // stopping condition (parent lobe close the domain boundary or at a not defined z value)
@@ -691,7 +705,8 @@ void Simulation::run()
                 break;
             }
             // Get the slope at the final budding point
-            const double slope_budding_point = topography.slope_between_points( lobe_parent.center, final_budding_point );
+            const double slope_budding_point
+                = topography.slope_between_points( lobe_parent.center, final_budding_point );
 
             // compute the new lobe axes
             MrLavaLoba::compute_lobe_axes( lobe_cur, slope_budding_point, input, common_lobe_dimensions );

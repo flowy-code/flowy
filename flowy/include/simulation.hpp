@@ -26,12 +26,10 @@ struct SimulationState
     std::chrono::time_point<std::chrono::system_clock> t_run_start{};
     std::vector<Lobe> lobes{};
 
-    int n_lobes_processed    = 0;
-    int n_lobes              = 0;
-    int step                 = 0;
-    int idx_flow             = 0;
-    int idx_lobe             = 0;
-    int n_lobes_current_flow = 0;
+    int n_lobes_processed = 0;
+    int n_lobes           = 0;
+    int idx_flow          = 0;
+    int idx_lobe          = 0;
 
     bool beginning_of_new_flow = true;
 };
