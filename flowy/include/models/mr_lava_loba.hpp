@@ -5,7 +5,6 @@
 #include "flowy/include/config.hpp"
 #include "flowy/include/definitions.hpp"
 #include "flowy/include/lobe.hpp"
-#include "flowy/include/simulation.hpp"
 #include "flowy/include/vent_flags.hpp"
 #include "pdf_cpplib/include/probability_dist.hpp"
 #include <algorithm>

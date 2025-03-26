@@ -344,7 +344,7 @@ Simulation::get_file_handle( const Topography & topography, OutputQuantity outpu
 
 void Simulation::compute_topography_thickness()
 {
-    // Compute the thickness by substracting the initial topography and correcting for the thickening parametr
+    // Compute the thickness by subtracting the initial topography and correcting for the thickening parametr
     topography_thickness               = topography;
     topography_thickness.no_data_value = DEFAULT_NO_DATA_VALUE_THICKNESS;
     topography_thickness.height_data -= topography_initial.height_data;
@@ -367,6 +367,34 @@ void Simulation::write_thickness_if_necessary( int n_lobes_processed )
         file_thick->save(
             input.output_folder / fmt::format( "{}_thickness_after_{}_lobes", input.run_name, n_lobes_processed ) );
     }
+}
+
+void Simulation::save_post_run_output()
+{
+    // Save initial topography to asc file
+    auto file_initial = get_file_handle( topography_initial, OutputQuantity::Height );
+    file_initial->save( input.output_folder / fmt::format( "{}_DEM", input.run_name ) );
+
+    // Save final topography to asc file
+    if( input.save_final_dem )
+    {
+        auto file_final = get_file_handle( topography, OutputQuantity::Height );
+        file_final->save( input.output_folder / fmt::format( "{}_DEM_final", input.run_name ) );
+    }
+
+    // Save full thickness to asc file
+    compute_topography_thickness();
+    auto file_thick = get_file_handle( topography_thickness, OutputQuantity::Height );
+    file_thick->save( input.output_folder / fmt::format( "{}_thickness_full", input.run_name ) );
+
+    // Save the full hazard map
+    if( input.save_hazard_data )
+    {
+        auto file_hazard = get_file_handle( topography, OutputQuantity::Hazard );
+        file_hazard->save( input.output_folder / fmt::format( "{}_hazard_full", input.run_name ) );
+    }
+
+    write_avg_thickness_file();
 }
 
 void Simulation::run()
@@ -527,30 +555,7 @@ void Simulation::run()
 
     fmt::print( "Used RNG seed: {}\n", rng_seed );
 
-    // Save initial topography to asc file
-    auto file_initial = get_file_handle( topography_initial, OutputQuantity::Height );
-    file_initial->save( input.output_folder / fmt::format( "{}_DEM", input.run_name ) );
-
-    // Save final topography to asc file
-    if( input.save_final_dem )
-    {
-        auto file_final = get_file_handle( topography, OutputQuantity::Height );
-        file_final->save( input.output_folder / fmt::format( "{}_DEM_final", input.run_name ) );
-    }
-
-    // Save full thickness to asc file
-    compute_topography_thickness();
-    auto file_thick = get_file_handle( topography_thickness, OutputQuantity::Height );
-    file_thick->save( input.output_folder / fmt::format( "{}_thickness_full", input.run_name ) );
-
-    // Save the full hazard map
-    if( input.save_hazard_data )
-    {
-        auto file_hazard = get_file_handle( topography, OutputQuantity::Hazard );
-        file_hazard->save( input.output_folder / fmt::format( "{}_hazard_full", input.run_name ) );
-    }
-
-    write_avg_thickness_file();
+    save_post_run_output();
 }
 
 } // namespace Flowy
