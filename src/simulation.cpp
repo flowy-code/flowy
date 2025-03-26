@@ -231,8 +231,7 @@ void Simulation::write_avg_thickness_file()
 
     // This lambda performs bisection search to find the threshold thickness at which a
     // relative volume proportion of `thresh` is contained within cells with greater thickness than the threshold thickness
-    auto bisection_search = [&]( double thresh, double tol, int max_iter )
-    {
+    auto bisection_search = [&]( double thresh, double tol, int max_iter ) {
         int idx_lo = 0;
         int idx_hi = n_cells - 1;
 
@@ -455,16 +454,16 @@ RunStatus Simulation::steps( int n_steps )
             break;
         }
 
+        // Add a new lobe
+        lobes.emplace_back();
+        Lobe & lobe_cur = lobes.back();
+        // Compute the thickness of the lobe
+        lobe_cur.thickness
+            = MrLavaLoba::compute_current_lobe_thickness( idx_lobe, n_lobes, input, common_lobe_dimensions );
+
         if( is_an_initial_lobe )
         {
-            lobes.emplace_back();
-            Lobe & lobe_cur = lobes.back();
-
             MrLavaLoba::compute_initial_lobe_position( idx_flow, lobe_cur, input, gen );
-
-            // Compute the thickness of the lobe
-            lobe_cur.thickness
-                = MrLavaLoba::compute_current_lobe_thickness( idx_lobe, n_lobes, input, common_lobe_dimensions );
 
             const auto [height_lobe_center, slope] = topography.height_and_slope( lobe_cur.center );
 
@@ -481,16 +480,9 @@ RunStatus Simulation::steps( int n_steps )
 
             // compute lobe axes
             MrLavaLoba::compute_lobe_axes( lobe_cur, slope_norm, input, common_lobe_dimensions );
-
-            // Add rasterized lobe
-            topography.add_lobe( lobe_cur, input.volume_correction, idx_lobe );
-            write_thickness_if_necessary( n_lobes_processed );
         }
         else
         {
-            lobes.emplace_back();
-            Lobe & lobe_cur = lobes.back();
-
             // Select which of the previously created lobes is the parent lobe
             // from which the new descendent lobe will bud
             const auto idx_parent
@@ -510,8 +502,7 @@ RunStatus Simulation::steps( int n_steps )
             const Flowy::Vector2 budding_point
                 = topography.find_preliminary_budding_point( lobe_parent, input.npoints );
 
-            const auto [height_lobe_center, slope_parent] = topography.height_and_slope( lobe_parent.center );
-            const auto [height_bp, slope_bp]              = topography.height_and_slope( budding_point );
+            const auto [height_parent, slope_parent] = topography.height_and_slope( lobe_parent.center );
 
             const Vector2 diff = ( budding_point - lobe_parent.center );
 
@@ -551,16 +542,11 @@ RunStatus Simulation::steps( int n_steps )
                 run_status = RunStatus::Finished;
                 break;
             }
-
-            // Compute the thickness of the lobe
-            lobe_cur.thickness
-                = MrLavaLoba::compute_current_lobe_thickness( idx_lobe, n_lobes, input, common_lobe_dimensions );
-
-            // Add rasterized lobe
-            topography.add_lobe( lobe_cur, input.volume_correction, idx_lobe );
-            write_thickness_if_necessary( n_lobes_processed );
         }
 
+        // Add rasterized lobe
+        topography.add_lobe( lobe_cur, input.volume_correction, idx_lobe );
+        write_thickness_if_necessary( n_lobes_processed );
         n_lobes_processed++;
         idx_lobe++;
 
@@ -681,7 +667,6 @@ void Simulation::run()
             Flowy::Vector2 budding_point = topography.find_preliminary_budding_point( lobe_parent, input.npoints );
 
             const auto [height_lobe_center, slope_parent] = topography.height_and_slope( lobe_parent.center );
-            const auto [height_bp, slope_bp]              = topography.height_and_slope( budding_point );
 
             const Vector2 diff = ( budding_point - lobe_parent.center );
 
