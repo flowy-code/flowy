@@ -80,7 +80,7 @@ public:
     }
 
     // Calculate n_lobes
-    int compute_n_lobes( int idx_flow )
+    int compute_n_lobes( int idx_flow ) const
     {
         int n_lobes{};
         // Number of lobes in the flow is a random number between the min and max values
@@ -115,7 +115,7 @@ public:
     }
 
     // calculates the initial lobe position
-    void compute_initial_lobe_position( int idx_flow, Lobe & lobe )
+    void compute_initial_lobe_position( int idx_flow, Lobe & lobe ) const
     {
         std::unique_ptr<VentFlag> f{};
 
@@ -182,7 +182,7 @@ public:
         lobe.semi_axes = { semi_major_axis, semi_minor_axis };
     }
 
-    void compute_descendent_lobe_position( Lobe & lobe, const Lobe & parent, Vector2 final_budding_point )
+    void compute_descendent_lobe_position( Lobe & lobe, const Lobe & parent, const Vector2 & final_budding_point ) const
     {
         Vector2 direction_to_new_lobe
             = ( final_budding_point - parent.center ) / xt::linalg::norm( final_budding_point - parent.center );
@@ -190,7 +190,7 @@ public:
         lobe.center             = new_lobe_center;
     }
 
-    void perturb_lobe_angle( Lobe & lobe, double slope )
+    void perturb_lobe_angle( Lobe & lobe, double slope ) const
     {
         const double slope_deg = 180.0 / Math::pi * std::atan( slope );
 
@@ -216,7 +216,7 @@ public:
     }
 
     // Select which lobe amongst the existing lobes will be the parent for the new descendent lobe
-    int select_parent_lobe( int idx_descendant, std::vector<Lobe> & lobes )
+    int select_parent_lobe( int idx_descendant, std::vector<Lobe> & lobes ) const
     {
         Lobe & lobe_descendent = lobes[idx_descendant];
 

@@ -19,7 +19,7 @@ struct TopographyCrop
     double y_max;
 };
 
-enum class OutputQuantitiy
+enum class OutputQuantity
 {
     Hazard,
     Height
@@ -51,14 +51,14 @@ public:
     TopographyFile() = default;
 
     // Constructor that takes topography
-    TopographyFile( const Topography & topography, OutputQuantitiy output )
+    TopographyFile( const Topography & topography, OutputQuantity output )
             : x_data( topography.x_data ), y_data( topography.y_data ), no_data_value( topography.no_data_value )
     {
-        if( output == OutputQuantitiy::Height )
+        if( output == OutputQuantity::Height )
         {
             data = topography.height_data;
         }
-        else if( output == OutputQuantitiy::Hazard )
+        else if( output == OutputQuantity::Hazard )
         {
             data = topography.hazard;
         }
