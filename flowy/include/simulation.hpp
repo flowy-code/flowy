@@ -24,7 +24,7 @@ namespace Flowy
  */
 struct SimulationState
 {
-    std::chrono::time_point<std::chrono::system_clock> t_run_start{};
+    std::chrono::time_point<std::chrono::high_resolution_clock> t_run_start{};
     std::vector<Lobe> lobes{};
 
     int n_lobes_processed = 0;

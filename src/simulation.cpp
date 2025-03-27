@@ -16,6 +16,7 @@
 #include <fmt/format.h>
 #include <fmt/ranges.h>
 #include <algorithm>
+#include <chrono>
 #include <cmath>
 #include <cstddef>
 #include <memory>
@@ -345,7 +346,7 @@ Simulation::get_file_handle( const Topography & topography, OutputQuantity outpu
 
 void Simulation::compute_topography_thickness()
 {
-    // Compute the thickness by subtracting the initial topography and correcting for the thickening parametr
+    // Compute the thickness by subtracting the initial topography and correcting for the thickening parameter
     topography_thickness               = topography;
     topography_thickness.no_data_value = DEFAULT_NO_DATA_VALUE_THICKNESS;
     topography_thickness.height_data -= topography_initial.height_data;
@@ -497,7 +498,9 @@ void Simulation::post_flow_hook( int idx_flow, std::vector<Lobe> & lobes )
 
     if( input.print_remaining_time )
     {
-        const auto t_cur          = std::chrono::high_resolution_clock::now();
+        const std::chrono::time_point<std::chrono::high_resolution_clock> t_cur
+            = std::chrono::high_resolution_clock::now();
+
         const auto remaining_time = std::chrono::duration_cast<std::chrono::milliseconds>(
             ( input.n_flows - idx_flow - 1 ) * ( t_cur - simulation_state->t_run_start ) / ( idx_flow + 1 ) );
         fmt::print( "     remaining_time = {:%Hh %Mm %Ss}\n", remaining_time );
