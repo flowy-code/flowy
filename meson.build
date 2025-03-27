@@ -39,8 +39,9 @@ _sources = [
 _deps = []
 pdflib_dep = dependency('pdf_cpplib', fallback : ['pdf_cpplib', 'pdflib_dep'])
 
+with_netcdf = get_option('with_netcdf')
 ## Netcdf
-if get_option('with_netcdf')
+if with_netcdf
   # On windows the conda-forge netcdf pkg-config file tells us to link against a mysterious debug.lib
   # Therefore, we use cmake as the preferred method, which does not make problems
   netcdf_dep = dependency('netcdf',  language : 'cpp', method: 'cmake', required: false)

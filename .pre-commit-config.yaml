@@ -18,7 +18,7 @@ repos:
       name: cpplint
       entry: cpplint
       language: system
-      args: ["--exclude=thirdparty/", "--filter=-whitespace/comments,-runtime/references,-whitespace/indent,-whitespace/parens,-whitespace/braces,-whitespace/line_length,-whitespace/newline,-build/include_order,-readability/todo,-build/namespaces"]
+      args: ["--exclude=thirdparty/", "--filter=-whitespace/comments,-runtime/references,-whitespace/indent,-whitespace/parens,-whitespace/braces,-whitespace/line_length,-whitespace/newline,-build/include_order,-readability/todo,-build/namespaces,-build/c++11"]
     - id: clang-format
       name: clang-format
       entry: clang-format
