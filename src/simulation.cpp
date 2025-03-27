@@ -233,7 +233,8 @@ void Simulation::write_avg_thickness_file()
 
     // This lambda performs bisection search to find the threshold thickness at which a
     // relative volume proportion of `thresh` is contained within cells with greater thickness than the threshold thickness
-    auto bisection_search = [&]( double thresh, double tol, int max_iter ) {
+    auto bisection_search = [&]( double thresh, double tol, int max_iter )
+    {
         int idx_lo = 0;
         int idx_hi = n_cells - 1;
 
@@ -606,7 +607,6 @@ RunStatus Simulation::steps( int n_steps )
 
     if( run_status == RunStatus::Finished )
     {
-
         const auto t_cur = std::chrono::high_resolution_clock::now();
         const auto total_time
             = std::chrono::duration_cast<std::chrono::milliseconds>( ( t_cur - simulation_state->t_run_start ) );
