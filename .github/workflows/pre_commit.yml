@@ -9,7 +9,9 @@ jobs:
     steps:
     - uses: actions/checkout@v3
     - name: Install Conda environment
-      uses: mamba-org/provision-with-micromamba@main
+      uses: mamba-org/setup-micromamba@main
+      with:
+        environment-file: environment.yml
     - name: Run precommit
       shell: bash -l {0}
       run: |
