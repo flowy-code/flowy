@@ -86,7 +86,12 @@ public:
     // Perform `n_steps` steps of the simulation (per step, a single lobe is added to the topography)
     RunStatus steps( int n_steps );
 
-    std::optional<SimulationState> get_simulation_state()
+    void reset_simulation_state()
+    {
+        simulation_state = std::nullopt;
+    }
+
+    std::optional<SimulationState> get_simulation_state() const
     {
         return simulation_state;
     }
