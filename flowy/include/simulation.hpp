@@ -5,6 +5,7 @@
 #include "flowy/include/config.hpp"
 #include "flowy/include/definitions.hpp"
 #include "flowy/include/lobe.hpp"
+#include "flowy/include/models/mr_lava_loba.hpp"
 #include "flowy/include/topography.hpp"
 #include "flowy/include/topography_file.hpp"
 #include <chrono>
@@ -32,6 +33,12 @@ struct SimulationState
     int idx_lobe          = 0;
 
     bool beginning_of_new_flow = true;
+};
+
+enum class FlowStatus
+{
+    Finished,
+    Ongoing
 };
 
 enum class RunStatus
@@ -79,10 +86,20 @@ public:
     // Perform `n_steps` steps of the simulation (per step, a single lobe is added to the topography)
     RunStatus steps( int n_steps );
 
+    std::optional<SimulationState> get_simulation_state()
+    {
+        return simulation_state;
+    }
+
 private:
     int rng_seed;
     std::mt19937 gen{};
     std::optional<SimulationState> simulation_state = std::nullopt;
+
+    void post_flow_hook( int idx_flow, std::vector<Lobe> & lobes );
+    void process_initial_lobe( int idx_flow, Lobe & lobe_cur, const CommonLobeDimensions & common_lobe_dimensions );
+    FlowStatus process_descendent_lobe(
+        int idx_lobe, std::vector<Lobe> & lobes, const CommonLobeDimensions & common_lobe_dimensions );
 };
 
 } // namespace Flowy

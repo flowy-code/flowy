@@ -2,6 +2,7 @@
 // Copyright 2023--present Flowy developers
 #include "flowy/include/simulation.hpp"
 #include "flowy/include/asc_file.hpp"
+#include "flowy/include/config.hpp"
 #include "flowy/include/definitions.hpp"
 #include "flowy/include/lobe.hpp"
 #include "flowy/include/math.hpp"
@@ -397,6 +398,112 @@ void Simulation::save_post_run_output()
     write_avg_thickness_file();
 }
 
+void Simulation::process_initial_lobe(
+    int idx_flow, Lobe & lobe_cur, const CommonLobeDimensions & common_lobe_dimensions )
+{
+    MrLavaLoba::compute_initial_lobe_position( idx_flow, lobe_cur, input, gen );
+
+    const auto [height_lobe_center, slope] = topography.height_and_slope( lobe_cur.center );
+
+    if( height_lobe_center == topography.no_data_value )
+    {
+        throw std::runtime_error(
+            "The initial lobe center has been placed on a no_data value point in the topography." );
+    }
+
+    // Perturb the angle (and set it)
+    lobe_cur.set_azimuthal_angle( std::atan2( slope[1], slope[0] ) ); // Sets the angle prior to perturbation
+    const double slope_norm = xt::linalg::norm( slope, 2 );           // Similar to np.linalg.norm
+    MrLavaLoba::perturb_lobe_angle( lobe_cur, slope_norm, input, gen );
+
+    // compute lobe axes
+    MrLavaLoba::compute_lobe_axes( lobe_cur, slope_norm, input, common_lobe_dimensions );
+}
+
+[[nodiscard]] FlowStatus Simulation::process_descendent_lobe(
+    int idx_lobe, std::vector<Lobe> & lobes, const CommonLobeDimensions & common_lobe_dimensions )
+{
+    Lobe & lobe_cur = lobes.back();
+
+    // Select which of the previously created lobes is the parent lobe
+    // from which the new descendent lobe will bud
+    const auto idx_parent    = MrLavaLoba::select_parent_lobe( idx_lobe, lobes, input, common_lobe_dimensions, gen );
+    const Lobe & lobe_parent = lobes[idx_parent];
+
+    // stopping condition (parent lobe close the domain boundary or at a not defined z value)
+    if( stop_condition( lobe_parent.center, lobe_parent.semi_axes[0] ) )
+    {
+        lobes.pop_back();
+        return FlowStatus::Finished;
+    }
+
+    // Find the preliminary budding point on the perimeter of the parent lobe (npoints is the number of raster
+    // points on the ellipse)
+    const Flowy::Vector2 budding_point = topography.find_preliminary_budding_point( lobe_parent, input.npoints );
+
+    const auto [height_parent, slope_parent] = topography.height_and_slope( lobe_parent.center );
+
+    const Vector2 diff = ( budding_point - lobe_parent.center );
+
+    // Perturb the angle and set it (not on the parent anymore)
+    lobe_cur.set_azimuthal_angle( std::atan2( diff[1], diff[0] ) ); // Sets the angle prior to perturbation
+    const double slope_parent_norm = topography.slope_between_points( lobe_parent.center, budding_point );
+    MrLavaLoba::perturb_lobe_angle( lobe_cur, slope_parent_norm, input, gen );
+
+    // Add the inertial contribution
+    MrLavaLoba::add_inertial_contribution( lobe_cur, lobe_parent, slope_parent_norm, input );
+
+    // Compute the final budding point
+    // It is defined by the point on the perimeter of the parent lobe closest to the center of the new lobe
+    const auto angle_diff             = lobe_parent.get_azimuthal_angle() - lobe_cur.get_azimuthal_angle();
+    const Vector2 final_budding_point = lobe_parent.point_at_angle( -angle_diff );
+
+    // final_budding_point = budding_point;
+    if( stop_condition( final_budding_point, lobe_parent.semi_axes[0] ) )
+    {
+        lobes.pop_back();
+        return FlowStatus::Finished;
+    }
+    // Get the slope at the final budding point
+    const double slope_budding_point = topography.slope_between_points( lobe_parent.center, final_budding_point );
+
+    // compute the new lobe axes
+    MrLavaLoba::compute_lobe_axes( lobe_cur, slope_budding_point, input, common_lobe_dimensions );
+
+    // Get new lobe center
+    MrLavaLoba::compute_descendent_lobe_position( lobe_cur, lobe_parent, final_budding_point, input );
+
+    if( stop_condition( lobe_cur.center, lobe_cur.semi_axes[0] ) )
+    {
+        lobes.pop_back();
+        return FlowStatus::Finished;
+    }
+
+    return FlowStatus::Ongoing;
+}
+
+void Simulation::post_flow_hook( int idx_flow, std::vector<Lobe> & lobes )
+{
+    if( input.save_hazard_data )
+    {
+        compute_cumulative_descendents( lobes );
+        topography.compute_hazard_flow( lobes );
+    }
+
+    if( input.write_lobes_csv )
+    {
+        write_lobe_data_to_file( lobes, input.output_folder / fmt::format( "lobes_{}.csv", idx_flow ) );
+    }
+
+    if( input.print_remaining_time )
+    {
+        const auto t_cur          = std::chrono::high_resolution_clock::now();
+        const auto remaining_time = std::chrono::duration_cast<std::chrono::milliseconds>(
+            ( input.n_flows - idx_flow - 1 ) * ( t_cur - simulation_state->t_run_start ) / ( idx_flow + 1 ) );
+        fmt::print( "     remaining_time = {:%Hh %Mm %Ss}\n", remaining_time );
+    }
+}
+
 RunStatus Simulation::steps( int n_steps )
 {
     RunStatus run_status = RunStatus::Ongoing;
@@ -416,22 +523,14 @@ RunStatus Simulation::steps( int n_steps )
     auto & n_lobes_processed = simulation_state->n_lobes_processed;
     auto & n_lobes           = simulation_state->n_lobes;
 
+    int n_lobes_processed_initial = n_lobes_processed;
+
     // Now we have to figure out the value of idx_flow and if we are past n_init or not
-    for( int step = 0; step < n_steps; step++ )
+    while( n_lobes_processed < n_lobes_processed_initial + n_steps )
     {
-        std::cout << "step " << step << "\n";
-        std::cout << "idx_flow " << idx_flow << "\n";
-        std::cout << "idx_lobe " << idx_lobe << "\n";
-        std::cout << "n_lobes " << n_lobes << "\n";
-        std::cout << "n_lobes_processed " << n_lobes_processed << "\n";
-
-        const bool is_last_step_of_flow = idx_lobe == n_lobes - 1;
-        const bool is_an_initial_lobe   = idx_lobe < input.n_init;
-        const bool is_last_step         = ( idx_flow == input.n_flows - 1 ) && is_last_step_of_flow;
-
-        std::cout << "is_last_step_of_flow " << is_last_step_of_flow << "\n";
-        std::cout << "is_an_initial_lobe " << is_an_initial_lobe << "\n";
-        std::cout << "is_last_step " << is_last_step << "\n ===== \n\n";
+        bool is_last_step_of_flow     = idx_lobe == n_lobes - 1;
+        const bool is_an_initial_lobe = idx_lobe < input.n_init;
+        const bool is_last_step       = ( idx_flow == input.n_flows - 1 ) && is_last_step_of_flow;
 
         if( simulation_state->beginning_of_new_flow )
         {
@@ -463,115 +562,35 @@ RunStatus Simulation::steps( int n_steps )
 
         if( is_an_initial_lobe )
         {
-            MrLavaLoba::compute_initial_lobe_position( idx_flow, lobe_cur, input, gen );
+            process_initial_lobe( idx_flow, lobe_cur, common_lobe_dimensions );
 
-            const auto [height_lobe_center, slope] = topography.height_and_slope( lobe_cur.center );
-
-            if( height_lobe_center == topography.no_data_value )
-            {
-                throw std::runtime_error(
-                    "The initial lobe center has been placed on a no_data value point in the topography." );
-            }
-
-            // Perturb the angle (and set it)
-            lobe_cur.set_azimuthal_angle( std::atan2( slope[1], slope[0] ) ); // Sets the angle prior to perturbation
-            const double slope_norm = xt::linalg::norm( slope, 2 );           // Similar to np.linalg.norm
-            MrLavaLoba::perturb_lobe_angle( lobe_cur, slope_norm, input, gen );
-
-            // compute lobe axes
-            MrLavaLoba::compute_lobe_axes( lobe_cur, slope_norm, input, common_lobe_dimensions );
+            // Rasterized lobe and add it to the topography
+            topography.add_lobe( lobe_cur, input.volume_correction, idx_lobe );
+            n_lobes_processed++;
+            write_thickness_if_necessary( n_lobes_processed );
         }
         else
         {
-            // Select which of the previously created lobes is the parent lobe
-            // from which the new descendent lobe will bud
-            const auto idx_parent
-                = MrLavaLoba::select_parent_lobe( idx_lobe, lobes, input, common_lobe_dimensions, gen );
-            const Lobe & lobe_parent = lobes[idx_parent];
-
-            // stopping condition (parent lobe close the domain boundary or at a not defined z value)
-            if( stop_condition( lobe_parent.center, lobe_parent.semi_axes[0] ) )
+            const auto flow_status = process_descendent_lobe( idx_lobe, lobes, common_lobe_dimensions );
+            if( flow_status == FlowStatus::Ongoing )
             {
-                lobes.pop_back();
-                run_status = RunStatus::Finished;
-                break;
+                // Rasterized lobe and add it to the topography
+                topography.add_lobe( lobe_cur, input.volume_correction, idx_lobe );
+                n_lobes_processed++;
+                write_thickness_if_necessary( n_lobes_processed );
             }
-
-            // Find the preliminary budding point on the perimeter of the parent lobe (npoints is the number of raster
-            // points on the ellipse)
-            const Flowy::Vector2 budding_point
-                = topography.find_preliminary_budding_point( lobe_parent, input.npoints );
-
-            const auto [height_parent, slope_parent] = topography.height_and_slope( lobe_parent.center );
-
-            const Vector2 diff = ( budding_point - lobe_parent.center );
-
-            // Perturb the angle and set it (not on the parent anymore)
-            lobe_cur.set_azimuthal_angle( std::atan2( diff[1], diff[0] ) ); // Sets the angle prior to perturbation
-            const double slope_parent_norm = topography.slope_between_points( lobe_parent.center, budding_point );
-            MrLavaLoba::perturb_lobe_angle( lobe_cur, slope_parent_norm, input, gen );
-
-            // Add the inertial contribution
-            MrLavaLoba::add_inertial_contribution( lobe_cur, lobe_parent, slope_parent_norm, input );
-
-            // Compute the final budding point
-            // It is defined by the point on the perimeter of the parent lobe closest to the center of the new lobe
-            const auto angle_diff             = lobe_parent.get_azimuthal_angle() - lobe_cur.get_azimuthal_angle();
-            const Vector2 final_budding_point = lobe_parent.point_at_angle( -angle_diff );
-
-            // final_budding_point = budding_point;
-            if( stop_condition( final_budding_point, lobe_parent.semi_axes[0] ) )
+            else
             {
-                lobes.pop_back();
-                run_status = RunStatus::Finished;
-                break;
-            }
-            // Get the slope at the final budding point
-            const double slope_budding_point
-                = topography.slope_between_points( lobe_parent.center, final_budding_point );
-
-            // compute the new lobe axes
-            MrLavaLoba::compute_lobe_axes( lobe_cur, slope_budding_point, input, common_lobe_dimensions );
-
-            // Get new lobe center
-            MrLavaLoba::compute_descendent_lobe_position( lobe_cur, lobe_parent, final_budding_point, input );
-
-            if( stop_condition( lobe_cur.center, lobe_cur.semi_axes[0] ) )
-            {
-                lobes.pop_back();
-                run_status = RunStatus::Finished;
-                break;
+                is_last_step_of_flow = true;
             }
         }
 
-        // Add rasterized lobe
-        topography.add_lobe( lobe_cur, input.volume_correction, idx_lobe );
-        write_thickness_if_necessary( n_lobes_processed );
-        n_lobes_processed++;
         idx_lobe++;
 
         if( is_last_step_of_flow )
         {
+            post_flow_hook( idx_flow, lobes );
             simulation_state->beginning_of_new_flow = true;
-
-            if( input.save_hazard_data )
-            {
-                compute_cumulative_descendents( lobes );
-                topography.compute_hazard_flow( lobes );
-            }
-
-            if( input.write_lobes_csv )
-            {
-                write_lobe_data_to_file( lobes, input.output_folder / fmt::format( "lobes_{}.csv", idx_flow ) );
-            }
-
-            if( input.print_remaining_time )
-            {
-                const auto t_cur          = std::chrono::high_resolution_clock::now();
-                const auto remaining_time = std::chrono::duration_cast<std::chrono::milliseconds>(
-                    ( input.n_flows - idx_flow - 1 ) * ( t_cur - simulation_state->t_run_start ) / ( idx_flow + 1 ) );
-                fmt::print( "     remaining_time = {:%Hh %Mm %Ss}\n", remaining_time );
-            }
             idx_flow++;
             idx_lobe = 0;
         }
