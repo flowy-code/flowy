@@ -11,7 +11,7 @@ dependencies:
   - clang-format=18.1.1
   - tomlplusplus
   - catch2
-  - xtensor
+  - xtensor<=0.25.0
   - xtensor-blas
   - cppcheck
   - cpplint
