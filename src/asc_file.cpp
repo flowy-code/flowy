@@ -1,3 +1,4 @@
+#include <charconv>
 // GPL v3 License
 // Copyright 2023--present Flowy developers
 #include "flowy/include/asc_file.hpp"
@@ -46,7 +47,31 @@ AscFile::AscFile( const std::filesystem::path & path, const std::optional<Topogr
 
     no_data_value = std::stod( get_number_string() );
 
-    data = xt::load_csv<double>( file, ' ' );
+    // Fast bulk parse: read the rest of the file and from_chars it (replaces the
+    // strtod/stream path that dominated the profile).
+    std::string buf( ( std::istreambuf_iterator<char>( file ) ), std::istreambuf_iterator<char>() );
+    std::vector<double> vals;
+    vals.reserve( nrows_header * ncols_header );
+    const char * p   = buf.data();
+    const char * end = p + buf.size();
+    while( p < end )
+    {
+        while( p < end && ( *p == ' ' || *p == '\n' || *p == '\r' || *p == '\t' ) )
+            ++p;
+        if( p >= end )
+            break;
+        double d{};
+        auto [next, ec] = std::from_chars( p, end, d );
+        if( ec != std::errc() )
+        {
+            ++p;
+            continue;
+        }
+        vals.push_back( d );
+        p = next;
+    }
+    std::array<std::size_t, 2> shp = { nrows_header, ncols_header };
+    data = xt::adapt( vals, shp );
 
     if( nrows_header != data.shape()[0] )
     {

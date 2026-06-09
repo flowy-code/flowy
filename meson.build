@@ -36,7 +36,7 @@ _sources = [
 ]
 
 # Library dependencies
-_deps = []
+_deps = [ dependency('openmp') ]
 pdflib_dep = dependency('pdf_cpplib', fallback : ['pdf_cpplib', 'pdflib_dep'])
 
 with_netcdf = get_option('with_netcdf')

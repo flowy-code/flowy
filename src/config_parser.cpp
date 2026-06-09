@@ -62,6 +62,7 @@ InputParams parse_config( const std::filesystem::path & path )
     }
 
     params.rng_seed = tbl["rng_seed"].value<int>();
+    if( tbl["n_runs"].value<int>().has_value() ) params.n_runs = tbl["n_runs"].value<int>().value();
 
     set_if_specified( params.masking_tolerance, tbl["masking_tolerance"] );
     set_if_specified( params.masking_max_iter, tbl["masking_max_iter"] );
