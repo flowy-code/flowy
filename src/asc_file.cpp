@@ -1,4 +1,6 @@
 #include <charconv>
+#include <fcntl.h>
+#include <unistd.h>
 // GPL v3 License
 // Copyright 2023--present Flowy developers
 #include "flowy/include/asc_file.hpp"
@@ -103,27 +105,45 @@ void AscFile::save( const std::filesystem::path & path_ )
 {
     auto path = handle_suffix( path_ );
 
-    std::fstream file;
-    file.open( path, std::fstream::in | std::fstream::out | std::fstream::trunc );
+    // Bulk format into one buffer, then a single write() (replaces the per-value
+    // stream formatting that dominated the write profile).
+    const size_t ncols = data.shape()[0];
+    const size_t nrows = data.shape()[1];
 
-    if( !file.is_open() )
+    std::string buf;
+    buf.reserve( ncols * nrows * 15 + 256 );
+    auto out = std::back_inserter( buf );
+    out = fmt::format_to( out, "ncols {}\n", ncols );
+    out = fmt::format_to( out, "nrows {}\n", nrows );
+    out = fmt::format_to( out, "xllcorner {}\n", lower_left_corner()[0] );
+    out = fmt::format_to( out, "yllcorner {}\n", lower_left_corner()[1] );
+    out = fmt::format_to( out, "cellsize {}\n", cell_size() );
+    out = fmt::format_to( out, "NODATA_value {}\n", no_data_value );
+
+    for( size_t r = 0; r < nrows; r++ )
     {
-        throw std::runtime_error( fmt::format( "Unable to create output asc file: '{}'", path.string() ) );
+        const size_t src_row = nrows - 1 - r; // undo the y-flip
+        for( size_t c = 0; c < ncols; c++ )
+        {
+            if( c > 0 )
+                buf.push_back( ' ' );
+            out = fmt::format_to( out, "{}", data( c, src_row ) );
+        }
+        buf.push_back( '\n' );
     }
 
-    file << fmt::format( "ncols {}\n", data.shape()[0] );
-    file << fmt::format( "nrows {}\n", data.shape()[1] );
-    file << fmt::format( "xllcorner {}\n", lower_left_corner()[0] );
-    file << fmt::format( "yllcorner {}\n", lower_left_corner()[1] );
-    file << fmt::format( "cellsize {}\n", cell_size() );
-    file << fmt::format( "NODATA_value {}\n", no_data_value );
-
-    // We have to undo the transformation we applied to the height data
-    // Therefore, we transpose and *then* we flip the y-axis
-    auto data_out = xt::flip( xt::transpose( data ), 0 );
-    Utility::dump_csv( file, data_out, ' ' );
-
-    file.close();
+    int fd = ::open( path.c_str(), O_WRONLY | O_CREAT | O_TRUNC, 0644 );
+    if( fd < 0 )
+        throw std::runtime_error( fmt::format( "Unable to create output asc file: '{}'", path.string() ) );
+    const char * wp = buf.data();
+    size_t rem      = buf.size();
+    while( rem > 0 )
+    {
+        ssize_t w = ::write( fd, wp, rem );
+        if( w < 0 ) { ::close( fd ); throw std::runtime_error( "write error" ); }
+        wp += w; rem -= static_cast<size_t>( w );
+    }
+    ::close( fd );
 }
 
 } // namespace Flowy

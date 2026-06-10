@@ -390,36 +390,27 @@ void Topography::compute_hazard_flow( const std::vector<Lobe> & lobes )
 
 std::pair<double, Vector2> Topography::height_and_slope( const Vector2 & coordinates ) const noexcept
 {
-    const auto [idx_x, idx_y] = locate_point( coordinates );
-    const Vector2 cell_center = { x_data[idx_x] + 0.5 * cell_size(), y_data[idx_y] + 0.5 * cell_size() };
+    const double cs      = cell_size();
+    const double inv_cs  = 1.0 / cs;
+    const double half_cs = 0.5 * cs;
+    const double x0      = x_data[0];
+    const double y0      = y_data[0];
+    const int nx_max     = static_cast<int>( x_data.size() ) - 1;
+    const int ny_max     = static_cast<int>( y_data.size() ) - 1;
 
-    int idx_x_lower{}, idx_x_higher{};
-    int idx_y_lower{}, idx_y_higher{};
+    const int idx_x = static_cast<int>( ( coordinates[0] - x0 ) * inv_cs );
+    const int idx_y = static_cast<int>( ( coordinates[1] - y0 ) * inv_cs );
 
-    if( coordinates[0] > cell_center[0] )
-    {
-        idx_x_lower  = idx_x;
-        idx_x_higher = std::min<int>( idx_x + 1, x_data.size() - 1 );
-    }
-    else
-    {
-        idx_x_lower  = std::max<int>( idx_x - 1, 0 );
-        idx_x_higher = idx_x;
-    }
+    const double ccx = x_data[idx_x] + half_cs;
+    const double ccy = y_data[idx_y] + half_cs;
 
-    if( coordinates[1] > cell_center[1] )
-    {
-        idx_y_lower  = idx_y;
-        idx_y_higher = std::min<int>( idx_y + 1, y_data.size() - 1 );
-    }
-    else
-    {
-        idx_y_lower  = std::max<int>( idx_y - 1, 0 );
-        idx_y_higher = idx_y;
-    }
+    int idx_x_lower, idx_x_higher;
+    if( coordinates[0] > ccx ) { idx_x_lower = idx_x; idx_x_higher = idx_x < nx_max ? idx_x + 1 : nx_max; }
+    else                       { idx_x_lower = idx_x > 0 ? idx_x - 1 : 0; idx_x_higher = idx_x; }
 
-    const Vector2 cell_center_lower_left
-        = { x_data[idx_x_lower] + 0.5 * cell_size(), y_data[idx_y_lower] + 0.5 * cell_size() };
+    int idx_y_lower, idx_y_higher;
+    if( coordinates[1] > ccy ) { idx_y_lower = idx_y; idx_y_higher = idx_y < ny_max ? idx_y + 1 : ny_max; }
+    else                       { idx_y_lower = idx_y > 0 ? idx_y - 1 : 0; idx_y_higher = idx_y; }
 
     const double Z00 = height_data( idx_x_lower, idx_y_lower );
     const double Z10 = height_data( idx_x_higher, idx_y_lower );
@@ -435,12 +426,14 @@ std::pair<double, Vector2> Topography::height_and_slope( const Vector2 & coordin
     const double beta  = Z01 - Z00;
     const double gamma = Z11 + Z00 - Z10 - Z01;
 
-    const Vector2 xp = ( coordinates - cell_center_lower_left ) / cell_size();
+    const double xp0 = ( coordinates[0] - ( x_data[idx_x_lower] + half_cs ) ) * inv_cs;
+    const double xp1 = ( coordinates[1] - ( y_data[idx_y_lower] + half_cs ) ) * inv_cs;
 
-    const double height = Z00 + alpha * xp[0] + beta * xp[1] + gamma * xp[0] * xp[1];
-    const Vector2 slope = { alpha + gamma * xp[1], beta + gamma * xp[0] };
+    const double height = Z00 + alpha * xp0 + beta * xp1 + gamma * xp0 * xp1;
+    const double sx     = -( alpha + gamma * xp1 ) * inv_cs;
+    const double sy     = -( beta + gamma * xp0 ) * inv_cs;
 
-    return { height, -slope / cell_size() };
+    return { height, { sx, sy } };
 }
 
 double Topography::slope_between_points(
