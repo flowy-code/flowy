@@ -1,6 +1,4 @@
 #include <charconv>
-#include <fcntl.h>
-#include <unistd.h>
 // GPL v3 License
 // Copyright 2023--present Flowy developers
 #include "flowy/include/asc_file.hpp"
@@ -132,18 +130,10 @@ void AscFile::save( const std::filesystem::path & path_ )
         buf.push_back( '\n' );
     }
 
-    int fd = ::open( path.c_str(), O_WRONLY | O_CREAT | O_TRUNC, 0644 );
-    if( fd < 0 )
+    std::ofstream out_file( path, std::ios::binary );
+    if( !out_file.is_open() )
         throw std::runtime_error( fmt::format( "Unable to create output asc file: '{}'", path.string() ) );
-    const char * wp = buf.data();
-    size_t rem      = buf.size();
-    while( rem > 0 )
-    {
-        ssize_t w = ::write( fd, wp, rem );
-        if( w < 0 ) { ::close( fd ); throw std::runtime_error( "write error" ); }
-        wp += w; rem -= static_cast<size_t>( w );
-    }
-    ::close( fd );
+    out_file.write( buf.data(), buf.size() );
 }
 
 } // namespace Flowy

@@ -16,32 +16,22 @@ jobs:
     steps:
     - uses: actions/checkout@v4
 
-    - name: Setup micromamba
-      uses: mamba-org/setup-micromamba@v1
+    - name: Setup Pixi
+      uses: prefix-dev/setup-pixi@v0.8.1
       with:
-        micromamba-version: '1.5.7-0'
-        environment-file: environment.yml
-        init-shell: powershell
-        cache-environment: true
-        post-cleanup: 'all'
+        cache: true
 
     - name: Compile with meson
-      shell: pwsh
       run: |
-        micromamba activate flowyenv
-        meson setup build --buildtype release --vsenv
-        meson compile -C build
+        pixi run meson setup build --buildtype release --vsenv
+        pixi run meson compile -C build
 
     - name: Test with meson
-      shell: pwsh
       run: |
-        micromamba activate flowyenv
-        meson test -C build --verbose
+        pixi run meson test -C build --verbose
 
     - name: Compile and test without netcdf
-      shell: pwsh
       run: |
-        micromamba activate flowyenv
-        meson setup build_nonetcdf --buildtype release --vsenv -Dwith_netcdf=false
-        meson compile -C build_nonetcdf
-        meson test -C build_nonetcdf --verbose
+        pixi run meson setup build_nonetcdf --buildtype release --vsenv -Dwith_netcdf=false
+        pixi run meson compile -C build_nonetcdf
+        pixi run meson test -C build_nonetcdf --verbose

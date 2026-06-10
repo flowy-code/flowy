@@ -8,11 +8,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v3
-    - name: Install Conda environment
-      uses: mamba-org/setup-micromamba@main
+    - name: Setup Pixi
+      uses: prefix-dev/setup-pixi@v0.8.1
       with:
-        environment-file: environment.yml
+        cache: true
     - name: Run precommit
-      shell: bash -l {0}
       run: |
         pipx run pre-commit run -a

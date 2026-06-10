@@ -18,3 +18,4 @@ dependencies:
   - libnetcdf
   - hdf5
   - towncrier
+  - libhwy
