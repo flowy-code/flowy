@@ -1,7 +1,6 @@
 // GPL v3 License
 // Copyright 2023--present Flowy developers
 #include "flowy/include/simulation.hpp"
-#include <hwy/highway.h>
 #include "flowy/include/asc_file.hpp"
 #include "flowy/include/config.hpp"
 #include "flowy/include/definitions.hpp"
@@ -16,6 +15,7 @@
 #include <fmt/chrono.h>
 #include <fmt/format.h>
 #include <fmt/ranges.h>
+#include <hwy/highway.h>
 #include <algorithm>
 #include <chrono>
 #include <cmath>

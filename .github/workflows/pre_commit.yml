@@ -1,17 +1,21 @@
-name: pre-commit
+name: prek
 on:
   pull_request:
   push:
     branches: [main]
 jobs:
-  pre-commit:
+  prek:
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v6.0.3
     - name: Setup Pixi
-      uses: prefix-dev/setup-pixi@v0.8.1
+      uses: prefix-dev/setup-pixi@v0.9.6
       with:
         cache: true
-    - name: Run precommit
+    - name: Install prek
+      uses: taiki-e/install-action@prek
+    - name: Run prek
       run: |
-        pipx run pre-commit run -a
+        pixi run prek run --all-files --show-diff-on-failure
+      env:
+        PREK_COLOR: always

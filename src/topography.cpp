@@ -405,12 +405,28 @@ std::pair<double, Vector2> Topography::height_and_slope( const Vector2 & coordin
     const double ccy = y_data[idx_y] + half_cs;
 
     int idx_x_lower, idx_x_higher;
-    if( coordinates[0] > ccx ) { idx_x_lower = idx_x; idx_x_higher = idx_x < nx_max ? idx_x + 1 : nx_max; }
-    else                       { idx_x_lower = idx_x > 0 ? idx_x - 1 : 0; idx_x_higher = idx_x; }
+    if( coordinates[0] > ccx )
+    {
+        idx_x_lower  = idx_x;
+        idx_x_higher = idx_x < nx_max ? idx_x + 1 : nx_max;
+    }
+    else
+    {
+        idx_x_lower  = idx_x > 0 ? idx_x - 1 : 0;
+        idx_x_higher = idx_x;
+    }
 
     int idx_y_lower, idx_y_higher;
-    if( coordinates[1] > ccy ) { idx_y_lower = idx_y; idx_y_higher = idx_y < ny_max ? idx_y + 1 : ny_max; }
-    else                       { idx_y_lower = idx_y > 0 ? idx_y - 1 : 0; idx_y_higher = idx_y; }
+    if( coordinates[1] > ccy )
+    {
+        idx_y_lower  = idx_y;
+        idx_y_higher = idx_y < ny_max ? idx_y + 1 : ny_max;
+    }
+    else
+    {
+        idx_y_lower  = idx_y > 0 ? idx_y - 1 : 0;
+        idx_y_higher = idx_y;
+    }
 
     const double Z00 = height_data( idx_x_lower, idx_y_lower );
     const double Z10 = height_data( idx_x_higher, idx_y_lower );

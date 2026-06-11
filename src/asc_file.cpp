@@ -71,7 +71,7 @@ AscFile::AscFile( const std::filesystem::path & path, const std::optional<Topogr
         p = next;
     }
     std::array<std::size_t, 2> shp = { nrows_header, ncols_header };
-    data = xt::adapt( vals, shp );
+    data                           = xt::adapt( vals, shp );
 
     if( nrows_header != data.shape()[0] )
     {
@@ -110,12 +110,12 @@ void AscFile::save( const std::filesystem::path & path_ )
     std::string buf;
     buf.reserve( ncols * nrows * 15 + 256 );
     auto out = std::back_inserter( buf );
-    out = fmt::format_to( out, FMT_COMPILE( "ncols {}\n" ), ncols );
-    out = fmt::format_to( out, FMT_COMPILE( "nrows {}\n" ), nrows );
-    out = fmt::format_to( out, FMT_COMPILE( "xllcorner {}\n" ), lower_left_corner()[0] );
-    out = fmt::format_to( out, FMT_COMPILE( "yllcorner {}\n" ), lower_left_corner()[1] );
-    out = fmt::format_to( out, FMT_COMPILE( "cellsize {}\n" ), cell_size() );
-    out = fmt::format_to( out, FMT_COMPILE( "NODATA_value {}\n" ), no_data_value );
+    out      = fmt::format_to( out, FMT_COMPILE( "ncols {}\n" ), ncols );
+    out      = fmt::format_to( out, FMT_COMPILE( "nrows {}\n" ), nrows );
+    out      = fmt::format_to( out, FMT_COMPILE( "xllcorner {}\n" ), lower_left_corner()[0] );
+    out      = fmt::format_to( out, FMT_COMPILE( "yllcorner {}\n" ), lower_left_corner()[1] );
+    out      = fmt::format_to( out, FMT_COMPILE( "cellsize {}\n" ), cell_size() );
+    out      = fmt::format_to( out, FMT_COMPILE( "NODATA_value {}\n" ), no_data_value );
 
     for( size_t r = 0; r < nrows; r++ )
     {

@@ -105,7 +105,7 @@ int main( int argc, char * argv[] )
     fmt::print( "run_name = {}\n", input_params.run_name );
     if( input_params.n_runs > 1 )
     {
-        const int n_runs   = input_params.n_runs;
+        const int n_runs    = input_params.n_runs;
         const int base_seed = input_params.rng_seed.value_or( 0 );
         xt::xtensor<double, 2> sum;
         bool sum_init = false;
@@ -123,15 +123,29 @@ int main( int argc, char * argv[] )
                 Simulation sim( inp, base_seed + i );
                 sim.run();
                 sim.compute_topography_thickness();
-                if( !local_init ) { local = sim.topography_thickness.height_data; local_init = true; }
-                else { local += sim.topography_thickness.height_data; }
+                if( !local_init )
+                {
+                    local      = sim.topography_thickness.height_data;
+                    local_init = true;
+                }
+                else
+                {
+                    local += sim.topography_thickness.height_data;
+                }
             }
 #pragma omp critical
             {
                 if( local_init )
                 {
-                    if( !sum_init ) { sum = local; sum_init = true; }
-                    else { sum += local; }
+                    if( !sum_init )
+                    {
+                        sum      = local;
+                        sum_init = true;
+                    }
+                    else
+                    {
+                        sum += local;
+                    }
                 }
             }
         }
