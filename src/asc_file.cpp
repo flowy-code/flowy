@@ -4,6 +4,7 @@
 #include "flowy/include/dump_csv.hpp"
 #include "flowy/include/topography_file.hpp"
 #include <fast_float/fast_float.h>
+#include <fmt/compile.h>
 #include <fmt/format.h>
 #include <fstream>
 
@@ -109,12 +110,12 @@ void AscFile::save( const std::filesystem::path & path_ )
     std::string buf;
     buf.reserve( ncols * nrows * 15 + 256 );
     auto out = std::back_inserter( buf );
-    out = fmt::format_to( out, "ncols {}\n", ncols );
-    out = fmt::format_to( out, "nrows {}\n", nrows );
-    out = fmt::format_to( out, "xllcorner {}\n", lower_left_corner()[0] );
-    out = fmt::format_to( out, "yllcorner {}\n", lower_left_corner()[1] );
-    out = fmt::format_to( out, "cellsize {}\n", cell_size() );
-    out = fmt::format_to( out, "NODATA_value {}\n", no_data_value );
+    out = fmt::format_to( out, FMT_COMPILE( "ncols {}\n" ), ncols );
+    out = fmt::format_to( out, FMT_COMPILE( "nrows {}\n" ), nrows );
+    out = fmt::format_to( out, FMT_COMPILE( "xllcorner {}\n" ), lower_left_corner()[0] );
+    out = fmt::format_to( out, FMT_COMPILE( "yllcorner {}\n" ), lower_left_corner()[1] );
+    out = fmt::format_to( out, FMT_COMPILE( "cellsize {}\n" ), cell_size() );
+    out = fmt::format_to( out, FMT_COMPILE( "NODATA_value {}\n" ), no_data_value );
 
     for( size_t r = 0; r < nrows; r++ )
     {
@@ -123,7 +124,11 @@ void AscFile::save( const std::filesystem::path & path_ )
         {
             if( c > 0 )
                 buf.push_back( ' ' );
-            out = fmt::format_to( out, "{}", data( c, src_row ) );
+            const double value = data( c, src_row );
+            if( value == 0.0 )
+                buf.push_back( '0' );
+            else
+                out = fmt::format_to( out, FMT_COMPILE( "{}" ), value );
         }
         buf.push_back( '\n' );
     }
