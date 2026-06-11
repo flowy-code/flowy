@@ -26,6 +26,7 @@ hdf5 = "*"
 towncrier = "*"
 libhwy = ">=1.4.0,<2"
 llvm-openmp = ">=22.1.7,<23"
+fast_float = ">=8.1.0,<9"
 
 [target.osx-64.dependencies]
 cxx-compiler = "==1.10.0"

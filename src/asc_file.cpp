@@ -1,9 +1,9 @@
-#include <charconv>
 // GPL v3 License
 // Copyright 2023--present Flowy developers
 #include "flowy/include/asc_file.hpp"
 #include "flowy/include/dump_csv.hpp"
 #include "flowy/include/topography_file.hpp"
+#include <fast_float/fast_float.h>
 #include <fmt/format.h>
 #include <fstream>
 
@@ -47,8 +47,7 @@ AscFile::AscFile( const std::filesystem::path & path, const std::optional<Topogr
 
     no_data_value = std::stod( get_number_string() );
 
-    // Fast bulk parse: read the rest of the file and from_chars it (replaces the
-    // strtod/stream path that dominated the profile).
+    // Fast bulk parse with a locale-independent from_chars-style API.
     std::string buf( ( std::istreambuf_iterator<char>( file ) ), std::istreambuf_iterator<char>() );
     std::vector<double> vals;
     vals.reserve( nrows_header * ncols_header );
@@ -61,7 +60,7 @@ AscFile::AscFile( const std::filesystem::path & path, const std::optional<Topogr
         if( p >= end )
             break;
         double d{};
-        auto [next, ec] = std::from_chars( p, end, d );
+        auto [next, ec] = fast_float::from_chars( p, end, d );
         if( ec != std::errc() )
         {
             ++p;
@@ -103,8 +102,7 @@ void AscFile::save( const std::filesystem::path & path_ )
 {
     auto path = handle_suffix( path_ );
 
-    // Bulk format into one buffer, then a single write() (replaces the per-value
-    // stream formatting that dominated the write profile).
+    // Bulk format into one buffer, then write it once.
     const size_t ncols = data.shape()[0];
     const size_t nrows = data.shape()[1];
 
