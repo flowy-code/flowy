@@ -10,17 +10,19 @@ cpp_args = []
 
 cppc = meson.get_compiler('cpp')
 
-cpp_args += cppc.get_supported_arguments([
-  '-Wno-unused-local-typedefs',  # Ignore unused local typedefs warnings
-  '-Wno-array-bounds',           # Suppress out-of-bounds array access warnings
-  '-ffast-math',                 # Enable faster, non-IEEE math calculations
-  '-fno-finite-math-only',       # Allow Inf and NaN
-  # These are based on recommendations from
-  # https://youtu.be/_enXuIxuNV4?si=LvtMqPwJ6jYbDY66
-  '-fno-semantic-interposition', # Assume no interposition for module functions
-  '-fno-plt',                    # Avoid PLT for function calls within shared libs
-  '-Bsymbolic',                  # Resolve symbols to local definitions
-])
+if cppc.get_id() != 'msvc' and cppc.get_id() != 'clang-cl'
+  cpp_args += cppc.get_supported_arguments([
+    '-Wno-unused-local-typedefs',  # Ignore unused local typedefs warnings
+    '-Wno-array-bounds',           # Suppress out-of-bounds array access warnings
+    '-ffast-math',                 # Enable faster, non-IEEE math calculations
+    '-fno-finite-math-only',       # Allow Inf and NaN
+    # These are based on recommendations from
+    # https://youtu.be/_enXuIxuNV4?si=LvtMqPwJ6jYbDY66
+    '-fno-semantic-interposition', # Assume no interposition for module functions
+    '-fno-plt',                    # Avoid PLT for function calls within shared libs
+    '-Bsymbolic',                  # Resolve symbols to local definitions
+  ])
+endif
 
 if cpp_args.length() > 0
   message('Adding compiler flags', cpp_args)
@@ -36,7 +38,7 @@ _sources = [
 ]
 
 # Library dependencies
-_deps = []
+_deps = [ dependency('openmp'), dependency('libhwy') ]
 pdflib_dep = dependency('pdf_cpplib', fallback : ['pdf_cpplib', 'pdflib_dep'])
 
 with_netcdf = get_option('with_netcdf')

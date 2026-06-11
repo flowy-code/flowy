@@ -15,6 +15,7 @@
 #include <fmt/chrono.h>
 #include <fmt/format.h>
 #include <fmt/ranges.h>
+#include <hwy/highway.h>
 #include <algorithm>
 #include <chrono>
 #include <cmath>
@@ -347,11 +348,29 @@ Simulation::get_file_handle( const Topography & topography, OutputQuantity outpu
 
 void Simulation::compute_topography_thickness()
 {
-    // Compute the thickness by subtracting the initial topography and correcting for the thickening parameter
+    // thickness = (topography - initial) / (1 - thickening_parameter), over the whole grid.
+    // Vectorised with google/highway: a contiguous Load/Sub/Mul/Store with a scalar tail.
     topography_thickness               = topography;
     topography_thickness.no_data_value = DEFAULT_NO_DATA_VALUE_THICKNESS;
-    topography_thickness.height_data -= topography_initial.height_data;
-    topography_thickness.height_data /= ( 1.0 - input.thickening_parameter );
+
+    const double inv_factor = 1.0 / ( 1.0 - input.thickening_parameter );
+    const std::size_t n     = topography_thickness.height_data.size();
+    double * dst            = topography_thickness.height_data.data();
+    const double * src      = topography_initial.height_data.data();
+
+    namespace hn = hwy::HWY_NAMESPACE;
+    const hn::ScalableTag<double> d;
+    const auto vf       = hn::Set( d, inv_factor );
+    const std::size_t L = hn::Lanes( d );
+    std::size_t i       = 0;
+    for( ; i + L <= n; i += L )
+    {
+        const auto a = hn::LoadU( d, dst + i );
+        const auto b = hn::LoadU( d, src + i );
+        hn::StoreU( hn::Mul( hn::Sub( a, b ), vf ), d, dst + i );
+    }
+    for( ; i < n; i++ )
+        dst[i] = ( dst[i] - src[i] ) * inv_factor;
 }
 
 void Simulation::write_thickness_if_necessary( int n_lobes_processed )

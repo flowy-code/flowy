@@ -1,3 +1,4 @@
+#include <omp.h>
 // GPL v3 License
 // Copyright 2023--present Flowy developers
 #include "flowy/include/config_parser.hpp"
@@ -102,7 +103,64 @@ int main( int argc, char * argv[] )
     fmt::print( "Using input file: {}\n", config_file_path.string() );
     fmt::print( "Output directory path set to: {}\n", input_params.output_folder.string() );
     fmt::print( "run_name = {}\n", input_params.run_name );
-    auto simulation = Simulation( input_params, input_params.rng_seed );
-    simulation.run();
+    if( input_params.n_runs > 1 )
+    {
+        const int n_runs    = input_params.n_runs;
+        const int base_seed = input_params.rng_seed.value_or( 0 );
+        xt::xtensor<double, 2> sum;
+        bool sum_init = false;
+#pragma omp parallel
+        {
+            xt::xtensor<double, 2> local;
+            bool local_init = false;
+#pragma omp for schedule( dynamic )
+            for( int i = 0; i < n_runs; i++ )
+            {
+                auto inp            = input_params;
+                inp.write_lobes_csv = false;
+                inp.output_folder   = input_params.output_folder / fmt::format( "ens_{}", i );
+                inp.run_name        = "r";
+                Simulation sim( inp, base_seed + i );
+                sim.run();
+                sim.compute_topography_thickness();
+                if( !local_init )
+                {
+                    local      = sim.topography_thickness.height_data;
+                    local_init = true;
+                }
+                else
+                {
+                    local += sim.topography_thickness.height_data;
+                }
+            }
+#pragma omp critical
+            {
+                if( local_init )
+                {
+                    if( !sum_init )
+                    {
+                        sum      = local;
+                        sum_init = true;
+                    }
+                    else
+                    {
+                        sum += local;
+                    }
+                }
+            }
+        }
+        sum /= static_cast<double>( n_runs );
+        auto grid = Simulation::construct_initial_topography( input_params );
+        Flowy::Topography mean_topo( sum, grid.x_data, grid.y_data, DEFAULT_NO_DATA_VALUE_THICKNESS );
+        auto out = input_params.output_folder / "ensemble_mean";
+        std::filesystem::create_directories( input_params.output_folder );
+        Flowy::AscFile( mean_topo, Flowy::OutputQuantity::Height ).save( out );
+        fmt::print( "ensemble of {} runs -> {}\n", n_runs, out.string() );
+    }
+    else
+    {
+        auto simulation = Simulation( input_params, input_params.rng_seed );
+        simulation.run();
+    }
     fmt::print( "=================================================================\n" );
 }

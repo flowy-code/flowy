@@ -16,29 +16,30 @@ jobs:
     steps:
     - uses: actions/checkout@v4
 
-    - name: Setup micromamba
-      uses: mamba-org/setup-micromamba@v1
+    - name: Setup Pixi
+      uses: prefix-dev/setup-pixi@v0.8.1
       with:
-        micromamba-version: '1.5.7-0'
-        environment-file: environment.yml
-        init-shell: bash
-        cache-environment: true
-        post-cleanup: 'all'
+        cache: true
 
     - name: Compile with meson
-      shell: micromamba-shell {0}
       run: |
-        meson setup build --buildtype release
-        meson compile -C build
+        if [ "${{ matrix.os }}" = "macos-latest" ]; then
+          export CC=clang
+          export CXX=clang++
+        fi
+        pixi run meson setup build --buildtype release
+        pixi run meson compile -C build
 
     - name: Test with meson
-      shell: micromamba-shell {0}
       run: |
-        meson test -C build --verbose
+        pixi run meson test -C build --verbose
 
     - name: Compile and test without netcdf
-      shell: micromamba-shell {0}
       run: |
-        meson setup build_nonetcdf --buildtype release --vsenv -Dwith_netcdf=false
-        meson compile -C build_nonetcdf
-        meson test -C build_nonetcdf --verbose
+        if [ "${{ matrix.os }}" = "macos-latest" ]; then
+          export CC=clang
+          export CXX=clang++
+        fi
+        pixi run meson setup build_nonetcdf --buildtype release -Dwith_netcdf=false
+        pixi run meson compile -C build_nonetcdf
+        pixi run meson test -C build_nonetcdf --verbose

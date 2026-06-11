@@ -150,6 +150,7 @@ public:
     // ===================================================================================
 
     int npoints{ 30 }; // Number of points for rasterizing the ellipse
+    int n_runs{ 1 };   // ensemble size (independent runs aggregated for the hazard map)
     int n_init{ 0 };   // Number of repetitions of the first lobe (useful for initial spreading)
 
     /*This factor is to choose where the center of the new lobe will be:

@@ -3,6 +3,8 @@
 #include "flowy/include/asc_file.hpp"
 #include "flowy/include/dump_csv.hpp"
 #include "flowy/include/topography_file.hpp"
+#include <fast_float/fast_float.h>
+#include <fmt/compile.h>
 #include <fmt/format.h>
 #include <fstream>
 
@@ -46,7 +48,30 @@ AscFile::AscFile( const std::filesystem::path & path, const std::optional<Topogr
 
     no_data_value = std::stod( get_number_string() );
 
-    data = xt::load_csv<double>( file, ' ' );
+    // Fast bulk parse with a locale-independent from_chars-style API.
+    std::string buf( ( std::istreambuf_iterator<char>( file ) ), std::istreambuf_iterator<char>() );
+    std::vector<double> vals;
+    vals.reserve( nrows_header * ncols_header );
+    const char * p   = buf.data();
+    const char * end = p + buf.size();
+    while( p < end )
+    {
+        while( p < end && ( *p == ' ' || *p == '\n' || *p == '\r' || *p == '\t' ) )
+            ++p;
+        if( p >= end )
+            break;
+        double d{};
+        auto [next, ec] = fast_float::from_chars( p, end, d );
+        if( ec != std::errc() )
+        {
+            ++p;
+            continue;
+        }
+        vals.push_back( d );
+        p = next;
+    }
+    std::array<std::size_t, 2> shp = { nrows_header, ncols_header };
+    data                           = xt::adapt( vals, shp );
 
     if( nrows_header != data.shape()[0] )
     {
@@ -78,27 +103,40 @@ void AscFile::save( const std::filesystem::path & path_ )
 {
     auto path = handle_suffix( path_ );
 
-    std::fstream file;
-    file.open( path, std::fstream::in | std::fstream::out | std::fstream::trunc );
+    // Bulk format into one buffer, then write it once.
+    const size_t ncols = data.shape()[0];
+    const size_t nrows = data.shape()[1];
 
-    if( !file.is_open() )
+    std::string buf;
+    buf.reserve( ncols * nrows * 15 + 256 );
+    auto out = std::back_inserter( buf );
+    out      = fmt::format_to( out, FMT_COMPILE( "ncols {}\n" ), ncols );
+    out      = fmt::format_to( out, FMT_COMPILE( "nrows {}\n" ), nrows );
+    out      = fmt::format_to( out, FMT_COMPILE( "xllcorner {}\n" ), lower_left_corner()[0] );
+    out      = fmt::format_to( out, FMT_COMPILE( "yllcorner {}\n" ), lower_left_corner()[1] );
+    out      = fmt::format_to( out, FMT_COMPILE( "cellsize {}\n" ), cell_size() );
+    out      = fmt::format_to( out, FMT_COMPILE( "NODATA_value {}\n" ), no_data_value );
+
+    for( size_t r = 0; r < nrows; r++ )
     {
-        throw std::runtime_error( fmt::format( "Unable to create output asc file: '{}'", path.string() ) );
+        const size_t src_row = nrows - 1 - r; // undo the y-flip
+        for( size_t c = 0; c < ncols; c++ )
+        {
+            if( c > 0 )
+                buf.push_back( ' ' );
+            const double value = data( c, src_row );
+            if( value == 0.0 )
+                buf.push_back( '0' );
+            else
+                out = fmt::format_to( out, FMT_COMPILE( "{}" ), value );
+        }
+        buf.push_back( '\n' );
     }
 
-    file << fmt::format( "ncols {}\n", data.shape()[0] );
-    file << fmt::format( "nrows {}\n", data.shape()[1] );
-    file << fmt::format( "xllcorner {}\n", lower_left_corner()[0] );
-    file << fmt::format( "yllcorner {}\n", lower_left_corner()[1] );
-    file << fmt::format( "cellsize {}\n", cell_size() );
-    file << fmt::format( "NODATA_value {}\n", no_data_value );
-
-    // We have to undo the transformation we applied to the height data
-    // Therefore, we transpose and *then* we flip the y-axis
-    auto data_out = xt::flip( xt::transpose( data ), 0 );
-    Utility::dump_csv( file, data_out, ' ' );
-
-    file.close();
+    std::ofstream out_file( path, std::ios::binary );
+    if( !out_file.is_open() )
+        throw std::runtime_error( fmt::format( "Unable to create output asc file: '{}'", path.string() ) );
+    out_file.write( buf.data(), buf.size() );
 }
 
 } // namespace Flowy

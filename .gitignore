@@ -35,3 +35,10 @@ compile_commands.json
 *.out
 *.app
 /subprojects/pdf_cpplib/
+# pixi environments
+.pixi/*
+!.pixi/config.toml
+
+.project-ctx.toml
+GEMINI.md
+.gemini/
